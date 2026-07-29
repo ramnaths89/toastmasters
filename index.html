@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Toastmasters Tools</title>
+<meta name="description" content="Small web tools for Toastmasters clubs and meetings, by Ramanathan S.">
+<meta name="theme-color" content="#004165">
+<style>
+:root{
+  --ink:#004165;      /* PANTONE 302 Loyal Blue */
+  --ink2:#CD202C;     /* PANTONE 1795 Fair Red */
+  --stock:#F4F1E8;
+  --stock-2:#EAE6DA;
+  --rule:#CFC8B6;
+  --disp:"Helvetica Neue",Arial,"Segoe UI",system-ui,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--stock);color:var(--ink);
+  font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;
+}
+/* paper grain */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+}
+.wrap{max-width:860px;margin:0 auto;
+  padding:env(safe-area-inset-top) calc(18px + env(safe-area-inset-right))
+          calc(40px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left))}
+
+/* masthead with the offset red plate */
+.mast{padding:34px 0 22px;position:relative}
+.mast h1{margin:0;font-family:var(--disp);font-weight:900;letter-spacing:-.02em;
+  font-size:clamp(30px,7.4vw,58px);line-height:.94;position:relative;z-index:2;text-transform:uppercase}
+.mast h1 .l{display:block;position:relative}
+.mast h1 .l::before{
+  content:attr(data-t);position:absolute;left:4px;top:4px;color:var(--ink2);z-index:-1;
+  -webkit-text-stroke:0}
+.mast .issue{margin:14px 0 0;font-family:var(--disp);font-weight:600;font-size:11.5px;
+  letter-spacing:.13em;text-transform:uppercase;opacity:.72}
+.rule-thick{height:6px;background:var(--ink);margin-bottom:4px}
+.rule-thin{height:2px;background:var(--ink2);margin-bottom:26px}
+
+.lede{margin:0 0 26px;font-size:16.5px;line-height:1.65;max-width:60ch}
+
+h2.sec{font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;margin:0 0 12px;padding-bottom:7px;border-bottom:2px solid var(--ink)}
+
+.tools{display:grid;gap:16px;margin-bottom:34px}
+.tool{
+  display:block;text-decoration:none;color:inherit;background:var(--stock-2);
+  border:2px solid var(--ink);padding:18px 19px 17px;position:relative;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.tool:hover,.tool:focus-visible{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--ink2);outline:none}
+.tool h3{margin:0 0 5px;font-family:var(--disp);font-weight:900;font-size:20px;
+  letter-spacing:-.01em;line-height:1.15}
+.tool p{margin:0 0 11px;font-size:14.5px;line-height:1.55;opacity:.85;max-width:56ch}
+.tool .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{font-family:var(--disp);font-weight:700;font-size:9.5px;letter-spacing:.09em;
+  text-transform:uppercase;background:var(--ink);color:var(--stock);padding:3px 8px}
+.tag.red{background:var(--ink2)}
+.tag.ghost{background:none;color:var(--ink);border:1.5px solid var(--rule)}
+.tool .go{position:absolute;right:16px;bottom:15px;font-family:var(--disp);font-weight:900;
+  font-size:13px;letter-spacing:.06em;color:var(--ink2)}
+
+.tool.soon{opacity:.62;border-style:dashed;cursor:default}
+.tool.soon:hover{transform:none;box-shadow:none}
+
+.note{border-left:5px solid var(--ink2);background:var(--stock-2);padding:15px 17px;
+  font-size:14px;line-height:1.62;margin:0 0 26px}
+.note b{font-family:var(--disp);font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  font-size:11px;display:block;margin-bottom:5px}
+.note ol{margin:8px 0 0;padding-left:19px}
+.note li{margin-bottom:4px}
+
+.foot{border-top:2px solid var(--ink);padding-top:15px;font-size:12.5px;line-height:1.65;opacity:.75}
+.foot p{margin:0 0 7px}
+a{color:var(--ink2)}
+@media (max-width:560px){
+  .mast{padding:24px 0 18px}
+  .tool{padding:15px 15px 14px}
+  .tool .go{position:static;display:block;margin-top:9px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <h1><span class="l" data-t="TOASTMASTERS">TOASTMASTERS</span><span class="l" data-t="TOOLS">TOOLS</span></h1>
+    <p class="issue">Built by Ramanathan S · District 80 · Singapore</p>
+  </div>
+  <div class="rule-thick"></div>
+  <div class="rule-thin"></div>
+
+  <p class="lede">Small, single-page web tools for Toastmasters clubs and meetings.
+  Everything here runs entirely in your browser — nothing is uploaded, nothing is tracked,
+  and once a page has loaded it keeps working without a signal.</p>
+
+  <h2 class="sec">Tools</h2>
+  <div class="tools">
+
+    <a class="tool" href="d80-club-finder/">
+      <h3>D80 Club Meeting Finder</h3>
+      <p>Every District 80 club, when it meets, and where — filter by division, area, language,
+      day, time and format. Star your own club and it hides anything that clashes, so you can
+      see at a glance which clubs you could actually visit.</p>
+      <div class="meta">
+        <span class="tag">217 clubs</span>
+        <span class="tag">9 divisions</span>
+        <span class="tag red">Data: 27 Jul 2026</span>
+      </div>
+      <span class="go">OPEN →</span>
+    </a>
+
+  </div>
+
+  <div class="note">
+    <b>Put it on your phone</b>
+    Open a tool, then:
+    <ol>
+      <li><b style="display:inline;font-size:inherit;letter-spacing:0;text-transform:none">iPhone —</b>
+        in <strong>Safari</strong>, tap Share → Add to Home Screen.</li>
+      <li><b style="display:inline;font-size:inherit;letter-spacing:0;text-transform:none">Android —</b>
+        in Chrome, tap ⋮ → Add to Home screen.</li>
+    </ol>
+    It gets its own icon, opens full screen, and works offline afterwards.
+    On iPhone this has to be done in Safari — Chrome on iOS cannot add to the home screen.
+  </div>
+
+  <div class="foot">
+    <p>These tools are personal projects by an individual member. They are not official
+    Toastmasters International or District 80 publications, are not endorsed by either, and
+    the data in them may be out of date. Always confirm meeting details with the club before
+    turning up.</p>
+    <p>Toastmasters International, District 80 and related marks are the property of
+    Toastmasters International.</p>
+  </div>
+
+</div>
+</body>
+</html>
