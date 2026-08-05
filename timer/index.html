@@ -97,6 +97,28 @@
     input[type="text"]:focus { border-color: var(--fg); }
     input[type="text"]::placeholder { color: currentColor; opacity: 0.4; }
 
+    /* ══ Club name: top-left, set once, rides on every report ══ */
+    .club-tag {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      z-index: 20;
+      width: min(20rem, 46vw);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      opacity: 0.6;
+      height: 2.2rem;
+      padding: 0 0.6rem;
+      background: transparent;
+      border-color: transparent;
+      transition: opacity 0.3s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    .club-tag:hover { opacity: 0.9; background: var(--field-bg); border-color: var(--field-border); }
+    .club-tag:focus { opacity: 1; background: var(--field-bg); border-color: var(--fg); }
+    body.running .club-tag { opacity: 0; pointer-events: none; }
+
     /* ══ Bottom-left dock: cockpit + segment joined ══ */
     .dock {
       position: fixed;
@@ -469,6 +491,17 @@
       .lbl-short { display: inline; }
       .card { padding: 0.7rem 0.75rem; border-radius: 13px; }
 
+      /* Club name — its own top row, above the help button */
+      .club-tag {
+        position: static;
+        top: auto; left: auto;
+        order: -2;
+        width: 100%;
+        height: 2rem;
+        font-size: 11px;
+        opacity: 0.75;
+      }
+
       /* Help "?" — its own top row (no overlap with the record box) */
       .help {
         position: relative;
@@ -535,6 +568,9 @@
 </head>
 <body>
 
+  <!-- Top-left: club name (remembered on this device) -->
+  <input type="text" id="clubTag" class="club-tag" placeholder="Your club" aria-label="Club name" maxlength="70" autocomplete="organization">
+
   <!-- Top-right: help "?" -->
   <details class="help" id="help">
     <summary aria-label="Instructions">?</summary>
@@ -546,6 +582,7 @@
         <li>Press Start — the screen goes white, then green → amber → red at your times; bell 30s after red.</li>
         <li>Press Stop, then Reset — Reset logs the speaker (name · segment · time) and clears for the next.</li>
         <li>Copy exports the list · ✕ removes a row · Test checks the bell.</li>
+        <li>Set your club name top-left — it heads the copied report and is remembered on this device.</li>
       </ol>
       <div class="help-foot">While the timer runs, only Stop and the Bell toggle stay active.</div>
     </div>
@@ -623,8 +660,23 @@
     const startBtn = document.getElementById('startBtn');
     const stopBtn  = document.getElementById('stopBtn');
     const nameInput = document.getElementById('nameInput');
+    const clubTag = document.getElementById('clubTag');
     const logEntriesEl = document.getElementById('logEntries');
     const logEmptyEl = document.getElementById('logEmpty');
+
+    /* ── Club name: kept in this browser only, survives Clear and reload ── */
+    const CLUB_KEY = 'tmtimer.club';
+    function loadClub() {
+      try {
+        const v = window.localStorage.getItem(CLUB_KEY);
+        if (v) clubTag.value = v;
+      } catch (e) {}
+    }
+    function saveClub() {
+      try { window.localStorage.setItem(CLUB_KEY, clubTag.value.trim()); } catch (e) {}
+    }
+    clubTag.addEventListener('input', saveClub);
+    loadClub();
 
     function parseTime(str) {
       const parts = str.trim().split(':');
@@ -721,7 +773,13 @@
 
     function copyLog() {
       if (!records.length) return;
-      const text = records.map(r => `${r.name}\t${r.seg || 'Other'}\t${r.time}`).join('\n');
+      const club = clubTag.value.trim();
+      const head = club
+        ? [`${club} — Timer's report — ${new Date().toLocaleDateString()}`, '']
+        : [];
+      const text = head
+        .concat(records.map(r => `${r.name}\t${r.seg || 'Other'}\t${r.time}`))
+        .join('\n');
       navigator.clipboard.writeText(text).catch(() => {});
     }
 
