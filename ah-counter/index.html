@@ -63,7 +63,17 @@ header::after{
 .titles{min-width:0;display:flex;flex-direction:column;gap:1px}
 .titles h1{font-family:'Cormorant Garamond',serif;font-weight:700;font-size:23px;line-height:1;white-space:nowrap}
 .titles h1 em{font-style:italic;color:var(--gold-lit)}
-.titles .kicker{font-size:8.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.titles .kicker{font-size:8.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim);white-space:nowrap;display:flex;align-items:center;gap:7px;min-width:0}
+.kicker .sep{opacity:.5}
+.clubField{
+  font-family:'Figtree',sans-serif;font-size:8.5px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--gold-lit);background:transparent;border:none;border-bottom:1px dotted var(--rule);
+  padding:1px 0 2px;width:15ch;min-width:0;outline:none;
+  transition:border-color .16s,color .16s,width .16s;
+}
+.clubField::placeholder{color:var(--dim);opacity:1}
+.clubField:hover{border-bottom-color:var(--cad-lit)}
+.clubField:focus{border-bottom-color:var(--gold);width:24ch}
 .grow{flex:1}
 .tally{
   display:flex;align-items:center;gap:9px;padding:4px 13px;
@@ -361,7 +371,10 @@ tr.zero td{color:#4a6b56}
   header{padding:8px 12px 7px;gap:10px;flex-wrap:wrap}
   header::after{left:12px;right:12px}
   .titles h1{font-size:19px}
-  .titles .kicker{display:none}
+  .titles .kicker{gap:0}
+  .kicker .sep,.kicker .kdate{display:none}
+  .clubField{width:100%;font-size:9px;letter-spacing:.22em}
+  .clubField:focus{width:100%}
   .tally{padding:3px 10px}
   .tally b{font-size:17px}
   .btn{padding:7px 10px;font-size:9px;letter-spacing:.1em}
@@ -397,7 +410,10 @@ tr.zero td{color:#4a6b56}
     <div class="crest"><span>A</span></div>
     <div class="titles">
       <h1>The Ah&#8209;Counter&rsquo;s <em>Log</em></h1>
-      <span class="kicker" id="kicker"></span>
+      <span class="kicker" id="kicker">
+        <input class="clubField" id="clubField" placeholder="Your club" aria-label="Club name" maxlength="70" autocomplete="organization">
+        <span class="sep">&middot;</span><span class="kdate" id="kdate"></span>
+      </span>
     </div>
     <div class="grow"></div>
     <div class="tally"><b id="grandNum">0</b><i>Total<br>crutches</i></div>
@@ -615,6 +631,23 @@ tr.zero td{color:#4a6b56}
     }catch(e){ storeOK = false; return null; }
   }
   function wipe(){ try{ window.localStorage.removeItem(STORE_KEY); }catch(e){} }
+
+  /* Club name is a club constant, not meeting data: it lives under its own key
+     so Reset / Start fresh (which wipe STORE_KEY) leave it alone. */
+  var CLUB_KEY = 'ahcounter.club';
+  function clubName(){
+    var el = document.getElementById('clubField');
+    return el ? (el.value||'').trim() : '';
+  }
+  function loadClub(){
+    try{
+      var v = window.localStorage.getItem(CLUB_KEY);
+      if (v) document.getElementById('clubField').value = v;
+    }catch(e){}
+  }
+  function saveClub(){
+    try{ window.localStorage.setItem(CLUB_KEY, clubName()); }catch(e){}
+  }
 
   var $ = function(id){ return document.getElementById(id); };
   function markSaveState(){
@@ -1043,13 +1076,17 @@ tr.zero td{color:#4a6b56}
     $('reportScript').innerHTML = '<div class="hd">Read this out</div>' +
       (lines.length ? lines.join('<br><br>') : '<span style="color:#93AA9B">Nothing recorded yet.</span>');
 
+    var club = clubName();
     $('reportSub').textContent =
+      (club ? club + '  ·  ' : '') +
       new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'}) +
       '  ·  ' + grand() + ' crutches  ·  ' + state.speakers.length + ' speakers';
   }
 
   function plainText(){
-    var out = ['AH-COUNTER REPORT  ' + new Date().toLocaleDateString(), ''];
+    var club = clubName();
+    var out = [(club ? club.toUpperCase() + '  ::  ' : '') +
+               'AH-COUNTER REPORT  ' + new Date().toLocaleDateString(), ''];
     state.speakers.forEach(function(sp,i){
       var parts = [];
       allWords().forEach(function(f){
@@ -1066,9 +1103,10 @@ tr.zero td{color:#4a6b56}
   }
   function csvText(){
     var words = allWords();
-    var rows = [['Speaker','Appointment','Segment'].concat(words.map(function(f){ return f.label; })).concat(['Total','Remarks'])];
+    var club = clubName();
+    var rows = [['Club','Speaker','Appointment','Segment'].concat(words.map(function(f){ return f.label; })).concat(['Total','Remarks'])];
     state.speakers.forEach(function(sp,i){
-      rows.push([nameOf(sp,i), (sp.name ? (sp.role||'') : ''), sp.segment]
+      rows.push([club, nameOf(sp,i), (sp.name ? (sp.role||'') : ''), sp.segment]
         .concat(words.map(function(f){ return sp.counts[f.id]||0; }))
         .concat([total(sp), sp.note||'']));
     });
@@ -1139,8 +1177,9 @@ tr.zero td{color:#4a6b56}
     var url = URL.createObjectURL(blob);
     var d = new Date();
     var stamp = String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    var slug = clubName().replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
     var a = document.createElement('a');
-    a.href = url; a.download = 'AhCounterV4_' + stamp + '.csv';
+    a.href = url; a.download = 'AhCounterV5_' + (slug ? slug + '_' : '') + stamp + '.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(url); }, 800);
     toast('CSV downloaded');
@@ -1183,7 +1222,9 @@ tr.zero td{color:#4a6b56}
     state.history = [];
   }
 
-  $('kicker').textContent = 'V4  ·  ' + new Date().toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
+  $('kdate').textContent = 'V5  ·  ' + new Date().toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
+  loadClub();
+  $('clubField').addEventListener('input', saveClub);
 
 
   var saved = load();
