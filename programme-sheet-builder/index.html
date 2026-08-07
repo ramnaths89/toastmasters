@@ -236,6 +236,17 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
    it shoving the icons around, same reasoning as the save badge. */
 .end-check{ min-width:210px; text-align:center; }
 
+/* Saved-meetings dropdown. Capped width so a long meeting title cannot push the
+   icon buttons around - same reasoning as the end-check chip's min-width. */
+.file-select{
+  flex:0 1 auto; width:auto; max-width:230px; min-width:150px;
+  font-size:12px; padding:8px 8px; height:38px;
+  border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink);
+  font-family:inherit; cursor:pointer;
+}
+.file-select:hover{ border-color:var(--maroon); }
+@media (max-width: 760px){ .file-select{ min-width:0; max-width:130px; } }
+
 /* ---------- Download menu ---------- */
 .menu-wrap{ position:relative; flex:0 0 auto; }
 .dl-menu{
@@ -389,10 +400,6 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
 .cbx-empty{ display:none; padding:6px 7px; font-size:11.5px; color:var(--ink-soft); font-style:italic; }
 @media print{ .cbx-list, .cbx-btn{ display:none !important; } }
 
-/* iOS Safari ignores print() on a hidden iframe, so the Print icon does nothing
-   on a phone. Hide it there rather than leave a dead button; the Download menu's
-   PDF entry builds the file in-page on those devices instead. */
-body.touch-device .print-only{ display:none; }
 </style>
 </head>
 <body>
@@ -413,16 +420,20 @@ body.touch-device .print-only{ display:none; }
   <button class="btn secondary icon" data-tip="Balance — stretches or squeezes the FLEXIBLE segments — Break and Table Topics — so the meeting lands exactly on its target end time." onclick="balanceToEndTime()" aria-label="Balance flexible segments to the end time">⚖</button>
   <div class="spacer"></div>
 
+  <select id="fileSelect" class="file-select" onchange="pickMeetingFile(this.value)" aria-label="Saved meetings" title="Open a saved meeting, or connect the folder they live in">
+    <option value="">Saved meetings…</option>
+  </select>
+  <button class="btn secondary icon" id="saveBtn" data-tip="Save — writes this meeting as a .json file in your chosen folder, then keeps autosaving into it as you work. The dropdown on the left reopens any meeting saved there." onclick="saveMeeting()" aria-label="Save meeting to a file">💾</button>
+
   <div class="menu-wrap">
     <button class="btn blue icon" id="dlBtn" data-tip="Download — save the finished sheet as HTML, PDF or JPG." onclick="toggleDownloadMenu(event)" aria-haspopup="true" aria-expanded="false" aria-label="Download">⭳</button>
     <div class="dl-menu" id="dlMenu" role="menu" onclick="event.stopPropagation()">
       <button role="menuitem" onclick="pickDownload('html')"><span class="dl-i">&lt;/&gt;</span><span><b>HTML</b><em>Editable file that reopens in any browser</em></span></button>
-      <button role="menuitem" onclick="pickDownload('pdf')"><span class="dl-i">📄</span><span><b>PDF</b><em>Print-ready A4 — opens the print dialog on a computer</em></span></button>
+      <button role="menuitem" onclick="pickDownload('pdf')"><span class="dl-i">📄</span><span><b>PDF</b><em>About 450 KB, saves straight away — no print dialog</em></span></button>
       <button role="menuitem" onclick="pickDownload('jpg')"><span class="dl-i">🖼</span><span><b>JPG image</b><em>Under 450 KB — for WhatsApp, email and posting</em></span></button>
     </div>
   </div>
 
-  <button class="btn icon print-only" data-tip="Print — opens your browser's print dialog. Untick “Headers and footers” there, or the browser stamps its own title, URL and page numbers over the sheet." onclick="printSheet()" aria-label="Print">🖨</button>
   <button class="btn ghost icon" data-tip="Reset — throws away your saved version and starts again from the built-in club template. Every name you have typed is cleared." onclick="resetToDefaults()" aria-label="Reset to the built-in defaults">↺</button>
   <button class="btn ghost icon tip-right" data-tip="Instructions — how every part of the builder works." onclick="openHelp()" aria-label="Instructions">?</button>
 </div>
@@ -438,6 +449,8 @@ body.touch-device .print-only{ display:none; }
           <div><label>Club Name</label><input type="text" id="f-clubName" placeholder="Club name" oninput="bindMeeting('clubName', this.value)"></div>
           <div><label>Club Number</label><input type="text" id="f-clubNumber" placeholder="e.g. 00002548" oninput="bindMeeting('clubNumber', this.value)"></div>
         </div>
+        <label>Club initials <span class="lbl-hint">(used to name saved files)</span></label>
+        <input type="text" id="f-clubInitials" placeholder="e.g. NSE" oninput="bindMeeting('clubInitials', this.value)">
         <label>District line <span class="lbl-hint">(prints under the club name)</span></label>
         <input type="text" id="f-orgLine" placeholder="District: 80 | Division: Y | Area Y1 | Club Number: 2548" oninput="bindMeeting('orgLine', this.value)">
         <label>Meeting cadence <span class="lbl-hint">(prints at the foot of the banner)</span></label>
@@ -562,30 +575,34 @@ body.touch-device .print-only{ display:none; }
       <button class="help-close" onclick="closeHelp()" aria-label="Close instructions">✕</button>
     </div>
     <div class="help-body">
-      <p class="help-lead">Fill in the panel on the left; the sheet on the right redraws as you type. Everything is saved in this browser automatically — the green ✓ at the top-left confirms it. Nothing is uploaded anywhere.</p>
+      <p class="help-lead">Fill in the panel on the left — the sheet on the right redraws as you type. Your work is kept in this browser automatically; the green ✓ at the top-left confirms it. Press <b>💾 Save</b> to also keep it as a file you can reopen later. Nothing is ever uploaded anywhere.</p>
 
-      <h3>The toolbar</h3>
+      <h3>Saving your meetings</h3>
       <dl>
-        <dt>⚖ Balance</dt><dd>Stretches or squeezes the two FLEXIBLE segments — Break and Table Topics — so the meeting lands exactly on its target end time. The chip on its left tells you where you currently finish.</dd>
-        <dt>⭳ Download</dt><dd><b>HTML</b> reopens and stays editable in any browser. <b>PDF</b> opens the print dialog — set the destination to “Save as PDF”. <b>JPG</b> is an image of the whole sheet, kept under 450 KB for WhatsApp, email and posting.</dd>
-        <dt>🖨 Print</dt><dd>Opens the print dialog. <b>Untick “Headers and footers”</b> there — otherwise the browser stamps its own title, URL and page numbers over the sheet. Leave Margins on Default; the sheet sets its own 1 cm.</dd>
-        <dt>↺ Reset</dt><dd>Throws away your saved version and starts again from the built-in club template. This clears every name you have typed, so use it when starting a fresh meeting, not to undo a mistake.</dd>
+        <dt>💾 Save</dt><dd>The first time, you pick a folder to keep meetings in — choose the folder the builder itself sits in. Name the meeting and it becomes a <b>.json</b> file there. From then on it saves itself as you work, so there is nothing to remember.</dd>
+        <dt>Saved meetings</dt><dd>The dropdown beside 💾 reopens any meeting in that folder. <b>＋ Save as a new file</b> keeps the current one and starts another — handy for copying last month's agenda into this month's. If the browser asks to reconnect the folder after a restart, that is normal; pick it once and it remembers.</dd>
+      </dl>
+
+      <h3>The rest of the toolbar</h3>
+      <dl>
+        <dt>⚖ Balance</dt><dd>Nudges the two FLEXIBLE segments — Break and Table Topics — so the meeting finishes on time. The chip to its left shows where you currently finish.</dd>
+        <dt>⭳ Download</dt><dd><b>HTML</b> reopens and stays editable anywhere. <b>PDF</b> saves a print-ready A4 file of about 450 KB straight away, with no dialog. <b>JPG</b> is an image of the sheet, under 450 KB — for WhatsApp and email.</dd>
+        <dt>Printing on paper</dt><dd>Download the <b>PDF</b> and print that, or press <b>Ctrl&nbsp;+&nbsp;P</b> on the downloaded HTML. There is no print button here any more — the browser dialog's destination setting quietly decided your file size, and the PDF above is the reliable answer.</dd>
+        <dt>↺ Reset</dt><dd>Back to the blank club template. This clears every name you have typed, so use it to start a fresh meeting — not to undo a mistake.</dd>
       </dl>
 
       <h3>Filling in a meeting</h3>
       <dl>
-        <dt>Meeting Info</dt><dd>Title, date and start/end times. Announcements print in the left-hand pane, one per line — leave a blank line for a gap. The block disappears entirely if you leave it empty.</dd>
-        <dt>Meeting Roles</dt><dd>Untick any role that isn't running tonight: it drops off the roster and its own agenda items switch off. Ticked but blank shows a red <b>TBD</b> chip and is listed as still open at the top of the sheet. Naming a Language Evaluator adds the Word of the Day row by itself.</dd>
-        <dt>Speeches &amp; Evaluators</dt><dd>Pick Pathway → Level → Project and the detail line, duration and timing lights fill in from the official Toastmasters catalog. The Project box lists all 64 projects — click ▾ to browse or type to narrow. Drag the ⠿ grip to reorder speakers; each speech carries its evaluation with it.</dd>
-        <dt>Programme Segments</dt><dd>Click a row to open it and change its title, holder or duration. Drag the ⠿ grip to reorder. <b>⏱ Apply club standard timings</b> resets the durations and the combined timer's-report/voting rows to the club standard without touching any names.</dd>
-        <dt>Club Setup</dt><dd>Sits at the top because it is the club's identity — club name, district line, meeting cadence, venue, committee and district officers. It stays collapsed because these rarely change; refresh them at the handover after the AGM.</dd>
+        <dt>Club Setup</dt><dd>Club name, district line, venue, committee and district officers. Rarely changes — refresh it after the AGM handover.</dd>
+        <dt>Meeting Info</dt><dd>Title, date, start and end times, and announcements. Each announcement goes on its own line.</dd>
+        <dt>Meeting Roles</dt><dd>Untick anything not running tonight and its agenda items switch off. Leave a role blank and the sheet prints a red <b>TBD</b> and lists it as still open.</dd>
+        <dt>Speeches &amp; Evaluators</dt><dd>Pick Pathway → Level → Project and the timing fills in from the official catalog. Click ▾ on the Project box to browse all 64, or type to search. Drag the ⠿ grip to reorder speakers.</dd>
+        <dt>Programme Segments</dt><dd>Click any row to open it and change the title, holder or duration. <b>⏱ Apply club standard timings</b> resets the durations to the club standard without touching names.</dd>
       </dl>
 
-      <h3>Editing on the sheet itself</h3>
-      <p>Hover any row of the printed sheet and hit <b>✎ Edit</b> to change it in place, or drag its ⠿ grip to move it. Drag the divider between the two panes to resize them; double-click it to go back to 50/50.</p>
-
-      <h3>Timing lights</h3>
-      <p>Green, amber and red are the signals the Timer shows. They follow the slot automatically — red lands one minute before the slot ends — until you type your own numbers, after which they stay put. <b>↺ follow the slot again</b> hands control back.</p>
+      <h3>Two more things</h3>
+      <p>Hover any row <i>on the sheet itself</i> and hit <b>✎ Edit</b> to change it in place. Drag the divider between the panes to resize them, or double-click it for 50/50.</p>
+      <p>Timing lights follow the slot automatically — red lands a minute before the slot ends, and 🔔 is thirty seconds after that. Type your own numbers and they stay put; <b>↺ follow the slot again</b> hands control back.</p>
     </div>
   </div>
 </div>
@@ -1360,6 +1377,11 @@ const SHEET_CSS = `
        paper - the badges in the rows already say it (Rama, V21). */
     .schedule-note{ display: none; }
 
+    /* Sub-notes 12.3px -> 11.5px on paper. The Award Presentation row gained a
+       sub line in V27 and three themes were within ~4mm of page 2's edge; this
+       is the lightest trim that clears all six. Measured via pgprobe. */
+    td.item .item-sub{ font-size: 11.5px; line-height: 1.35; }
+
     aside h3{ font-size: 10px; margin-bottom: 6px; padding-bottom: 3px; }
     .exco-block{ margin-bottom: 10px; break-inside: avoid; }
     .exco-item{ margin-bottom: 4px; }
@@ -1479,13 +1501,16 @@ const PRESETS = {
   ttmasterintro: {label:'TME Introduces Table Topics Master', durMin:1, roleKey:'tmod'},
   tabletopics:   {label:'Conduct Table Topics Session', durMin:17, flexible:true, flexMin:12, flexMax:20,
                   hasSignal:true, signalMin:1, signalMid:1.5, signalMax:2, roleKey:'ttmaster', signalGroup:'Table Topics', signalSuffix:'per speaker'},
-  ttreturn:      {label:'Table Topics Master Returns Control to TME', durMin:1, roleKey:'timer'},
+  ttreturn:      {label:'Table Topics Master Returns Control to TME', durMin:1, roleKey:'tmod'},
   peintro:       {label:'TME Introduces Project Evaluation Segment', durMin:4, roleKey:'tmod'},
   evaluation:    {label:'Evaluation', durMin:4, hasSignal:true, signalMin:2, signalMid:2.5, signalMax:3, isEvaluation:true, signalGroup:'Evaluation'},
   reports:       {label:'TME Calls for Reports', durMin:4, noHolder:true},
-  awards:        {label:'Award Presentation', durMin:3, noHolder:true},
+  awards:        {label:'Award Presentation', durMin:3, roleKey:'tmod',
+                  sub:'Best Speaker | Table Topics | Evaluator'},
   closing:       {label:"Club President's Closing Address", durMin:4, roleKey:'president'},
-  photo:         {label:'Photo Taking Session', durMin:5, roleKey:'photographer'},
+  /* fixedHolder seeds holderOverride, so the sheet prints "All" but the field
+     stays editable. The photographer role still owns the row's on/off tick. */
+  photo:         {label:'Photo Taking Session', durMin:5, roleKey:'photographer', fixedHolder:'All'},
   adjourn:       {label:'Club President Adjourns Meeting', durMin:0, roleKey:'president'},
   /* Superseded by the three combined rows above, kept only so a meeting saved
      before V21 still resolves its presetKey on load. Not offered in Add. */
@@ -1504,7 +1529,7 @@ function newSegment(presetKey){
     title: p.label,
     sub: p.sub || '',
     speakerName: '',
-    holderOverride: '',
+    holderOverride: p.fixedHolder || '',
     roleKey: p.roleKey || '',
     noHolder: !!p.noHolder,
     durMin: p.durMin,
@@ -1540,6 +1565,10 @@ function defaultState(){
     meeting: {
       clubName: 'Nee Soon East Toastmasters Club',
       clubNumber: '00002548',
+      /* Initials for the saved-file name, e.g. NSE-ProgSheet-2026-08-13-1930.
+         Derived from clubName when blank, so a club that never sets it still
+         gets something sane. */
+      clubInitials: 'NSE',
       /* Printed in place of a bare club number under the club name, and the
          standing meeting cadence at the foot of the banner. Club constants like
          the venue - hardcoded on Rama's instruction (V26), editable in Club
@@ -1569,26 +1598,26 @@ function defaultState(){
       tmod: true, president: true, ttmaster: true, ttevaluator: true,
       langeval: false, timer: true, ahcounter: true, photographer: true, saa: true,
     },
-    /* Club officers for the current term, hardcoded on Rama's instruction (V21)
-       and taken from his live 13 Aug 2026 sheet. These are NOT meeting-specific:
+    /* Club officers for the current term, for the current term. Replace the <placeholders> with your own
+       club's names - see customise-for-your-club.md. These are NOT meeting-specific:
        they hold for the whole term, so unlike the roster they belong in the
        defaults and must survive a Reset. The V13 "no names in the template"
        rule still governs everything that changes weekly — roles, speakers,
        evaluators, meeting title and date all stay blank.
        Refresh these at the club's AGM / handover. */
     execText: [
-      'President|Johnson Soh',
-      'VP Education|Valerie J. Lim',
-      'VP Membership|Roger Lek',
-      'VP Public Relations|Anjali Jai Anjana',
-      'Secretary|Suhani, Rakshika',
-      'Treasurer|Haziq Muhammad',
-      'Sergeant at Arms|Haziq Muhammad',
-      'Immediate Past President|Kaydance Ng',
+      'President|<President Name>',
+      'VP Education|<VP Education Name>',
+      'VP Membership|<VP Membership Name>',
+      'VP Public Relations|<VP Public Relations Name>',
+      'Secretary|<Secretary Name>',
+      'Treasurer|<Treasurer Name>',
+      'Sergeant at Arms|<Sergeant at Arms Name>',
+      'Immediate Past President|<Immediate Past President Name>',
     ].join('\n'),
     districtText: [
-      'Division Director|Ibrahim Bin Mohd Ismail|Cheng San TMC',
-      'Area Director|Edward Lay|Chua Chu Kang TMC',
+      'Division Director|<Division Director Name>|<Their Club>',
+      'Area Director|<Area Director Name>|<Their Club>',
     ].join('\n'),
     linksText: [
       'Toastmasters Intl.|https://www.toastmasters.org|www.toastmasters.org',
@@ -1646,14 +1675,23 @@ function defaultState(){
 let state = defaultState();
 
 /* ================= Persistence (localStorage, gracefully degrading) ================= */
-const STORE_KEY = 'nse-programme-builder-v5';
+/* Bumped v5 -> v6 in V27 at Rama's request: file:// pages all share one
+   localStorage origin, so every version of the tool was restoring the same
+   saved meeting - opening a fresh V27 resurrected the last meeting built in
+   V26 and looked "populated". A new key means V27+ opens clean; the old v5
+   data is untouched and still loads in pre-V27 files. This deliberately
+   supersedes the earlier "never rename the key" rule, which protected saved
+   work that is now exported and done. */
+const STORE_KEY = 'nse-programme-builder-v6';
 let storageOK = true;
 
 function saveState(){
   if(!storageOK) return;
   try{
-    localStorage.setItem(STORE_KEY, JSON.stringify({v:5, savedAt:new Date().toISOString(), state}));
+    localStorage.setItem(STORE_KEY, JSON.stringify({v:6, savedAt:new Date().toISOString(), state}));
     flashSaved();
+    /* Once a meeting has a file on disk, every autosave goes there too. */
+    queueFileSave();
   }catch(e){
     storageOK = false;
     setSaveStatus('Not saved — browser storage unavailable here', true, true);
@@ -1669,26 +1707,38 @@ function queueSave(){
    render unstyled, so it falls back to Classic on load. */
 const RETIRED_THEMES = ['bauhaus','broadsheet','jetset','terminal','overprint','confessional'];
 
+/* Take a saved payload - from localStorage OR from a .json file on disk - and
+   make it the live state. Merging over defaultState() is what lets a meeting
+   saved by an older version keep working: fields added since simply take their
+   default. Returns false (leaving the current state untouched) if the payload
+   is not a meeting, so a wrong file picked from the dropdown cannot wipe your
+   work. Accepts either {state:{...}} or a bare state object. */
+function adoptState(parsed){
+  const raw = parsed && parsed.state ? parsed.state : parsed;
+  if(!raw || !Array.isArray(raw.segments) || !raw.meeting) return false;
+  const fresh = defaultState();
+  state = Object.assign(fresh, raw);
+  state.meeting = Object.assign(fresh.meeting, raw.meeting || {});
+  state.roles   = Object.assign(fresh.roles,   raw.roles   || {});
+  state.roleActive = Object.assign(fresh.roleActive, raw.roleActive || {});
+  state.segments = raw.segments.map(sg => Object.assign(newSegment('custom'), sg));
+  if(RETIRED_THEMES.includes(state.theme)) state.theme = 'classic';
+  /* keep new IDs from colliding with restored ones */
+  let maxId = 0;
+  state.segments.forEach(sg=>{
+    const n = parseInt(String(sg.id).replace(/\D/g,''), 10);
+    if(!isNaN(n) && n > maxId) maxId = n;
+  });
+  segIdCounter = maxId + 1;
+  return true;
+}
+
 function loadState(){
   try{
     const raw = localStorage.getItem(STORE_KEY);
     if(!raw) return false;
     const parsed = JSON.parse(raw);
-    if(!parsed || !parsed.state || !Array.isArray(parsed.state.segments)) return false;
-    const fresh = defaultState();
-    // merge so newly-added fields in later versions still exist
-    state = Object.assign(fresh, parsed.state);
-    state.meeting = Object.assign(fresh.meeting, parsed.state.meeting || {});
-    state.roles   = Object.assign(fresh.roles,   parsed.state.roles   || {});
-    state.segments = parsed.state.segments.map(sg => Object.assign(newSegment('custom'), sg));
-    if(RETIRED_THEMES.includes(state.theme)) state.theme = 'classic';
-    // keep new IDs from colliding with restored ones
-    let maxId = 0;
-    state.segments.forEach(sg=>{
-      const n = parseInt(String(sg.id).replace(/\D/g,''), 10);
-      if(!isNaN(n) && n > maxId) maxId = n;
-    });
-    segIdCounter = maxId + 1;
+    if(!adoptState(parsed)) return false;
     return parsed.savedAt || true;
   }catch(e){
     storageOK = false;
@@ -2054,6 +2104,11 @@ function midOf(seg){
 let editingSegId = null;
 
 /* ---- inline edit-row field builders (rendered inside the preview iframe) ---- */
+function fldTextML(seg, field, label, ph){
+  return `<label class="re-f"><span>${label}</span>
+    <textarea rows="2" placeholder="${esc(ph||'')}"
+      oninput="parent.liveEdit('${seg.id}','${field}',this.value)">${esc(seg[field]||'')}</textarea></label>`;
+}
 function fldText(seg, field, label, ph){
   return `<label class="re-f"><span>${label}</span>
     <input type="text" value="${esc(seg[field]||'')}" placeholder="${esc(ph||'')}"
@@ -2114,7 +2169,7 @@ function editRowHTML(seg, evPartner){
           : `<div class="re-grid">${fldNum(seg,'durMin','Duration (min)')}</div>`);
     body = `
       <div class="re-grid">${fldText(seg,'title','Title','Segment title')}${holderFld}</div>
-      <div class="re-grid">${fldText(seg,'sub','Sub-note','Detail line printed under the title')}</div>
+      <div class="re-grid">${fldTextML(seg,'sub','Sub-note','Detail line printed under the title')}</div>
       ${timing}`;
   }
   return `<div class="row-edit">${body}</div>`;
@@ -2343,10 +2398,12 @@ function buildSheetHTML(interactive){
           + `${r.k === 'timing' && seg.signalMax ? dots : ''}</span>`
         ).join('') + `</span>`;
     } else if(seg.flexible){
-      subHtml = `<span class="item-sub"><span class="flex-badge">FLEXIBLE</span>${seg.flexMin}&ndash;${seg.flexMax} min &middot; nominal ${seg.durMin} min${seg.sub?' &middot; '+esc(seg.sub):''}</span>`;
+      subHtml = `<span class="item-sub"><span class="flex-badge">FLEXIBLE</span>${seg.flexMin}&ndash;${seg.flexMax} min &middot; nominal ${seg.durMin} min${seg.sub?' &middot; '+esc(seg.sub).replace(/\n/g,' &middot; '):''}</span>`;
     } else if(seg.sub){
       const tail = seg.hasSignal?(' &middot; '+fmtSignalTime(seg.signalMin)+'&ndash;'+fmtSignalTime(seg.signalMax)+' min'):'';
-      subHtml = `<span class="item-sub">${esc(seg.sub)}${tail}</span>`;
+      /* A newline in the sub-note is a line break on the sheet - the Award
+         Presentation row lists its three awards this way (V27). */
+      subHtml = `<span class="item-sub">${esc(seg.sub).replace(/\n/g,'<br>')}${tail}</span>`;
     } else if(seg.hasSignal){
       subHtml = `<span class="item-sub">${fmtSignalTime(seg.signalMin)}&ndash;${fmtSignalTime(seg.signalMax)} min</span>`;
     }
@@ -2923,14 +2980,19 @@ async function downloadImage(){
 }
 
 /* PDF built here in the page, for phones. iOS cannot drive the print dialog from
-   a hidden iframe, so the desktop route (printSheet, which keeps real selectable
-   text) is unavailable there. This paints the rendered canvas onto A4 pages at
+   a hidden iframe. Since V29 nothing routes through the print dialog at all -
+   its destination setting silently decided the file size - so this builds every
+   PDF, on every device. This paints the rendered canvas onto A4 pages at
    the same 1 cm margin the print stylesheet uses, slicing it wherever the page
    ends. Text is an image in this file, but at 3x it is comfortably readable. */
 async function downloadPdfImage(){
   busyBtn(true);
   try{
-    const canvas = await renderSheetCanvas();
+    /* Same resolution cap as the JPG export. Uncapped this embedded 2700px
+       slices at q0.9 - a 1.3 MB file for two A4 pages. 1500px at 0.80 is the
+       setting already proven clean on the JPG, and lands ~450 KB. */
+    const full = await renderSheetCanvas();
+    const canvas = full.width > MAX_EXPORT_WIDTH ? downscaleCanvas(full, MAX_EXPORT_WIDTH) : full;
     const M_PT = 10 * 72/25.4, PW_PT = 595.28, PH_PT = 841.89;
     const imgWpt = PW_PT - M_PT*2;
     const pxPerPt = canvas.width / imgWpt;
@@ -2943,7 +3005,7 @@ async function downloadPdfImage(){
       cut.width = canvas.width; cut.height = h;
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cut.width, cut.height);
       ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
-      const blob = await new Promise(r => cut.toBlob(r, 'image/jpeg', 0.9));
+      const blob = await new Promise(r => cut.toBlob(r, 'image/jpeg', 0.80));
       if(!blob) throw new Error('encode');
       const hPt = h / pxPerPt;
       pages.push({ bytes: new Uint8Array(await blob.arrayBuffer()),
@@ -2955,6 +3017,271 @@ async function downloadPdfImage(){
   }catch(err){
     exportFailed(err, 'try the JPG option instead.');
   }finally{ busyBtn(false); }
+}
+
+/* ================= Meeting files on disk (V28) =================
+   Rama wanted Save to put a .json beside the app, then keep autosaving into it,
+   with a dropdown of previous meetings to load.
+
+   A file:// page cannot simply write next to itself - nothing in the web
+   platform grants that. What it CAN do, in Chrome and Edge, is the File System
+   Access API: the user picks the folder ONCE, the browser hands back a
+   directory handle, and that handle is stored in IndexedDB so it survives a
+   reload. Permission must be re-confirmed from a user gesture after a restart,
+   which is why "Reconnect folder" exists in the dropdown.
+
+   Safari and Firefox have no such API. There the same two buttons degrade to a
+   plain download and a file picker - the data format is identical, so meetings
+   move between browsers untouched.
+
+   Everything below talks only to the STANDARD handle interface
+   (getFileHandle / createWritable / entries / queryPermission), so the tests
+   drive it with an in-memory fake directory instead of a real folder. */
+const FILE_EXT   = '.nse.json';
+const IDB_NAME   = 'nse-progsheet-fs', IDB_STORE = 'handles', IDB_FOLDER_KEY = 'folder';
+const FS_SUPPORTED = typeof window.showDirectoryPicker === 'function';
+
+let folderHandle = null;    /* FileSystemDirectoryHandle for the meetings folder */
+let fileHandle   = null;    /* the meeting we are autosaving into */
+let fileSaveTimer = null;
+
+/* --- tiny IndexedDB kv, just for the folder handle --- */
+function idbOpen(){
+  return new Promise((res, rej)=>{
+    const r = indexedDB.open(IDB_NAME, 1);
+    r.onupgradeneeded = ()=> r.result.createObjectStore(IDB_STORE);
+    r.onsuccess = ()=> res(r.result);
+    r.onerror = ()=> rej(r.error);
+  });
+}
+async function idbGet(key){
+  try{
+    const db = await idbOpen();
+    return await new Promise((res, rej)=>{
+      const t = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+      t.onsuccess = ()=> res(t.result || null); t.onerror = ()=> rej(t.error);
+    });
+  }catch(e){ return null; }
+}
+async function idbSet(key, val){
+  try{
+    const db = await idbOpen();
+    await new Promise((res, rej)=>{
+      const t = db.transaction(IDB_STORE, 'readwrite').objectStore(IDB_STORE).put(val, key);
+      t.onsuccess = res; t.onerror = ()=> rej(t.error);
+    });
+    return true;
+  }catch(e){ return false; }   /* memory-only for this session; still usable */
+}
+
+/* --- payload + naming --- */
+function meetingPayload(){
+  return JSON.stringify({app:'nse-programme-sheet', v:28,
+    savedAt:new Date().toISOString(), state}, null, 2);
+}
+/* Initials for the filename: the explicit field if set, otherwise the capitals
+   of the club name ("Nee Soon East Toastmasters Club" -> NSE, dropping the
+   generic Toastmasters/Club words). */
+function clubInitials(){
+  const set = (state.meeting.clubInitials || '').trim();
+  if(set) return set.replace(/[^A-Za-z0-9]+/g, '').toUpperCase().slice(0, 8) || 'TMC';
+  const words = (state.meeting.clubName || '').split(/\s+/)
+    .filter(w => w && !/^(toastmasters?|club|the|of|and)$/i.test(w));
+  return (words.map(w => w[0]).join('').toUpperCase().slice(0, 8)) || 'TMC';
+}
+
+/* Turn whatever is in the Date field into a sortable yyyy-mm-dd. It is free
+   text - "Thursday, 13 August 2026", "13/08/2026" and "2026-08-13" all appear -
+   so parse the shapes we actually see and fall back to today rather than
+   inventing a wrong date. */
+function meetingDateStamp(){
+  const raw = (state.meeting.dateDisplay || '').trim();
+  const MON = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const two = n => String(n).padStart(2, '0');
+  let m;
+  if((m = raw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/)))
+    return m[1] + '-' + two(m[2]) + '-' + two(m[3]);
+  if((m = raw.match(/(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/)))      /* d/m/yyyy */
+    return m[3] + '-' + two(m[2]) + '-' + two(m[1]);
+  if((m = raw.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/))){
+    const i = MON.indexOf(m[2].slice(0, 3).toLowerCase());
+    if(i >= 0) return m[3] + '-' + two(i + 1) + '-' + two(m[1]);
+  }
+  if((m = raw.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/))){       /* August 13, 2026 */
+    const i = MON.indexOf(m[1].slice(0, 3).toLowerCase());
+    if(i >= 0) return m[3] + '-' + two(i + 1) + '-' + two(m[2]);
+  }
+  const d = new Date();
+  return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
+}
+
+/* <Initials>-ProgSheet-<meeting date>-<time now>. The time is what stops two
+   saves of the same meeting from silently overwriting each other (Rama, V29) -
+   the date alone would collide every time you saved a second copy. */
+function suggestedFileName(){
+  const d = new Date();
+  const two = n => String(n).padStart(2, '0');
+  const now = two(d.getHours()) + two(d.getMinutes());
+  return clubInitials() + '-ProgSheet-' + meetingDateStamp() + '-' + now + FILE_EXT;
+}
+function tidyFileName(name){
+  name = String(name || '').replace(/[\\/:*?"<>|]+/g, '-').trim();
+  if(!name) return '';
+  if(!/\.json$/i.test(name)) name += FILE_EXT;
+  return name;
+}
+
+/* --- permissions --- */
+async function handleUsable(h, interactive){
+  if(!h || !h.queryPermission) return !!h;
+  const opts = {mode:'readwrite'};
+  if(await h.queryPermission(opts) === 'granted') return true;
+  if(!interactive) return false;
+  try{ return await h.requestPermission(opts) === 'granted'; }catch(e){ return false; }
+}
+/* interactive=true may only be called from a click - the browser refuses otherwise. */
+async function ensureFolder(interactive){
+  if(folderHandle && await handleUsable(folderHandle, interactive)) return true;
+  const saved = await idbGet(IDB_FOLDER_KEY);
+  if(saved && await handleUsable(saved, interactive)){ folderHandle = saved; return true; }
+  return false;
+}
+async function linkFolder(){
+  folderHandle = await window.showDirectoryPicker({mode:'readwrite', id:'nse-progsheet'});
+  await idbSet(IDB_FOLDER_KEY, folderHandle);
+  return true;
+}
+
+async function writeHandle(h, text){
+  const w = await h.createWritable();
+  await w.write(text);
+  await w.close();
+}
+
+/* --- save --- */
+async function saveMeeting(){
+  if(!FS_SUPPORTED) return downloadMeetingJSON();
+  try{
+    if(!await ensureFolder(true)) await linkFolder();
+    if(!folderHandle) return;
+    if(!fileHandle){
+      const name = tidyFileName(prompt('Save this meeting as:', suggestedFileName()));
+      if(!name) return;
+      fileHandle = await folderHandle.getFileHandle(name, {create:true});
+    }
+    await writeHandle(fileHandle, meetingPayload());
+    await refreshFileList();
+    setSaveStatus('Saved to ' + fileHandle.name + ' - autosaving there', false, true);
+    flashSaved();
+    showBanner('Saved ' + fileHandle.name + '. Every change from here autosaves into that file.', false);
+  }catch(err){
+    if(err && err.name === 'AbortError') return;      /* user closed the picker */
+    showBanner('Could not save to the folder (' + ((err && err.message) || 'unknown')
+      + '). Your work is still held in this browser.', true);
+  }
+}
+async function saveMeetingAs(){
+  fileHandle = null;
+  await saveMeeting();
+}
+/* Autosave into the open file. Silent by design - it runs on every keystroke's
+   debounce, so it must never nag; a failure downgrades the badge instead. */
+function queueFileSave(){
+  if(!fileHandle) return;
+  clearTimeout(fileSaveTimer);
+  fileSaveTimer = setTimeout(async ()=>{
+    try{
+      if(!await handleUsable(folderHandle, false)) throw new Error('permission');
+      await writeHandle(fileHandle, meetingPayload());
+    }catch(e){
+      setSaveStatus('Autosaving to this browser only - reconnect the folder to resume saving to '
+        + fileHandle.name, true, true);
+    }
+  }, 1200);
+}
+
+/* --- the dropdown --- */
+async function refreshFileList(){
+  const sel = document.getElementById('fileSelect');
+  if(!sel) return;
+  const opts = ['<option value="">Saved meetings…</option>'];
+  let names = [];
+  if(FS_SUPPORTED && folderHandle && await handleUsable(folderHandle, false)){
+    try{
+      for await (const [name, h] of folderHandle.entries()){
+        if(h.kind === 'file' && /\.json$/i.test(name)) names.push(name);
+      }
+    }catch(e){ names = []; }
+    names.sort((a,b)=> a.localeCompare(b));
+    opts.push(...names.map(n =>
+      `<option value="f:${esc(n)}"${fileHandle && fileHandle.name === n ? ' selected' : ''}>${esc(n)}</option>`));
+    if(!names.length) opts.push('<option value="" disabled>(no saved meetings in that folder yet)</option>');
+    opts.push('<option value="__saveas">＋ Save as a new file…</option>');
+    opts.push('<option value="__folder">⟳ Choose a different folder…</option>');
+  } else if(FS_SUPPORTED){
+    opts.push('<option value="__folder">📂 Connect the meetings folder…</option>');
+  } else {
+    opts.push('<option value="__upload">📂 Open a saved .json file…</option>');
+  }
+  sel.innerHTML = opts.join('');
+}
+
+async function pickMeetingFile(value){
+  const sel = document.getElementById('fileSelect');
+  try{
+    if(value === '__folder'){ await linkFolder(); await refreshFileList(); return; }
+    if(value === '__saveas'){ await saveMeetingAs(); return; }
+    if(value === '__upload'){ return openMeetingJSON(); }
+    if(!value.startsWith('f:')) return;
+    const name = value.slice(2);
+    if(!await ensureFolder(true)) return;
+    const h = await folderHandle.getFileHandle(name);
+    const text = await (await h.getFile()).text();
+    if(!applyMeetingText(text, name)) return;
+    fileHandle = h;
+    setSaveStatus('Editing ' + name + ' - autosaving there', false, true);
+    showBanner('Loaded ' + name + '.', false);
+  }catch(err){
+    if(!err || err.name !== 'AbortError')
+      showBanner('Could not open that meeting (' + ((err && err.message) || 'unknown') + ').', true);
+  }finally{
+    if(sel) await refreshFileList();
+  }
+}
+
+/* Shared by the folder path and the fallback file picker. */
+function applyMeetingText(text, label){
+  let parsed;
+  try{ parsed = JSON.parse(text); }
+  catch(e){ showBanner((label||'That file') + ' is not readable JSON.', true); return false; }
+  if(!adoptState(parsed)){
+    showBanner((label||'That file') + ' is not a programme-sheet meeting - nothing was changed.', true);
+    return false;
+  }
+  editingSegId = null;
+  expandedSegs.clear();
+  syncLanguageEvaluatorSegment();
+  syncRoleSegments();
+  applyPaneWidth();
+  syncFormInputs();
+  renderFormPane();
+  renderPreviewNow();
+  return true;
+}
+
+/* --- fallback for browsers without the API --- */
+function downloadMeetingJSON(){
+  saveBlob(new Blob([meetingPayload()], {type:'application/json'}), suggestedFileName());
+  showBanner('Saved a .json copy to your Downloads folder. Open it again with the dropdown.', false);
+}
+function openMeetingJSON(){
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json,application/json';
+  inp.onchange = async ()=>{
+    const f = inp.files && inp.files[0];
+    if(f) applyMeetingText(await f.text(), f.name);
+  };
+  inp.click();
 }
 
 /* ================= Download menu + instructions ================= */
@@ -2975,7 +3302,15 @@ function pickDownload(kind){
   if(kind === 'html') return downloadSheet();
   /* Desktop goes through the print dialog, which keeps real selectable text.
      Phones cannot, so they get the canvas-built PDF instead. */
-  if(kind === 'pdf')  return IS_TOUCH_DEVICE ? downloadPdfImage() : printSheet();
+  /* Always the in-page PDF, desktop included (V29). Routing desktop through the
+     print dialog meant the file's size depended on which destination the user
+     picked there - and "Microsoft Print to PDF" rasterises every page at 300dpi
+     for a 1.4 MB result. The browser dialog is browser chrome; a web page cannot
+     preselect a destination or even see which one is chosen. So Download > PDF
+     no longer opens a dialog at all and always lands ~450 KB. Chrome's own
+     "Save as PDF" is still the better file - smaller AND with selectable text -
+     and the printer button below is how you reach it. */
+  if(kind === 'pdf')  return downloadPdfImage();
   return downloadImage();
 }
 function openHelp(){
@@ -3347,8 +3682,8 @@ function segFieldsHTML(seg){
   let fields = `
     <label>Title</label>
     <input type="text" placeholder="Segment title" value="${esc(seg.title)}" oninput="updateSeg('${seg.id}','title',this.value)">
-    <label>Sub-note (optional)</label>
-    <input type="text" placeholder="Detail line printed under the title" value="${esc(seg.sub)}" oninput="updateSeg('${seg.id}','sub',this.value)">`;
+    <label>Sub-note (optional) <span class="lbl-hint">(each line prints as its own line)</span></label>
+    <textarea rows="2" placeholder="Detail line printed under the title" oninput="updateSeg('${seg.id}','sub',this.value)">${esc(seg.sub)}</textarea>`;
   if(!seg.noHolder){
     fields += `
     <label>Holder ${seg.roleKey ? '(auto from roles; type to override)' : ''}</label>
@@ -3554,6 +3889,15 @@ function applyStandardTimings(){
   state.segments.forEach(seg => {
     const p = PRESETS[seg.presetKey];
     if(!p || !STANDARD_KEYS.includes(seg.presetKey)) return;
+    /* V27 rehomed these rows (ttreturn/awards -> TME, photo -> "All", awards
+       grew its three-line sub). Pull a saved meeting up to that without
+       touching anything the user typed. */
+    if(['ttreturn','awards','photo'].includes(seg.presetKey)){
+      seg.roleKey = p.roleKey || '';
+      seg.noHolder = !!p.noHolder;
+      if(seg.presetKey === 'awards' && !seg.sub) seg.sub = p.sub;
+      if(seg.presetKey === 'photo' && !seg.holderOverride) seg.holderOverride = p.fixedHolder;
+    }
     const wasAuto = !seg.signalsManual;
     if(seg.durMin !== p.durMin){ seg.durMin = p.durMin; retimed++; }
     /* Only the combined vote rows carry a standard title/sub — everything else
@@ -3623,20 +3967,6 @@ function initSplitter(){
 }
 
 /* ================= Print / download (clean sheet only) ================= */
-function printSheet(){
-  let frame = document.getElementById('printFrame');
-  if(!frame){
-    frame = document.createElement('iframe');
-    frame.id = 'printFrame';
-    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
-    document.body.appendChild(frame);
-  }
-  const doc = frame.contentDocument;
-  doc.open();
-  doc.write(buildSheetHTML(false));
-  doc.close();
-  setTimeout(()=>{ frame.contentWindow.focus(); frame.contentWindow.print(); }, 350);
-}
 function downloadSheet(){
   const blob = new Blob([buildSheetHTML(false)], {type:'text/html'});
   const url = URL.createObjectURL(blob);
@@ -3654,6 +3984,7 @@ function syncFormInputs(){
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };
   set('f-clubName', state.meeting.clubName);
   set('f-clubNumber', state.meeting.clubNumber);
+  set('f-clubInitials', state.meeting.clubInitials);
   set('f-orgLine', state.meeting.orgLine);
   set('f-cadence', state.meeting.cadence);
   set('f-title', state.meeting.title);
@@ -3685,6 +4016,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
   /* Hides the Print icon on phones and retargets the PDF entry — iOS Safari
      cannot print from a hidden iframe, so the button was doing nothing there. */
   if(IS_TOUCH_DEVICE) document.body.classList.add('touch-device');
+  /* Try to re-attach the meetings folder without a prompt. If the browser has
+     forgotten the grant, the dropdown offers to reconnect on click - permission
+     can only be re-requested from a user gesture. */
+  ensureFolder(false).then(refreshFileList).catch(()=>refreshFileList());
   const hl = document.getElementById('hdrLogo');
   if(hl) hl.src = 'data:image/png;base64,' + LOGO_B64;
   const restored = loadState();
