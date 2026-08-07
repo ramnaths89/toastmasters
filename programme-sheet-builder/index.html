@@ -431,6 +431,30 @@ body.touch-device .print-only{ display:none; }
 <div class="builder-body">
   <div class="form-pane">
 
+    <details class="section" id="clubSection">
+      <summary>Club Setup (rarely changes)</summary>
+      <div class="content">
+        <div class="row2">
+          <div><label>Club Name</label><input type="text" id="f-clubName" placeholder="Club name" oninput="bindMeeting('clubName', this.value)"></div>
+          <div><label>Club Number</label><input type="text" id="f-clubNumber" placeholder="e.g. 00002548" oninput="bindMeeting('clubNumber', this.value)"></div>
+        </div>
+        <label>District line <span class="lbl-hint">(prints under the club name)</span></label>
+        <input type="text" id="f-orgLine" placeholder="District: 80 | Division: Y | Area Y1 | Club Number: 2548" oninput="bindMeeting('orgLine', this.value)">
+        <label>Meeting cadence <span class="lbl-hint">(prints at the foot of the banner)</span></label>
+        <input type="text" id="f-cadence" placeholder="We meet every 2nd and 4th Thursday of the month from 7:00PM to 9:30PM" oninput="bindMeeting('cadence', this.value)">
+        <label>Location</label>
+        <textarea id="f-location" rows="2" placeholder="Venue name, address, room, postal code" oninput="bindMeeting('location', this.value)"></textarea>
+        <label>Footer note (district/division/area)</label>
+        <input type="text" id="f-footerNote" placeholder="e.g. District 80, Division Y, Area 01" oninput="bindMeeting('footerNote', this.value)">
+        <label>Executive Committee <span class="lbl-hint">(one per line: Role | Name | Sub-note)</span></label>
+        <textarea id="f-execText" rows="8" placeholder="President|Jane Tan&#10;VP Education|…" oninput="bindText('execText', this.value)"></textarea>
+        <label>District Officers <span class="lbl-hint">(Role | Name | Club)</span></label>
+        <textarea id="f-districtText" rows="3" placeholder="Division Y Director|Name|Their Club" oninput="bindText('districtText', this.value)"></textarea>
+        <label>Links <span class="lbl-hint">(Label | URL | Display text)</span></label>
+        <textarea id="f-linksText" rows="3" placeholder="Label|URL|Display text" oninput="bindText('linksText', this.value)"></textarea>
+      </div>
+    </details>
+
     <details class="section" open>
       <summary>Meeting Info</summary>
       <div class="content">
@@ -516,30 +540,6 @@ body.touch-device .print-only{ display:none; }
       </div>
     </details>
 
-    <details class="section">
-      <summary>Club Setup (rarely changes)</summary>
-      <div class="content">
-        <div class="row2">
-          <div><label>Club Name</label><input type="text" id="f-clubName" placeholder="Club name" oninput="bindMeeting('clubName', this.value)"></div>
-          <div><label>Club Number</label><input type="text" id="f-clubNumber" placeholder="e.g. 00002548" oninput="bindMeeting('clubNumber', this.value)"></div>
-        </div>
-        <label>District line <span class="lbl-hint">(prints under the club name)</span></label>
-        <input type="text" id="f-orgLine" placeholder="District: 80 | Division: Y | Area Y1 | Club Number: 2548" oninput="bindMeeting('orgLine', this.value)">
-        <label>Meeting cadence <span class="lbl-hint">(prints at the foot of the banner)</span></label>
-        <input type="text" id="f-cadence" placeholder="We meet every 2nd and 4th Thursday of the month from 7:00PM to 9:30PM" oninput="bindMeeting('cadence', this.value)">
-        <label>Location</label>
-        <textarea id="f-location" rows="2" placeholder="Venue name, address, room, postal code" oninput="bindMeeting('location', this.value)"></textarea>
-        <label>Footer note (district/division/area)</label>
-        <input type="text" id="f-footerNote" placeholder="e.g. District 80, Division Y, Area 01" oninput="bindMeeting('footerNote', this.value)">
-        <label>Executive Committee <span class="lbl-hint">(one per line: Role | Name | Sub-note)</span></label>
-        <textarea id="f-execText" rows="8" placeholder="President|Jane Tan&#10;VP Education|…" oninput="bindText('execText', this.value)"></textarea>
-        <label>District Officers <span class="lbl-hint">(Role | Name | Club)</span></label>
-        <textarea id="f-districtText" rows="3" placeholder="Division Y Director|Name|Their Club" oninput="bindText('districtText', this.value)"></textarea>
-        <label>Links <span class="lbl-hint">(Label | URL | Display text)</span></label>
-        <textarea id="f-linksText" rows="3" placeholder="Label|URL|Display text" oninput="bindText('linksText', this.value)"></textarea>
-      </div>
-    </details>
-
     <div class="print-hint">
       <b>Before printing:</b> untick <b>“Headers and footers”</b> in the print dialog — otherwise
       the browser stamps its own title, URL and page numbers over the sheet. Leave Margins on
@@ -578,7 +578,7 @@ body.touch-device .print-only{ display:none; }
         <dt>Meeting Roles</dt><dd>Untick any role that isn't running tonight: it drops off the roster and its own agenda items switch off. Ticked but blank shows a red <b>TBD</b> chip and is listed as still open at the top of the sheet. Naming a Language Evaluator adds the Word of the Day row by itself.</dd>
         <dt>Speeches &amp; Evaluators</dt><dd>Pick Pathway → Level → Project and the detail line, duration and timing lights fill in from the official Toastmasters catalog. The Project box lists all 64 projects — click ▾ to browse or type to narrow. Drag the ⠿ grip to reorder speakers; each speech carries its evaluation with it.</dd>
         <dt>Programme Segments</dt><dd>Click a row to open it and change its title, holder or duration. Drag the ⠿ grip to reorder. <b>⏱ Apply club standard timings</b> resets the durations and the combined timer's-report/voting rows to the club standard without touching any names.</dd>
-        <dt>Club Setup</dt><dd>Club name, venue, committee and district officers. These rarely change — refresh them at the handover after the AGM.</dd>
+        <dt>Club Setup</dt><dd>Sits at the top because it is the club's identity — club name, district line, meeting cadence, venue, committee and district officers. It stays collapsed because these rarely change; refresh them at the handover after the AGM.</dd>
       </dl>
 
       <h3>Editing on the sheet itself</h3>
