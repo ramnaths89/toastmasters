@@ -158,6 +158,17 @@ footer h2{
 a.lnk{color:var(--ink);text-decoration:underline;text-decoration-color:var(--yellow);text-underline-offset:2px}
 a.lnk:hover{text-decoration-color:var(--red)}
 
+/* line beneath a card — sits outside it, so the link is its own target */
+.card-note{
+  margin:-4px 0 18px; padding-left:2px;
+  font:400 14.5px/1.5 var(--body); color:#4a5a63;
+}
+.card-note a{
+  color:var(--ink); font-weight:600; text-decoration:underline;
+  text-decoration-color:var(--yellow); text-underline-offset:2px;
+}
+.card-note a:hover{text-decoration-color:var(--red)}
+
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important}
   .card:hover,.card:focus-visible{transform:none;box-shadow:3px 3px 0 var(--ink)}
@@ -220,16 +231,23 @@ a.lnk:hover{text-decoration-color:var(--red)}
       <h3>Programme Sheet Builder</h3>
       <p class="role">For the Toastmaster of the Day</p>
       <p>Fill in the panel on the left and the agenda redraws on the right. Built around
-         Nee Soon East's sheet, with a Club Setup panel so any club can put its own name,
-         number and district line on it.</p>
+         Nee Soon East's sheet, but <b>Club Setup is the first panel</b> — put your own club's
+         name, number, district line, venue and committee on it in about five minutes.</p>
       <ul>
         <li>Pick Pathway → Level → Project and the detail line, duration and timing lights fill in from the official catalogue</li>
         <li>Untick a role that isn't running today and it drops out of the roster and the agenda together</li>
+        <li>Add or remove a prepared speech and its paired evaluation moves with it</li>
         <li>Drag segments to reorder, or apply your club's standard timings to retime the whole meeting at once</li>
         <li>Export as HTML, print-ready A4 PDF, or a JPG under 450&nbsp;KB for WhatsApp</li>
       </ul>
       <span class="go">Open the builder →</span>
     </a>
+
+    <p class="card-note">
+      Running a different club?
+      <a href="https://github.com/ramnaths89/toastmasters/blob/main/programme-sheet-builder/customise-for-your-club.md">Customise it for yours →</a>
+      — what to fill in, and how to make your club the permanent default.
+    </p>
   </section>
 
   <section class="phase">
