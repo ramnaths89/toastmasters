@@ -1,0 +1,15 @@
+  bindMeeting('title','Chapter Meeting: National Day — Voices of a Nation');
+  bindMeeting('dateDisplay','Thursday, 13 August 2026');
+  bindRole('tmod','Robin Chua'); bindRole('president','Morgan Koh');
+  bindRole('ttmaster','Dana Poh'); bindRole('ttevaluator','Jamie Foo');
+  bindRole('langeval','Taylor Rao'); bindRole('timer','Casey Lim');
+  bindRole('ahcounter','Riley Ong'); bindRole('photographer','Sam Lee');
+  bindRole('saa','Priya Menon');
+  const sps = state.segments.filter(s=>s.isSpeech);
+  updSpeech(sps[0].id,'speakerName','Alex Tan'); updSpeechCatalog(sps[0].id,'pathway','DL');
+  updSpeechCatalog(sps[0].id,'pLevel','1'); updSpeechProject(sps[0].id,'Evaluation and Feedback');
+  updSpeech(sps[0].id,'speechTitle','The Quiet Signal');
+  updSpeech(sps[1].id,'speakerName','Priya Menon'); updSpeechCatalog(sps[1].id,'pathway','VC');
+  updSpeechCatalog(sps[1].id,'pLevel','3'); updSpeechProject(sps[1].id,'Connect with Storytelling');
+  updSpeech(sps[2].id,'speakerName','Sam Lee'); updSpeechCatalog(sps[2].id,'pathway','EH');
+  updSpeechCatalog(sps[2].id,'pLevel','2'); updSpeechProject(sps[2].id,'Know Your Sense of Humor');
