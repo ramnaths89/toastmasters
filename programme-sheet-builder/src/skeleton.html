@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NSE Programme Sheet Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>__BUILDER_CSS__</style>
+</head>
+<body>
+
+<div id="saveDot" class="save-dot" title="Autosaving to this browser">✓</div>
+
+<div class="builder-header">
+  <!-- src assigned from LOGO_B64 on load: the base64 is 26 KB and was pasted here twice -->
+  <img id="hdrLogo" alt="TI">
+  <div>
+    <h1>NSE Programme Sheet Builder</h1>
+    <p>Fill in the fields on the left — the sheet updates live and your work is saved in this browser. Drag ⠿ to reorder; hover a sheet row and hit <b>✎ Edit</b> to change it in place.</p>
+  </div>
+</div>
+
+<div class="toolbar">
+  <span id="endCheck" class="end-check ok">—</span>
+  <button class="btn secondary icon" data-tip="Balance — stretches or squeezes the FLEXIBLE segments — Break and Table Topics — so the meeting lands exactly on its target end time." onclick="balanceToEndTime()" aria-label="Balance flexible segments to the end time">⚖</button>
+  <div class="spacer"></div>
+
+  <select id="fileSelect" class="file-select" onchange="pickMeetingFile(this.value)" aria-label="Saved meetings" title="Open a saved meeting, or connect the folder they live in">
+    <option value="">Saved meetings…</option>
+  </select>
+  <button class="btn secondary icon" id="saveBtn" data-tip="Save — writes this meeting as a .json file in your chosen folder, then keeps autosaving into it as you work. The dropdown on the left reopens any meeting saved there." onclick="saveMeeting()" aria-label="Save meeting to a file">💾</button>
+
+  <div class="menu-wrap">
+    <button class="btn blue icon" id="dlBtn" data-tip="Download — save the finished sheet as HTML, PDF or JPG." onclick="toggleDownloadMenu(event)" aria-haspopup="true" aria-expanded="false" aria-label="Download">⭳</button>
+    <div class="dl-menu" id="dlMenu" role="menu" onclick="event.stopPropagation()">
+      <button role="menuitem" onclick="pickDownload('html')"><span class="dl-i">&lt;/&gt;</span><span><b>HTML</b><em>Editable file that reopens in any browser</em></span></button>
+      <button role="menuitem" onclick="pickDownload('pdf')"><span class="dl-i">📄</span><span><b>PDF</b><em>About 450 KB, saves straight away — no print dialog</em></span></button>
+      <button role="menuitem" onclick="pickDownload('jpg')"><span class="dl-i">🖼</span><span><b>JPG image</b><em>Under 450 KB — for WhatsApp, email and posting</em></span></button>
+    </div>
+  </div>
+
+  <button class="btn ghost icon" data-tip="Reset — throws away your saved version and starts again from the built-in club template. Every name you have typed is cleared." onclick="resetToDefaults()" aria-label="Reset to the built-in defaults">↺</button>
+  <button class="btn ghost icon tip-right" data-tip="Instructions — how every part of the builder works." onclick="openHelp()" aria-label="Instructions">?</button>
+</div>
+<div id="banner" style="display:none; margin:0 16px; padding:8px 14px; border-radius:6px; font-size:12.5px;"></div>
+
+<div class="builder-body">
+  <div class="form-pane">
+
+    <details class="section" id="clubSection">
+      <summary>Club Setup (rarely changes)</summary>
+      <div class="content">
+        <div class="row2">
+          <div><label>Club Name</label><input type="text" id="f-clubName" placeholder="Club name" oninput="bindMeeting('clubName', this.value)"></div>
+          <div><label>Club Number</label><input type="text" id="f-clubNumber" placeholder="e.g. 00002548" oninput="bindMeeting('clubNumber', this.value)"></div>
+        </div>
+        <label>Club initials <span class="lbl-hint">(used to name saved files)</span></label>
+        <input type="text" id="f-clubInitials" placeholder="e.g. NSE" oninput="bindMeeting('clubInitials', this.value)">
+        <label>District line <span class="lbl-hint">(prints under the club name)</span></label>
+        <input type="text" id="f-orgLine" placeholder="District: 80 | Division: Y | Area Y1 | Club Number: 2548" oninput="bindMeeting('orgLine', this.value)">
+        <label>Meeting cadence <span class="lbl-hint">(prints at the foot of the banner)</span></label>
+        <input type="text" id="f-cadence" placeholder="We meet every 2nd and 4th Thursday of the month from 7:00PM to 9:30PM" oninput="bindMeeting('cadence', this.value)">
+        <label>Location</label>
+        <textarea id="f-location" rows="2" placeholder="Venue name, address, room, postal code" oninput="bindMeeting('location', this.value)"></textarea>
+        <label>Footer note (district/division/area)</label>
+        <input type="text" id="f-footerNote" placeholder="e.g. District 80, Division Y, Area 01" oninput="bindMeeting('footerNote', this.value)">
+        <label>Executive Committee <span class="lbl-hint">(one per line: Role | Name | Sub-note)</span></label>
+        <textarea id="f-execText" rows="8" placeholder="President|Jane Tan&#10;VP Education|…" oninput="bindText('execText', this.value)"></textarea>
+        <label>District Officers <span class="lbl-hint">(Role | Name | Club)</span></label>
+        <textarea id="f-districtText" rows="3" placeholder="Division Y Director|Name|Their Club" oninput="bindText('districtText', this.value)"></textarea>
+        <label>Links <span class="lbl-hint">(Label | URL | Display text)</span></label>
+        <textarea id="f-linksText" rows="3" placeholder="Label|URL|Display text" oninput="bindText('linksText', this.value)"></textarea>
+      </div>
+    </details>
+
+    <details class="section" open>
+      <summary>Meeting Info</summary>
+      <div class="content">
+        <label>Meeting Title / Theme</label>
+        <input type="text" id="f-title" placeholder="e.g. Chapter Meeting: Voices of a Nation" oninput="bindMeeting('title', this.value)">
+        <div class="row2">
+          <div><label>Date (display)</label><input type="text" id="f-dateDisplay" placeholder="e.g. Thursday, 13 August 2026" oninput="bindMeeting('dateDisplay', this.value)"></div>
+          <div><label>Sheet style</label><select id="f-theme" onchange="bindTheme(this.value)"></select></div>
+        </div>
+        <div class="hint">"Prepared" date in the footer stamps itself with the date the sheet is generated.</div>
+        <div class="row2">
+          <div><label>Start Time</label><input type="time" id="f-startTime" oninput="bindMeeting('startTime', this.value); renderSegmentsList();"></div>
+          <div><label>Target End Time</label><input type="time" id="f-endTime" oninput="bindMeeting('endTime', this.value)"></div>
+        </div>
+        <label>Announcements <span class="lbl-hint">(one per line — prints on the sheet, below Pathways)</span></label>
+        <textarea id="f-announcementsText" rows="4" placeholder="e.g. Club anniversary dinner — 20 Sept, sign up with the Sergeant-at-Arms" oninput="bindText('announcementsText', this.value)"></textarea>
+      </div>
+    </details>
+
+    <details class="section" open>
+      <summary>Meeting Roles</summary>
+      <div class="content">
+        <div class="roles-grid">
+          <div id="rw-tmod"><label class="role-lbl"><input type="checkbox" id="rc-tmod" checked onchange="toggleRoleActive('tmod', this.checked)"> Toastmaster of the Day</label><input type="text" id="r-tmod" placeholder="TBD" oninput="bindRole('tmod', this.value)"></div>
+          <div id="rw-president"><label class="role-lbl"><input type="checkbox" id="rc-president" checked onchange="toggleRoleActive('president', this.checked)"> (Acting) President</label><input type="text" id="r-president" placeholder="TBD" oninput="bindRole('president', this.value)"></div>
+          <div id="rw-ttmaster"><label class="role-lbl"><input type="checkbox" id="rc-ttmaster" checked onchange="toggleRoleActive('ttmaster', this.checked)"> Table Topics Master</label><input type="text" id="r-ttmaster" placeholder="TBD" oninput="bindRole('ttmaster', this.value)"></div>
+          <div id="rw-ttevaluator"><label class="role-lbl"><input type="checkbox" id="rc-ttevaluator" checked onchange="toggleRoleActive('ttevaluator', this.checked)"> Table Topics Evaluator</label><input type="text" id="r-ttevaluator" placeholder="TBD" oninput="bindRole('ttevaluator', this.value)"></div>
+          <div id="rw-langeval"><label class="role-lbl"><input type="checkbox" id="rc-langeval" checked onchange="toggleRoleActive('langeval', this.checked)"> Language Evaluator</label><input type="text" id="r-langeval" placeholder="TBD" oninput="bindRole('langeval', this.value)"></div>
+          <div id="rw-timer"><label class="role-lbl"><input type="checkbox" id="rc-timer" checked onchange="toggleRoleActive('timer', this.checked)"> Timer</label><input type="text" id="r-timer" placeholder="TBD" oninput="bindRole('timer', this.value)"></div>
+          <div id="rw-ahcounter"><label class="role-lbl"><input type="checkbox" id="rc-ahcounter" checked onchange="toggleRoleActive('ahcounter', this.checked)"> Ah-Counter</label><input type="text" id="r-ahcounter" placeholder="TBD" oninput="bindRole('ahcounter', this.value)"></div>
+          <div id="rw-photographer"><label class="role-lbl"><input type="checkbox" id="rc-photographer" checked onchange="toggleRoleActive('photographer', this.checked)"> Photographer</label><input type="text" id="r-photographer" placeholder="TBD" oninput="bindRole('photographer', this.value)"></div>
+          <div id="rw-saa"><label class="role-lbl"><input type="checkbox" id="rc-saa" checked onchange="toggleRoleActive('saa', this.checked)"> Sergeant-at-Arms</label><input type="text" id="r-saa" placeholder="TBD" oninput="bindRole('saa', this.value)"></div>
+        </div>
+        <div class="hint">Untick a role that isn't running today — it disappears from the roster under TME Welcome Remarks and its own agenda items switch off. Leave a role blank and the sheet prints a red TBD; it is also listed as still open.</div>
+      </div>
+    </details>
+
+    <details class="section" open id="speechSection">
+      <summary>Speeches &amp; Evaluators</summary>
+      <div class="content">
+        <div id="speechList"></div>
+        <div class="addbar">
+          <button onclick="addSpeechSlot()" style="flex:1 1 auto;">+ Add speech (with paired evaluation)</button>
+        </div>
+        <div class="hint">Pick Pathway → Level → Project and the detail line, duration, and timing lights fill in from the official Toastmasters catalog. Type in the Project box to search.</div>
+      </div>
+    </details>
+
+    <details class="section" id="segSection">
+      <summary>Programme Segments (order &amp; timing)</summary>
+      <div class="content">
+        <div id="segList"></div>
+        <div class="addbar">
+          <select id="addSegType">
+            <option value="custom">Custom item</option>
+            <option value="registration">Registration & Fellowship</option>
+            <option value="calltoorder">SAA Calls Meeting to Order</option>
+            <option value="welcome">TME Welcome Remarks</option>
+            <option value="langeval">Language Evaluator Introduces Word of the Day</option>
+            <option value="president">President Opening Address</option>
+            <option value="returncontrol">President Returns Control to TME</option>
+            <option value="speechvote">Timer's Report | Voting for Best Speaker</option>
+            <option value="breaktime">Break Time (flexible)</option>
+            <option value="ttmasterintro">TME Introduces Table Topics Master</option>
+            <option value="tabletopics">Conduct Table Topics Session (flexible)</option>
+            <option value="ttreturn">TT Master Returns Control to TME</option>
+            <option value="ttvote">Timer's Report | Voting for Best Table Topics Speaker</option>
+            <option value="peintro">TME Introduces Project Evaluation Segment</option>
+            <option value="evalvote">Timer's Report | Voting for Best Speech Evaluation</option>
+            <option value="timerreport">Call for Timer's Report (on its own)</option>
+            <option value="reports">TME Calls for Reports</option>
+            <option value="awards">Award Presentation</option>
+            <option value="closing">President's Closing Address</option>
+            <option value="photo">Photo Taking Session</option>
+            <option value="adjourn">President Adjourns Meeting</option>
+          </select>
+          <button onclick="addSeg()">+ Add</button>
+        </div>
+        <div class="addbar">
+          <button onclick="applyStandardTimings()" style="flex:1 1 auto;" title="Reset durations and the combined timer's-report/voting rows to the club standard. Names, speakers, evaluators and the running order are left alone.">⏱ Apply club standard timings</button>
+        </div>
+        <div class="hint">Speeches and evaluations are added from the section above so each speech keeps its paired evaluation. <b>⏱ Apply club standard</b> retimes an existing meeting without touching any names.</div>
+      </div>
+    </details>
+
+    <div class="print-hint">
+      <b>Before printing:</b> untick <b>“Headers and footers”</b> in the print dialog — otherwise
+      the browser stamps its own title, URL and page numbers over the sheet. Leave Margins on
+      <b>Default</b>; the sheet sets its own 1&nbsp;cm.
+    </div>
+
+  </div>
+
+  <div id="splitter" title="Drag to resize · double-click to reset to 50/50"></div>
+
+  <div class="preview-pane">
+    <iframe id="previewFrame" title="Programme sheet preview"></iframe>
+  </div>
+</div>
+
+<div id="helpOverlay" class="help-overlay" onclick="if(event.target===this) closeHelp()">
+  <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-head">
+      <h2 id="helpTitle">How the Programme Sheet Builder works</h2>
+      <button class="help-close" onclick="closeHelp()" aria-label="Close instructions">✕</button>
+    </div>
+    <div class="help-body">
+      <p class="help-lead">Fill in the panel on the left — the sheet on the right redraws as you type. Your work is kept in this browser automatically; the green ✓ at the top-left confirms it. Press <b>💾 Save</b> to also keep it as a file you can reopen later. Nothing is ever uploaded anywhere.</p>
+
+      <h3>Saving your meetings</h3>
+      <dl>
+        <dt>💾 Save</dt><dd>The first time, you pick a folder to keep meetings in — choose the folder the builder itself sits in. Name the meeting and it becomes a <b>.json</b> file there. From then on it saves itself as you work, so there is nothing to remember.</dd>
+        <dt>Saved meetings</dt><dd>The dropdown beside 💾 reopens any meeting in that folder. <b>＋ Save as a new file</b> keeps the current one and starts another — handy for copying last month's agenda into this month's. If the browser asks to reconnect the folder after a restart, that is normal; pick it once and it remembers.</dd>
+      </dl>
+
+      <h3>The rest of the toolbar</h3>
+      <dl>
+        <dt>⚖ Balance</dt><dd>Nudges the two FLEXIBLE segments — Break and Table Topics — so the meeting finishes on time. The chip to its left shows where you currently finish.</dd>
+        <dt>⭳ Download</dt><dd><b>HTML</b> reopens and stays editable anywhere. <b>PDF</b> saves a print-ready A4 file of about 450 KB straight away, with no dialog. <b>JPG</b> is an image of the sheet, under 450 KB — for WhatsApp and email.</dd>
+        <dt>Printing on paper</dt><dd>Download the <b>PDF</b> and print that, or press <b>Ctrl&nbsp;+&nbsp;P</b> on the downloaded HTML. There is no print button here any more — the browser dialog's destination setting quietly decided your file size, and the PDF above is the reliable answer.</dd>
+        <dt>↺ Reset</dt><dd>Back to the blank club template. This clears every name you have typed, so use it to start a fresh meeting — not to undo a mistake.</dd>
+      </dl>
+
+      <h3>Filling in a meeting</h3>
+      <dl>
+        <dt>Club Setup</dt><dd>Club name, district line, venue, committee and district officers. Rarely changes — refresh it after the AGM handover.</dd>
+        <dt>Meeting Info</dt><dd>Title, date, start and end times, and announcements. Each announcement goes on its own line.</dd>
+        <dt>Meeting Roles</dt><dd>Untick anything not running tonight and its agenda items switch off. Leave a role blank and the sheet prints a red <b>TBD</b> and lists it as still open.</dd>
+        <dt>Speeches &amp; Evaluators</dt><dd>Pick Pathway → Level → Project and the timing fills in from the official catalog. Click ▾ on the Project box to browse all 64, or type to search. Drag the ⠿ grip to reorder speakers.</dd>
+        <dt>Programme Segments</dt><dd>Click any row to open it and change the title, holder or duration. <b>⏱ Apply club standard timings</b> resets the durations to the club standard without touching names.</dd>
+      </dl>
+
+      <h3>Two more things</h3>
+      <p>Hover any row <i>on the sheet itself</i> and hit <b>✎ Edit</b> to change it in place. Drag the divider between the panes to resize them, or double-click it for 50/50.</p>
+      <p>Timing lights follow the slot automatically — red lands a minute before the slot ends, and 🔔 is thirty seconds after that. Type your own numbers and they stay put; <b>↺ follow the slot again</b> hands control back.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_CSS = `__SHEET_CSS__`;
+const LOGO_B64 = "__LOGO_B64__";
+const PATHWAYS_DATA = __PATHWAYS_DATA__;
+</script>
+<script>__H2C_JS__</script>
+<script>__APP_JS__</script>
+<script>__APP2_JS__</script>
+
+</body>
+</html>
