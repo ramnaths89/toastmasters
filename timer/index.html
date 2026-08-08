@@ -780,6 +780,7 @@
       document.getElementById('greenAt').value = btn.dataset.g;
       document.getElementById('amberAt').value = btn.dataset.a;
       document.getElementById('redAt').value   = btn.dataset.r;
+      document.getElementById('bellDelay').textContent = '+30s';
       document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     }
