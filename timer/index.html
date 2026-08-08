@@ -161,7 +161,7 @@
     }
     .step-btn:hover { background: var(--btn-hover); }
 
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; cursor: pointer; transition: opacity 0.45s ease; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer; transition: opacity 0.45s ease; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
       position: absolute; inset: 0;
@@ -182,8 +182,34 @@
     .switch input:checked + .slider { background: #00c853; }
     .switch input:checked + .slider::before { transform: translateX(20px); }
 
-    .bell-cell { grid-column: 3 / 5; display: flex; align-items: center; gap: 0.7rem; }
-    #testBell { padding: 0.35em 0.7em; }
+    .bell-cell { grid-column: 2 / 5; display: flex; align-items: center; gap: 0.5rem; }
+    #testBell { padding: 0.3em 0.5em; flex-shrink: 0; }
+
+    /* Compact bell-delay spinner (seconds after Red) */
+    .bell-delay { display: flex; align-items: center; gap: 0.2rem; flex-shrink: 0; }
+    #bellDelay {
+      width: 2rem;
+      height: 1.9rem;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 0;
+    }
+    .bd-unit { font-size: 11px; opacity: 0.55; }
+    .spin { display: flex; flex-direction: column; gap: 2px; }
+    .spin-btn {
+      width: 1.3rem;
+      height: 0.9rem;
+      font-size: 8px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border-radius: 5px;
+    }
+    .spin-btn:hover { background: var(--btn-hover); }
+    body.running .bell-delay { pointer-events: none; opacity: 0.45; }
 
     /* Lock threshold controls while running */
     body.running .thr,
@@ -195,9 +221,8 @@
     body.running .thr { border-color: transparent; }
 
     /* Running: recede everything but Stop */
-    body.running .record-panel { opacity: 0.4; }
+    body.running .record-panel { opacity: 0.9; }
     body.running .presets .card-title { opacity: 0.35; }
-    body.running .name-input,
     body.running .s-label,
     body.running #resetBtn,
     body.running #testBell { opacity: 0.45; }
@@ -207,11 +232,9 @@
       box-shadow: 0 0 0 1px var(--btn-border), 0 5px 16px rgba(0,0,0,0.35);
     }
 
-    /* Full lockdown while running: only Stop + Bell toggle live */
+    /* Lockdown while running: Start/Reset + threshold controls freeze.
+       Stop, Bell toggle, Speaker name and the whole log stay live. */
     body.running .btn,
-    body.running .mini-btn,
-    body.running .name-input,
-    body.running .lg-del,
     body.running .help,
     body.running .help summary {
       pointer-events: none;
@@ -222,6 +245,7 @@
       pointer-events: auto;
       opacity: 0.9;
     }
+    body.running .name-input { pointer-events: auto; opacity: 0.9; }
 
     /* Timer + transport */
     .timer-row { display: flex; align-items: center; gap: 0.6rem; width: 100%; }
@@ -254,6 +278,18 @@
       border-left: 1px solid var(--panel-border);
       padding-left: 1.1rem;
     }
+    .preset-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    #segTest {
+      font-size: 9px;
+      padding: 0.25em 0.5em;
+      border-radius: 6px;
+    }
+    body.running #segTest { pointer-events: none; opacity: 0.35; }
     .preset-btns {
       flex: 1;
       display: flex;
@@ -278,8 +314,8 @@
       position: fixed;
       bottom: 1.5rem;
       right: 0;
-      width: 17rem;
-      height: 18.4rem;
+      width: 18.75rem;
+      height: 18.75rem;
       display: flex;
       flex-direction: column;
       gap: 0.55rem;
@@ -323,7 +359,25 @@
       border-bottom: 1px solid var(--panel-border);
     }
     .log-entry:last-child { border-bottom: none; }
-    .lg-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lg-name {
+      flex: 1;
+      text-align: left;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .lg-name, .lg-time {
+      border-radius: 4px;
+      padding: 0 0.2em;
+      outline: none;
+      cursor: text;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .lg-name:hover, .lg-time:hover { background: var(--field-bg); }
+    .lg-name:focus, .lg-time:focus {
+      background: var(--field-bg);
+      box-shadow: 0 0 0 1px var(--field-border);
+    }
     .lg-seg {
       font-size: 10px;
       font-weight: 700;
@@ -428,11 +482,35 @@
     }
     @keyframes pulse-bg { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
 
+    /* ══ Big centred phase word (accessibility) ══ */
+    .phase-word {
+      position: fixed;
+      top: 4vh;
+      left: 0; right: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      font-size: min(17vw, 22vh);
+      color: var(--fg);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 6;
+      transition: opacity 0.4s ease, color 0.5s ease;
+      text-transform: uppercase;
+    }
+    body.phase-green .phase-word,
+    body.phase-amber .phase-word,
+    body.phase-red .phase-word { opacity: 0.9; }
+    .pw-short { display: none; }
+
     /* Short G/A/R labels hidden on desktop */
     .lbl-short { display: none; }
 
-    /* ══════════ Phone / narrow screens ══════════ */
-    @media (max-width: 640px) {
+    /* ══════════ Phone / narrow screens (stack before the log meets the segment box) ══════════ */
+    @media (max-width: 940px) {
       body {
         display: flex;
         flex-direction: column;
@@ -443,6 +521,11 @@
       .lbl-full { display: none; }
       .lbl-short { display: inline; }
       .card { padding: 0.7rem 0.75rem; border-radius: 13px; }
+
+      /* Phase word → single letter, centred, extra large */
+      .phase-word { top: 13vh; bottom: auto; align-items: flex-start; font-size: 38vw; }
+      .pw-full { display: none; }
+      .pw-short { display: inline; }
 
       /* Left stack — pinned to the bottom of the column */
       .left-stack {
@@ -517,16 +600,21 @@
 </head>
 <body>
 
+  <!-- Big centred phase word for accessibility -->
+  <div class="phase-word" id="phaseWord" role="status" aria-live="polite" aria-label="Current light">
+    <span class="pw-full"></span><span class="pw-short" aria-hidden="true"></span>
+  </div>
+
   <!-- Bottom-left: HOW TO USE (above) + combined box -->
   <div class="left-stack">
     <details class="howto card" id="howto" open>
       <summary>How to use</summary>
       <ol>
         <li>Pick a segment — or set Green / Amber / Red with ± or by typing.</li>
-        <li>Enter the speaker's name.</li>
-        <li>Start — the screen goes white, then green → amber → red at your times; bell rings 30s after red.</li>
+        <li>Enter the speaker's name (optional — blank auto-fills as "PS 1", "TT 2", …).</li>
+        <li>Start — screen &amp; centre word show WHITE → GREEN → AMBER → RED, then BELL when the overtime bell rings (set the seconds after Red with the ± beside the bell).</li>
         <li>Stop, then Reset — Reset logs the speaker (name · segment · time) and clears for the next.</li>
-        <li>Copy exports the list · ✕ removes a row · Test checks the bell. While running, only Stop and the Bell toggle stay active.</li>
+        <li>Click any logged name or time to edit it. Copy exports the list · ✕ removes a row (asks first) · Test checks the bell. While running you can still edit the name and the log; only Stop and the Bell stay active.</li>
       </ol>
     </details>
 
@@ -551,8 +639,14 @@
         <button class="step-btn" onclick="step('redAt', 30)">+</button>
 
         <div class="s-label">Bell</div>
-        <div></div>
         <div class="bell-cell">
+          <div class="bell-delay" title="Seconds after Red before the bell rings">
+            <input type="text" id="bellDelay" value="30" inputmode="numeric">
+            <div class="spin">
+              <button class="spin-btn" onclick="stepBell(5)" aria-label="Increase bell delay">▲</button>
+              <button class="spin-btn" onclick="stepBell(-5)" aria-label="Decrease bell delay">▼</button>
+            </div>
+          </div>
           <label class="switch"><input type="checkbox" id="bellToggle" checked><span class="slider"></span></label>
           <button class="mini-btn" id="testBell" onclick="playBell()">Test</button>
         </div>
@@ -571,7 +665,10 @@
     </div>
 
     <div class="presets" id="presets">
-      <div class="card-title">Segment</div>
+      <div class="preset-head">
+        <span class="card-title">Segment</span>
+        <button class="mini-btn" id="segTest" onclick="testPreset()" title="Quick test run: 2 / 4 / 6s, bell +2s">Test</button>
+      </div>
       <div class="preset-btns">
         <button class="preset-btn" data-seg="PS" data-g="5:00" data-a="6:00" data-r="7:00" onclick="applyPreset(this)">Prepared Speech</button>
         <button class="preset-btn" data-seg="TT" data-g="1:00" data-a="1:30" data-r="2:00" onclick="applyPreset(this)">Table Topics</button>
@@ -606,6 +703,8 @@
     const nameInput = document.getElementById('nameInput');
     const logEntriesEl = document.getElementById('logEntries');
     const logEmptyEl = document.getElementById('logEmpty');
+    const pwFull = document.querySelector('.pw-full');
+    const pwShort = document.querySelector('.pw-short');
 
     function parseTime(str) {
       const parts = str.trim().split(':');
@@ -641,6 +740,15 @@
       clearActivePreset();
     }
 
+    function stepBell(delta) {
+      if (interval) return;
+      const el = document.getElementById('bellDelay');
+      let val = parseInt(el.value, 10);
+      if (isNaN(val)) val = 0;
+      val = Math.min(300, Math.max(0, val + delta));
+      el.value = val;
+    }
+
     function applyPreset(btn) {
       if (interval) return;
       document.getElementById('greenAt').value = btn.dataset.g;
@@ -652,6 +760,16 @@
 
     function clearActivePreset() {
       document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    /* Quick test run: short thresholds + fast bell */
+    function testPreset() {
+      if (interval) return;
+      document.getElementById('greenAt').value = '0:02';
+      document.getElementById('amberAt').value = '0:04';
+      document.getElementById('redAt').value   = '0:06';
+      document.getElementById('bellDelay').value = '2';
+      clearActivePreset();
     }
 
     function segCodeFromThresholds() {
@@ -668,9 +786,15 @@
 
     /* Log the just-finished speaker (fired on Reset) */
     function logSpeaker() {
-      const name = nameInput.value.trim();
-      if (seconds === 0 && !name) return;
-      records.push({ name: name || 'Speaker', seg: segCodeFromThresholds(), time: formatClock(seconds) });
+      const typed = nameInput.value.trim();
+      if (seconds === 0 && !typed) return;
+      const seg = segCodeFromThresholds();
+      let name = typed;
+      if (!name) {
+        const n = records.filter(r => r.seg === seg).length + 1;
+        name = `${seg} ${n}`;   // auto: "PS 1", "TT 2", ...
+      }
+      records.push({ name, seg, time: formatClock(seconds) });
       nameInput.value = '';
       renderLog();
     }
@@ -680,20 +804,47 @@
       records.forEach((r, i) => {
         const row = document.createElement('div');
         row.className = 'log-entry';
+
         const name = document.createElement('span');
         name.className = 'lg-name';
         name.textContent = r.name;
+        name.contentEditable = 'true';
+        name.spellcheck = false;
+        name.title = 'Click to edit name';
+        name.addEventListener('blur', () => {
+          const v = name.textContent.trim();
+          if (v) { records[i].name = v; } else { name.textContent = records[i].name; }
+        });
+        name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
+
         const seg = document.createElement('span');
         seg.className = 'lg-seg';
         seg.textContent = r.seg || 'Other';
+
         const time = document.createElement('span');
         time.className = 'lg-time';
         time.textContent = r.time;
+        time.contentEditable = 'true';
+        time.spellcheck = false;
+        time.title = 'Click to edit time (m:ss)';
+        time.addEventListener('blur', () => {
+          const parsed = parseTime(time.textContent);
+          if (parsed !== null) { records[i].time = formatClock(parsed); }
+          time.textContent = records[i].time;
+        });
+        time.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); time.blur(); } });
+
         const del = document.createElement('span');
         del.className = 'lg-del';
         del.textContent = '✕';
         del.title = 'Remove';
-        del.onclick = () => { records.splice(i, 1); renderLog(); };
+        del.onclick = () => {
+          if (confirm(`Delete "${records[i].name}" (${records[i].time})?`)) {
+            records.splice(i, 1);
+            renderLog();
+          }
+        };
+
         row.append(name, seg, time, del);
         logEntriesEl.appendChild(row);
       });
@@ -706,7 +857,13 @@
       navigator.clipboard.writeText(text).catch(() => {});
     }
 
-    function clearLog() { records = []; renderLog(); }
+    function clearLog() {
+      if (!records.length) return;
+      if (confirm(`Clear all ${records.length} recorded time${records.length > 1 ? 's' : ''}?`)) {
+        records = [];
+        renderLog();
+      }
+    }
 
     function playBell() {
       try {
@@ -731,18 +888,27 @@
       const t = getThresholds();
       const running = body.classList.contains('running');
       body.classList.remove('phase-green', 'phase-amber', 'phase-red', 'phase-white');
+      let word = '';
       if (seconds >= t.red) {
         body.classList.add('phase-red');
-        if (!bellPlayed && seconds >= t.red + 30 && document.getElementById('bellToggle').checked) {
+        const bd = parseInt(document.getElementById('bellDelay').value, 10);
+        const bellAfter = isNaN(bd) ? 30 : Math.max(0, bd);
+        const bellDue = document.getElementById('bellToggle').checked && seconds >= t.red + bellAfter;
+        word = bellDue ? 'BELL' : 'RED';
+        if (!bellPlayed && bellDue) {
           bellPlayed = true; playBell();
         }
       } else if (seconds >= t.amber) {
         body.classList.add('phase-amber');
+        word = 'AMBER';
       } else if (seconds >= t.green) {
         body.classList.add('phase-green');
+        word = 'GREEN';
       } else if (running) {
         body.classList.add('phase-white');
       }
+      pwFull.textContent = word;
+      pwShort.textContent = word ? word[0] : '';
     }
 
     function tick() {
