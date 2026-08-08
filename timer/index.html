@@ -26,6 +26,9 @@
     body {
       font-family: 'Chakra Petch', sans-serif;
       font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
       background: var(--bg);
       color: var(--fg);
       height: 100dvh;
@@ -50,11 +53,11 @@
     .card {
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 16px;
-      padding: 1rem 1.1rem;
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      box-shadow: 0 10px 34px rgba(0,0,0,0.28);
+      border-radius: 18px;
+      padding: 1.25rem 1.4rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.22);
       transition: background 0.5s ease, border-color 0.5s ease, opacity 0.45s ease;
       z-index: 10;
     }
@@ -108,21 +111,21 @@
       width: 20rem;
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 1rem;
     }
 
     .name-input {
       width: 100%;
       font-size: 17px;
       font-weight: 600;
-      height: 2.5rem;
-      padding: 0 0.75rem;
+      height: 2.6rem;
+      padding: 0 0.8rem;
     }
 
     .settings {
       display: grid;
-      grid-template-columns: 1fr 2.3rem 4.6rem 2.3rem;
-      gap: 0.5rem;
+      grid-template-columns: 1fr 2.4rem 4.7rem 2.4rem;
+      gap: 0.65rem 0.55rem;
       align-items: center;
     }
     .s-label {
@@ -142,7 +145,7 @@
     .dot.red   { background: #d50000; box-shadow: 0 0 7px rgba(213,0,0,0.6); }
 
     .thr {
-      height: 2.3rem;
+      height: 2.4rem;
       width: 100%;
       text-align: center;
       font-size: 18px;
@@ -150,8 +153,8 @@
       padding: 0;
     }
     .step-btn {
-      height: 2.3rem;
-      width: 2.3rem;
+      height: 2.4rem;
+      width: 2.4rem;
       font-size: 20px;
       line-height: 1;
       display: flex;
@@ -182,18 +185,18 @@
     .switch input:checked + .slider { background: #00c853; }
     .switch input:checked + .slider::before { transform: translateX(20px); }
 
-    .bell-cell { grid-column: 2 / 5; display: flex; align-items: center; gap: 0.5rem; }
+    .bell-cell { grid-column: 2 / 5; display: flex; align-items: center; gap: 0.45rem; }
     #testBell { padding: 0.3em 0.5em; flex-shrink: 0; }
 
     /* Compact bell-delay spinner (seconds after Red) */
     .bell-delay { display: flex; align-items: center; gap: 0.2rem; flex-shrink: 0; }
     #bellDelay {
-      width: 2rem;
-      height: 1.9rem;
+      min-width: 2.4rem;
       text-align: center;
       font-size: 15px;
       font-weight: 600;
-      padding: 0;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
     .bd-unit { font-size: 11px; opacity: 0.55; }
     .spin { display: flex; flex-direction: column; gap: 2px; }
@@ -312,10 +315,10 @@
     /* ══ Timer's log (bottom-right, flush to edge) ══ */
     .record-panel {
       position: fixed;
-      bottom: 1.5rem;
+      bottom: 1.75rem;
       right: 0;
-      width: 18.75rem;
-      height: 18.75rem;
+      width: 19.5rem;
+      height: 20.4rem;
       display: flex;
       flex-direction: column;
       gap: 0.55rem;
@@ -403,12 +406,12 @@
     /* ══ Left stack: instructions (above) + combined box ══ */
     .left-stack {
       position: fixed;
-      bottom: 1.5rem;
-      left: 1.5rem;
-      width: 35.5rem;
+      bottom: 1.75rem;
+      left: 1.75rem;
+      width: 37rem;
       display: flex;
       flex-direction: column;
-      gap: 0.9rem;
+      gap: 1.1rem;
       z-index: 10;
     }
 
@@ -432,15 +435,15 @@
       content: '';
     }
     .howto ol {
-      margin: 0.6rem 0 0;
-      padding-left: 1.3rem;
+      margin: 0.75rem 0 0;
+      padding-left: 1.4rem;
       columns: 2;
-      column-gap: 1.8rem;
+      column-gap: 2.4rem;
       font-size: 13.5px;
       font-weight: 500;
-      line-height: 1.32;
+      line-height: 1.5;
     }
-    .howto li { opacity: 0.94; margin-bottom: 0.34rem; break-inside: avoid; }
+    .howto li { opacity: 0.9; margin-bottom: 0.6rem; break-inside: avoid; }
     .howto li:last-child { margin-bottom: 0; }
     body.running .howto { opacity: 0.3; }
 
@@ -510,7 +513,7 @@
     .lbl-short { display: none; }
 
     /* ══════════ Phone / narrow screens (stack before the log meets the segment box) ══════════ */
-    @media (max-width: 940px) {
+    @media (max-width: 980px) {
       body {
         display: flex;
         flex-direction: column;
@@ -596,6 +599,29 @@
       .control-slot { flex: 1; }
       .controls .btn { flex: 1; min-width: 0; font-size: 14px; padding: 0.6em 0; }
     }
+
+    /* ══════════ Short windows: fit the left stack vertically ══════════ */
+    @media (max-height: 660px) {
+      .left-stack { bottom: 1rem; left: 1rem; gap: 0.65rem; }
+      .record-panel { bottom: 1rem; height: min(17rem, calc(100dvh - 2rem)); }
+      .card { padding: 0.85rem 1.05rem; }
+      .cockpit { gap: 0.6rem; }
+      .settings { gap: 0.45rem 0.5rem; }
+      .name-input { height: 2.2rem; }
+      .thr, .step-btn { height: 2.15rem; }
+      .step-btn { width: 2.15rem; }
+      .timer { font-size: 24px; }
+
+      /* Collapse the How-to box to reclaim height */
+      .howto summary {
+        pointer-events: auto;
+        cursor: pointer;
+        justify-content: space-between;
+      }
+      .howto summary::after { content: '▸'; font-size: 10px; opacity: 0.6; }
+      .howto[open] summary::after { content: '▾'; }
+      .howto ol { columns: 1; margin-top: 0.5rem; }
+    }
   </style>
 </head>
 <body>
@@ -641,7 +667,7 @@
         <div class="s-label">Bell</div>
         <div class="bell-cell">
           <div class="bell-delay" title="Seconds after Red before the bell rings">
-            <input type="text" id="bellDelay" value="30" inputmode="numeric">
+            <span id="bellDelay">+30s</span>
             <div class="spin">
               <button class="spin-btn" onclick="stepBell(5)" aria-label="Increase bell delay">▲</button>
               <button class="spin-btn" onclick="stepBell(-5)" aria-label="Decrease bell delay">▼</button>
@@ -743,10 +769,10 @@
     function stepBell(delta) {
       if (interval) return;
       const el = document.getElementById('bellDelay');
-      let val = parseInt(el.value, 10);
+      let val = parseInt(el.textContent, 10);
       if (isNaN(val)) val = 0;
       val = Math.min(300, Math.max(0, val + delta));
-      el.value = val;
+      el.textContent = '+' + val + 's';
     }
 
     function applyPreset(btn) {
@@ -768,7 +794,7 @@
       document.getElementById('greenAt').value = '0:02';
       document.getElementById('amberAt').value = '0:04';
       document.getElementById('redAt').value   = '0:06';
-      document.getElementById('bellDelay').value = '2';
+      document.getElementById('bellDelay').textContent = '+2s';
       clearActivePreset();
     }
 
@@ -891,7 +917,7 @@
       let word = '';
       if (seconds >= t.red) {
         body.classList.add('phase-red');
-        const bd = parseInt(document.getElementById('bellDelay').value, 10);
+        const bd = parseInt(document.getElementById('bellDelay').textContent, 10);
         const bellAfter = isNaN(bd) ? 30 : Math.max(0, bd);
         const bellDue = document.getElementById('bellToggle').checked && seconds >= t.red + bellAfter;
         word = bellDue ? 'BELL' : 'RED';
@@ -956,8 +982,9 @@
 
     renderLog();
 
-    /* Instructions collapse only on small screens */
-    if (window.matchMedia('(max-width: 640px)').matches) {
+    /* Instructions collapse on small or short screens */
+    if (window.matchMedia('(max-width: 980px)').matches ||
+        window.matchMedia('(max-height: 660px)').matches) {
       document.getElementById('howto').open = false;
     }
   </script>
