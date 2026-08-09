@@ -74,20 +74,33 @@ carried `builder.css` as an inline string and silently reverted weeks of edits. 
 build if `sheet.css` contains a backtick or `${`, because that CSS is injected into a JavaScript
 template literal and either character would break the whole app at parse time.
 
-The suites need Python Playwright and Chromium, and run against the built `index.html`:
+The suites need Python Playwright and Chromium, and run against the built `index.html`. **Run
+`pgprobe.py` first — it is the quickest and catches the worst failure.** Status against the current
+build:
 
-| Suite | Checks |
-|---|---|
-| `t13.py` | Functional behaviour end to end — 98 checks |
-| `fscheck.py` | Saving and reopening meetings, including revoked folder permission — 30 checks |
-| `uicheck.py` | Export sizes, timing-light bells, PDF path — 22 checks |
-| `checkall.py` | Print geometry and a real PDF per theme, blank and filled — 12 cases |
-| `pgprobe.py` | Page count per theme |
+| Suite | Checks | Against this build |
+|---|---|---|
+| `pgprobe.py` | Page count per theme | passes |
+| `checkall.py` | Print geometry and a real PDF per theme, blank and filled | 10/10 |
+| `uicheck.py` | Toolbar, export sizes, PDF path | 19/22 — see below |
+| `t13.py` | Functional behaviour end to end | **needs updating** — its selectors predate the current UI |
+| `fscheck.py` | Saving and reopening meetings, incl. revoked folder permission | **needs updating** — the saved-file naming changed under it |
 
-162 checks in total. `checkall.py` is the one that matters most: it measures the printed layout at
-**both** 794px and 718px, because A4's content width is 190mm ≈ 718px at 96dpi, which is under the
-720px mobile breakpoint. A width media query written without `screen and` therefore fires on paper.
-Any new width query in `sheet.css` must be scoped `@media screen and (max-width: …)`.
+`t13.py` and `fscheck.py` were written against an earlier build and have not been refreshed since
+the interface gained the save dialog, custom roles and the speech-count spinner. They fail on
+missing selectors rather than on real defects, but until they are updated they are not a safety net.
+
+Of `uicheck.py`'s three failures, two are worth acting on rather than silencing: the JPG export
+currently lands slightly over its 450 KB budget, and one toolbar button is a text label where every
+other one is an icon with a tooltip.
+
+`checkall.py` is the check that matters most: it measures the printed layout at **both** 794px and
+718px, because A4's content width is 190mm ≈ 718px at 96dpi, which is under the 720px mobile
+breakpoint. A width media query written without `screen and` therefore fires on paper but not in a
+headless test. Any new width query in `sheet.css` must be scoped `@media screen and (max-width: …)`.
+
+**The sheet sits about 4 mm from the two-page boundary.** Adding a single line to any row has tipped
+themes onto a third page before now. Never ship a row or line change without running `pgprobe.py`.
 
 ## Housekeeping
 
