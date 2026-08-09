@@ -185,8 +185,12 @@
     .switch input:checked + .slider { background: #00c853; }
     .switch input:checked + .slider::before { transform: translateX(20px); }
 
-    .bell-cell { grid-column: 2 / 5; display: flex; align-items: center; gap: 0.45rem; }
+    /* Bell row spans the full grid width so label, delay, sound, toggle
+       and Test all fit on one line. */
+    .bell-cell { grid-column: 1 / 5; display: flex; align-items: center; gap: 0.45rem; }
+    .bell-cell .s-label { flex-shrink: 0; margin-right: 0.15rem; }
     #testBell { padding: 0.3em 0.5em; flex-shrink: 0; }
+
 
     /* Compact bell-delay spinner (seconds after Red) */
     .bell-delay { display: flex; align-items: center; gap: 0.2rem; flex-shrink: 0; }
@@ -198,7 +202,6 @@
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-    .bd-unit { font-size: 11px; opacity: 0.55; }
     .spin { display: flex; flex-direction: column; gap: 2px; }
     .spin-btn {
       width: 1.3rem;
@@ -237,9 +240,7 @@
 
     /* Lockdown while running: Start/Reset + threshold controls freeze.
        Stop, Bell toggle, Speaker name and the whole log stay live. */
-    body.running .btn,
-    body.running .help,
-    body.running .help summary {
+    body.running .btn {
       pointer-events: none;
     }
     body.running #stopBtn { pointer-events: auto; }
@@ -588,6 +589,8 @@
       .name-input { height: 2.4rem; font-size: 15px; }
       .settings { grid-template-columns: 2.6rem 2.2rem 1fr 2.2rem; gap: 0.4rem; }
       .s-label { font-size: 16px; letter-spacing: 0; gap: 0.35rem; }
+      .bell-cell { gap: 0.35rem; }
+      .bell-cell .s-label { min-width: 2.6rem; }
       .thr { height: 2.2rem; font-size: 16px; }
       .step-btn { height: 2.2rem; width: 2.2rem; font-size: 19px; }
       .switch { width: 46px; height: 26px; }
@@ -640,7 +643,8 @@
         <li>Enter the speaker's name (optional — blank auto-fills as "PS 1", "TT 2", …).</li>
         <li>Start — screen &amp; centre word show WHITE → GREEN → AMBER → RED, then BELL when the overtime bell rings (set the seconds after Red with the ± beside the bell).</li>
         <li>Stop, then Reset — Reset logs the speaker (name · segment · time) and clears for the next.</li>
-        <li>Click any logged name or time to edit it. Copy exports the list · ✕ removes a row (asks first) · Test checks the bell. While running you can still edit the name and the log; only Stop and the Bell stay active.</li>
+        <li>Click any logged name or time to edit it. Copy exports the list · ✕ removes a row (asks first). While running you can still edit the name and the log; only Stop and the Bell stay active.</li>
+        <li>Pick the bell sound — Desk Bell, Chime or Beep. <strong>On a phone, tap Test once before the meeting starts</strong>: that unlocks audio and confirms it's loud enough for the room.</li>
       </ol>
     </details>
 
@@ -664,8 +668,8 @@
         <input type="text" id="redAt" class="thr" value="7:00" placeholder="m:ss" oninput="clearActivePreset()">
         <button class="step-btn" onclick="step('redAt', 30)">+</button>
 
-        <div class="s-label">Bell</div>
         <div class="bell-cell">
+          <div class="s-label"><span class="lbl-full">Bell</span><span class="lbl-short">Bell</span></div>
           <div class="bell-delay" title="Seconds after Red before the bell rings">
             <span id="bellDelay">+30s</span>
             <div class="spin">
@@ -718,6 +722,14 @@
   </div>
 
   <script>
+    /* Bell recordings, synthesised offline (modal synthesis) and encoded as
+       mono MP3. Embedded so the page stays a single portable file. */
+    /* Desk bell: one clean strike, 0.6 s, mono 16 kHz 32 kbps MP3, inlined as
+       base64 so the page stays self-contained and rings with no network.
+       The source sample was three struck bells over 2.2 s, which read as a long
+       echo in a room; only the first strike is kept, faded out to avoid a click. */
+    const BELL_MP3 = 'SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NYwAAAAAAAAAAAAEluZm8AAAAPAAAAEwAAC2QAHBwcHBwpKSkpKTU1NTU1QkJCQkJCT09PT09bW1tbW2hoaGhodHR0dHR0gYGBgYGOjo6Ojpqampqap6enp6entLS0tLTAwMDAwM3Nzc3N2tra2tra5ubm5ubz8/Pz8///////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQDLQAAAAAAAAtkce/OMgAAAAAAAAAAAAAA//NIxAAZw462+UE4AXeGZoyAIAJjGNjGOAAFkCMY+YzDG6GDQH4PwfkxQAIAAAQRBYAwSCBn+////mN//U88wwwwwwwzPPPeYZMMMMMM//c8888889zDP///57//+e/7mGN/555555hhhhhjGGDcmeACMACgcDgXBAADXMAgOZAAJh7w2NvAFAR5dKRH1Jei//NIxBwkU/LaX4eQAk0Ono9EIEDLJMrhCgaGp4dYH2ceQ4R8blkxOGBHIaJPJGrZ0ipdcxKBj//ooqRRWUAy2O79YZOND9YnkTQMskRYixAiZIqZGKJMrFwk89X8VRmy0P865w+o2zIvOYo/////9aOtUcbIo2//mYwn//1ow4YnZNUICIGAN9SSdFRSD8gt//NIxA0f+6qEV8CwAZBg4EI5wNKY2gMNoKgMDYHgMBAAwBABhayMA3MknqSZE8pJ/v////tW6/VepFFRSK5IhbUDAYAsDGEQYDA8EMDAsAcMElIgRWRRZdey//v///////////rWq7tMyyOaVR0hYiAcAkBomAgsQ8ipqkrZE/QgSGB//refaV3nacFTItSY//NIxBAes8p0NAdq7BYOGLCwn2jVGMQOjQFMxBIBCQYJmy7CtutzdJ7nKv9f///VSuy9dlqRrQSMDMuFcRoB3+NgYPGQcqRYxN1o1qXW9SkqNf3//////////96nXRqMjrEYfUVkiAghBAG3SCF1RVMK6SLMo/YuHAgBAH//++fjW1jzdmbfReYgAIwFCkxE//NIxBgg89J0Vgdq0FyO5n3MTguMDQNLbgYABIQku52rrPlblrZmkm1Sv////tWq9a1KosgmxeLhfIIFw4HfDYBhQXjnEycSMnspJlU6XdX3///////////VdSZsmk6yZNDeshwTBYGejIISlwzMCimaHjYwNDacqiQAL///58ohwVY85LOV1JIgoAowKAGT//NIxBch665oFA+tCQoxRjYhFNMLcAwWA4FABBAAqDgH06pTaxz+rQd46elTetkG///176amsy3QWcmBmalccgQnAIAYBoFDgBg3B8Q84mcO2WhWplJ2St////////////7os6LMZG7OZDPgUAYBgpEmHqEXNCmsqNOq4981J////lOkWUVnm7KJjgDCEIzA//NIxBIgS6ZgCA9tCkGgxDus5V9gw9HEwUCIwIAAFBuGFqRBA51JnSbnsrWBg/qb1of//6rdVfN0lLL7E4WSYHLD9ADQRgaIiugYPAcicSXKhkvTUmx1KtBaev///////////+1d1JrUiYGaCRFAxOBgxD0FpY7C2hMsDSoX8/X/cj8ecZtVxiwBA8CEYTQJ//NIxBMbS6poCAeq7Ga2AIoYKwBgOwqAKQAIJpM9wr3aevd1rzM+//////dmZfRTZJJUyOHjcjBrg0CQHI5YBg8DCTForlxanqXv2/////////////+6Ka1vOkCC+IGEAeIaVjxu1dUgv7zv5UVBSOC6SZI6BRAHoFfQ1VnUwTDoRgOr8WBErC8KAY1lw1uU//NIxCgbC65oKAdq6YrrNkjT/////tVq51k2PJsi5kYkABAAQNWP8SiGCRmkVKUv16v////////////+83porNy+mkZGITAgBxZHKMWPzrzNqg///vm70zZg9xAwAcwFABjB5CFNIETwwhQFzAUAGAgAQXAJDAFXQoeVsakzKe2ln1P//////9bIqzKaJl5E//NIxD4bc6poAgeq7T4gMmpAFACLEQV0HRb//////////////VnUluYprKCLKUQwNeDEKJ/J0zQPjYfflv/X/ytVl0PNZT2EACgkLjDJrzuh4jEgJ0TmWloigPE4ZPbra3Xn7d5Axf//////+1SC7SbNCBh6gGOggDA2K1J5FAupr//////////////1cvrS//NIxFMau7JkAAdq7VmyJZNThfKhbD4ANlDgOaT6Dnkj4F12+wgAwAv1v956/DscZ2pgYAgaYcFcdAKCYeAgAgHRXQkBwJNvc3U3h27fxWaf/////VZS+qm9bpTWQAMhgZRRYDAoPGTppqS//////////////+tCmt1l5MxOG5qIWA0aXRBxVMjREzNFl1Oe//NIxGsbI8psVAdq7c/FUHHlmKu85KwwEAswvOY6LLUw/ARcDwJopRi3F1BSTuhY7Z/r////3Va3pKr1pLPEPBoAgNXOYDCYPHonS+yZr9S/////////////9d0WUm6VFjIul0pAgAYGaEwKVLzKRSRZAvLW52kP/+v/uGdybdBNMGA4xa6T0eAMLhkuImAl//NIxIEaA9JoCgdrBnhglFEK83PLqNElIt/////22UvrTRUi0wQNDpQBqCwOwzMDAQwDBI5xdNluy1rrWtlurV///////////+utdlHzCkWzyRkM6DQJAEt8Uwj1HTCGdDCDehB///9VvtS6Ku8y0vEYYGmchDWLDqn26aj0WHC6KlMYpLZFX////9e7sjr0//NIxJwb+6pgAgcq6dJJVFBRfPGJMAVAIHwl8BioejiIKmaoXazM2jWqv///////////3ru65obVmhoX0jccgG3wNEtgFgWQQrnA0FVJVutqxy5dmI23BBGYUpGWSJCBNLh9syPw9IO1SkklV/////+y1PdmSo6K1JnCmOgQHAEA0BoDCYBhFBsO8iBfQWyM//NIxK8b86ZcCgdq6dFJonqNn////////////9anW61pKLJdOGJdJIG1QMZQqwoBEly0fNAyWTRV/WplnyoOoOMAwAhqAwZhqBQEYgAOQPsWE2d///////260XaldK5gsuDLk0T4GAYFQGCQCYGnIxYKDsAwPAFBEBMdI4iIGTeyaF6X////////////1Oi6//NIxMIai6pUAAbtBKaolgmioTQ4g14GAcEQGOURgAQAhApPF1NpK1T0Lb3ENPotrzUvm6nMdY6SmT6AhHMSKjkhCJADBcB0iIwkQMBYVAJB+E3CjyKEGrLql+T6SDoVo//ZN03ND+jRo0kkVB7YGAYEwGLFRwGTkCxME4Rg4ExBQLWAMNoCAMOITGJqTQ5w//NIxNocu6pEAUCwALUIOAAAmAsAEFgLDQROL/g4DBXEECKi4x4HPImUyfMCJh9A+YpEWPmR8mZiXTH//lAnC8RQ8XDUvlovm503QNzVSKi8pJ0nMa0V6+awMAAcQGh2BvCrfnDRI0Y0OjjAcCMDB0Bc2LpFz5PmxcLZMGiKqklOTJMlg3SWXVosixlVk/////NIxOo5jBY0AYOwAOIUIdra3ctlpq1u42NoSNj1ta2tra///////////9rW6RtSR65bUObSQ7g9DqTBBAlLwQQEQRViUO4dx6CUO49KLREAgaDolDYKjA6CoFBV3KnQaLB3lg7BVbqzold/8qdER6oGoKlQ11grBpVMQU1FMy4xMDBVVVVVVVVVVVVVVVVV//NIxIYb0hWoAcFYAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+
     let interval = null;
     let seconds = 0;
     let bellPlayed = false;
@@ -892,9 +904,80 @@
       }
     }
 
-    function playBell() {
+    /* ══════════════════════════════════════════════════════════════
+       Bell audio.
+
+       Web Audio oscillators are silenced by the iPhone ringer switch;
+       <audio> elements are not. So the bell is a real recording played
+       through an <audio> element, with the old two-sine synth kept only
+       as a fallback for when the element refuses to play.
+
+       Safari also rejects `data:` URIs for media (it wants byte-range
+       support), so the base64 is turned into a Blob URL at load.
+       ══════════════════════════════════════════════════════════════ */
+
+    let bellAudio = null;
+    let audioCtx = null;
+    let audioUnlocked = false;
+    let priming = false;      // true while the silent iOS unlock pass is in flight
+
+    function b64ToBlobUrl(b64, mime) {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return URL.createObjectURL(new Blob([bytes], { type: mime }));
+    }
+
+    (function buildSound() {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        bellAudio = new Audio();
+        bellAudio.src = b64ToBlobUrl(BELL_MP3, 'audio/mpeg');
+        bellAudio.preload = 'auto';
+        bellAudio.load();
+      } catch (e) { bellAudio = null; }
+    })();
+
+    function currentSound() { return bellAudio; }
+
+    /* iOS gives audio permission only inside a user gesture, and only to
+       elements that have already been played once. Prime every element on
+       the first tap so the automatic bell can fire later, unattended. */
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      try {
+        if (navigator.audioSession) navigator.audioSession.type = 'playback';
+      } catch (e) {}
+      if (bellAudio) {
+        const a = bellAudio;
+        const wasMuted = a.muted;
+        priming = true;
+        a.muted = true;
+        const p = a.play();
+        /* settle() lands one tick later. If a real ring started in the meantime
+           it will have cleared `priming`, and we must not pause it — that raced
+           and left the very first Test press silent. */
+        const settle = () => {
+          if (priming) { a.pause(); a.currentTime = 0; a.muted = wasMuted; priming = false; }
+        };
+        if (p && p.then) { p.then(settle).catch(() => { a.muted = wasMuted; priming = false; }); }
+        else { settle(); }
+      }
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (e) {}
+    }
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
+
+    /* Fallback only: the V25 two-sine tone, on the shared context. */
+    function synthBell() {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const ctx = audioCtx;
         [880, 1320].forEach((freq, i) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
@@ -906,9 +989,41 @@
           osc.start(ctx.currentTime + i * 0.08);
           osc.stop(ctx.currentTime + 1.8);
         });
-        setTimeout(() => ctx.close(), 2500);
       } catch (e) {}
     }
+
+    function playBell() {
+      unlockAudio();
+      priming = false;          // a real ring outranks the silent priming pass
+      const a = currentSound();
+      if (!a) { synthBell(); return; }
+      try {
+        a.pause();
+        a.currentTime = 0;
+        a.muted = false;        // priming may have left it muted
+        const p = a.play();
+        if (p && p.catch) p.catch(() => synthBell());
+      } catch (e) {
+        synthBell();
+      }
+    }
+
+    /* ══ Keep the screen awake while timing (iOS 16.4+, Chrome, Edge) ══ */
+    let wakeLock = null;
+    async function acquireWakeLock() {
+      try {
+        if ('wakeLock' in navigator && !wakeLock) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => { wakeLock = null; });
+        }
+      } catch (e) {}
+    }
+    function releaseWakeLock() {
+      try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && interval) acquireWakeLock();
+    });
 
     function updatePhase() {
       const body = document.body;
@@ -946,6 +1061,8 @@
 
     function startTimer() {
       if (interval) return;
+      unlockAudio();
+      acquireWakeLock();
       interval = setInterval(tick, 1000);
       startBtn.classList.add('hidden');
       stopBtn.classList.remove('hidden');
@@ -956,6 +1073,7 @@
     function stopTimer() {
       clearInterval(interval);
       interval = null;
+      releaseWakeLock();
       stopBtn.classList.add('hidden');
       startBtn.classList.remove('hidden');
       document.body.classList.remove('running');
@@ -973,7 +1091,9 @@
       if (wasRunning) {
         interval = setInterval(tick, 1000);
         document.body.classList.add('running');
+        acquireWakeLock();
       } else {
+        releaseWakeLock();
         document.body.classList.remove('running');
         stopBtn.classList.add('hidden');
         startBtn.classList.remove('hidden');
