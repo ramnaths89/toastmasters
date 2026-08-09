@@ -87,9 +87,12 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
 .end-check.ok{background:#e6f3ea; color:#2e7d46;}
 .end-check.warn{background:#fdeeec; color:#9c3b33;}
 
+/* The V29 narrow rule stacked the panes and capped the form at 70vh, so a phone
+   showed a squeezed form with the sheet somewhere off the bottom. Replaced by the
+   one-pane-at-a-time layout at the end of this file (V30). */
 @media (max-width: 980px){
   .builder-body{flex-direction:column; height:auto;}
-  .form-pane{width:100%; border-right:none; border-bottom:1px solid var(--line); max-height:70vh;}
+  .form-pane{width:100%; border-right:none; border-bottom:1px solid var(--line);}
   .preview-pane iframe{height:1400px;}
 }
 
@@ -121,9 +124,48 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
 /* Speech & evaluator cards */
 .speech-card{
   border:1px solid var(--line); border-left:4px solid var(--maroon); border-radius:6px;
-  padding:10px 12px 12px; margin-bottom:12px; background:#fdfcfa;
+  padding:0; margin-bottom:8px; background:#fdfcfa; overflow:hidden;
 }
-.sc-head{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+/* Collapsed by default (V31), same behaviour as a Programme Segments row: the
+   head is the click target and the fields live in .sc-details. */
+.sc-head{
+  display:flex; align-items:center; gap:8px; margin-bottom:0;
+  padding:8px 10px; cursor:pointer; user-select:none;
+}
+.sc-head:hover{ background:rgba(0,0,0,0.03); }
+.speech-card .sc-details{ display:none; padding:2px 12px 12px; border-top:1px dashed var(--line); }
+.speech-card.open .sc-details{ display:block; }
+.speech-card .caret{ flex:0 0 auto; font-size:11px; color:var(--ink-soft); }
+.sc-sum{
+  flex:1 1 auto; min-width:0; font-size:11px; color:var(--ink-soft); font-style:italic;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right;
+}
+.sc-name{ flex:0 0 auto; }
+
+/* Speaker-count stepper, sitting in the section header (V31). Clicks inside it
+   must not toggle the <details> it lives in — the wrapper cancels the default. */
+.section > summary .sum-t{ flex:0 0 auto; }
+.sp-step{
+  display:inline-flex; align-items:center; gap:2px; margin-left:auto; margin-right:10px;
+  border:1px solid var(--line); border-radius:5px; background:#fff; overflow:hidden;
+}
+.sp-step button{
+  width:24px; height:22px; border:none; background:#fff; color:var(--maroon);
+  font-size:14px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit;
+}
+.sp-step button:hover:not(:disabled){ background:var(--cream); }
+.sp-step button:disabled{ color:var(--line); cursor:default; }
+.sp-step #spCount{
+  min-width:20px; text-align:center; font-size:12.5px; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+
+/* "Balance Segments" spelled out rather than a ⚖ nobody recognised (V31). Two
+   short words on two lines keep the button as narrow as the chip beside it. */
+.btn.balance{
+  padding:5px 10px; font-size:11px; line-height:1.15; text-align:center;
+  white-space:normal; max-width:82px; display:inline-block; position:relative;
+}
 .sc-badge{
   font-size:10px; font-weight:700; color:#fff; background:var(--maroon); padding:2px 8px;
   border-radius:3px; text-transform:uppercase; letter-spacing:0.4px; flex:0 0 auto;
@@ -197,7 +239,7 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
   position:relative; flex:0 0 auto;
 }
 .btn.icon:disabled{ opacity:0.6; cursor:default; }
-.btn.icon[data-tip]::after{
+.btn.icon[data-tip]::after, .btn.balance[data-tip]::after{
   content:attr(data-tip);
   position:absolute; top:calc(100% + 9px); left:50%;
   transform:translateX(-50%) translateY(-4px);
@@ -208,7 +250,7 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
   opacity:0; pointer-events:none; z-index:300;
   transition:opacity .13s ease, transform .13s ease;
 }
-.btn.icon[data-tip]::before{
+.btn.icon[data-tip]::before, .btn.balance[data-tip]::before{
   content:''; position:absolute; top:calc(100% + 3px); left:50%;
   transform:translateX(-50%) translateY(-4px);
   border:6px solid transparent; border-bottom-color:#23282b;
@@ -216,7 +258,9 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
   transition:opacity .13s ease, transform .13s ease;
 }
 .btn.icon:hover::after, .btn.icon:focus-visible::after,
-.btn.icon:hover::before, .btn.icon:focus-visible::before{
+.btn.icon:hover::before, .btn.icon:focus-visible::before,
+.btn.balance:hover::after, .btn.balance:focus-visible::after,
+.btn.balance:hover::before, .btn.balance:focus-visible::before{
   opacity:1; transform:translateX(-50%) translateY(0);
 }
 /* The last buttons sit at the window edge — pin their tooltip to the right so it
@@ -390,4 +434,92 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
 .cbx-opt.act .cbx-n, .cbx-opt.act .cbx-m{ color:#fff; }
 .cbx-empty{ display:none; padding:6px 7px; font-size:11.5px; color:var(--ink-soft); font-style:italic; }
 @media print{ .cbx-list, .cbx-btn{ display:none !important; } }
+
+/* ---------- Custom roles (V30) ----------
+   Tick, title, person, remove — on one line, so a club that runs six extra roles
+   does not push the rest of the form off the screen. */
+.cr-row{
+  display:grid; grid-template-columns:auto 1fr 1fr auto; gap:6px;
+  align-items:center; margin-bottom:6px;
+}
+.cr-row input[type=checkbox]{ width:14px; height:14px; margin:0; accent-color:var(--maroon); cursor:pointer; }
+.cr-row.role-off .cr-label, .cr-row.role-off input[type=text]{ background:#f4f4f2; color:#aaa; }
+.cr-del{
+  border:1px solid var(--line); background:#fff; border-radius:4px; width:26px; height:28px;
+  cursor:pointer; font-size:11px; line-height:1; color:var(--ink-soft);
+}
+.cr-del:hover{ background:#fdeeec; color:#9c3b33; border-color:#e3b3ac; }
+.cr-add{
+  margin-top:6px; border:1px dashed var(--maroon); background:#fff; color:var(--maroon);
+  border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;
+  font-family:inherit;
+}
+.cr-add:hover{ background:var(--cream); }
+
+/* ---------- Save dialog (V30) ----------
+   Replaces window.prompt(), which a file:// page can suppress outright. */
+.save-overlay{
+  display:none; position:fixed; inset:0; z-index:420; background:rgba(20,14,16,0.55);
+  padding:0 16px; overflow-y:auto;
+}
+.save-overlay.open{ display:flex; align-items:center; justify-content:center; }
+.save-panel{
+  width:100%; max-width:460px; background:#fff; border-radius:10px; overflow:hidden;
+  box-shadow:0 18px 50px rgba(0,0,0,0.4);
+}
+.save-head{
+  background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  color:#fff; padding:13px 18px; font-family:"Montserrat",Arial,sans-serif;
+  font-size:15px; font-weight:700;
+}
+.save-body{ padding:16px 18px 6px; }
+.save-body .ext{
+  font-size:12px; color:var(--ink-soft); margin-top:5px; font-variant-numeric:tabular-nums;
+}
+.save-body .ext b{ color:var(--ink); }
+.save-foot{ display:flex; gap:8px; padding:12px 18px 16px; justify-content:flex-end; flex-wrap:wrap; }
+.save-foot .btn{ padding:9px 16px; }
+
+/* ---------- One pane at a time on a narrow window or a phone (V30) ---------- */
+.view-tabs{ display:none; }
+.mobile-bar{ display:none; }
+@media (max-width: 900px){
+  html,body{ overflow-x:hidden; }
+  .builder-header p{ display:none; }              /* the long hint is desktop advice */
+  .view-tabs{
+    display:flex; gap:6px; padding:8px 12px; background:#fff;
+    border-bottom:1px solid var(--line); position:sticky; top:0; z-index:60;
+  }
+  .view-tabs button{
+    flex:1 1 0; padding:9px 8px; border:1px solid var(--line); background:#fff;
+    color:var(--ink-soft); border-radius:6px; font-family:"Montserrat",Arial,sans-serif;
+    font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .view-tabs button.on{ background:var(--maroon); border-color:var(--maroon); color:#fff; }
+
+  .builder-body{ display:block; height:auto; }
+  #splitter{ display:none; }
+  /* applyPaneWidth() sets flex-basis for the desktop splitter; in one column that
+     would become a height. */
+  .form-pane{ flex:none !important; width:100% !important; max-height:none;
+              padding:12px 12px 96px; overflow:visible; }
+  .preview-pane{ display:none; padding:10px 10px 96px; }
+  body.show-preview .form-pane{ display:none; }
+  body.show-preview .preview-pane{ display:block; }
+  .preview-pane iframe{ height:1500px; max-width:none; }
+
+  /* The icon toolbar is for a mouse and tooltips. On a phone the two things that
+     matter get full-width labelled buttons pinned to the bottom instead. */
+  .toolbar .menu-wrap, .toolbar #saveBtn{ display:none; }
+  .mobile-bar{
+    display:flex; gap:8px; position:fixed; left:0; right:0; bottom:0; z-index:210;
+    padding:9px 12px calc(9px + env(safe-area-inset-bottom, 0px));
+    background:#fff; border-top:1px solid var(--line); box-shadow:0 -3px 14px rgba(0,0,0,0.12);
+  }
+  .mobile-bar .btn{ flex:1 1 0; justify-content:center; padding:12px 10px; font-size:13.5px; }
+  .mobile-bar .dl-menu{ top:auto; bottom:calc(100% + 8px); right:0; left:0; width:auto; }
+  .save-dot{ top:auto; bottom:74px; left:12px; }
+  .end-check{ min-width:0; flex:1 1 100%; }
+  .file-select{ max-width:none; flex:1 1 auto; }
+}
 

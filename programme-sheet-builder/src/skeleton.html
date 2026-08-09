@@ -24,7 +24,7 @@
 
 <div class="toolbar">
   <span id="endCheck" class="end-check ok">—</span>
-  <button class="btn secondary icon" data-tip="Balance — stretches or squeezes the FLEXIBLE segments — Break and Table Topics — so the meeting lands exactly on its target end time." onclick="balanceToEndTime()" aria-label="Balance flexible segments to the end time">⚖</button>
+  <button class="btn secondary balance" data-tip="Stretches or squeezes the FLEXIBLE segments — Break and Table Topics — so the meeting lands exactly on its target end time." onclick="balanceToEndTime()">Balance Segments</button>
   <div class="spacer"></div>
 
   <select id="fileSelect" class="file-select" onchange="pickMeetingFile(this.value)" aria-label="Saved meetings" title="Open a saved meeting, or connect the folder they live in">
@@ -36,15 +36,21 @@
     <button class="btn blue icon" id="dlBtn" data-tip="Download — save the finished sheet as HTML, PDF or JPG." onclick="toggleDownloadMenu(event)" aria-haspopup="true" aria-expanded="false" aria-label="Download">⭳</button>
     <div class="dl-menu" id="dlMenu" role="menu" onclick="event.stopPropagation()">
       <button role="menuitem" onclick="pickDownload('html')"><span class="dl-i">&lt;/&gt;</span><span><b>HTML</b><em>Editable file that reopens in any browser</em></span></button>
-      <button role="menuitem" onclick="pickDownload('pdf')"><span class="dl-i">📄</span><span><b>PDF</b><em>About 450 KB, saves straight away — no print dialog</em></span></button>
-      <button role="menuitem" onclick="pickDownload('jpg')"><span class="dl-i">🖼</span><span><b>JPG image</b><em>Under 450 KB — for WhatsApp, email and posting</em></span></button>
+      <button role="menuitem" onclick="pickDownload('pdf')"><span class="dl-i">📄</span><span><b>PDF</b><em>A4, under 500 KB, saves straight away — no print dialog</em></span></button>
+      <button role="menuitem" onclick="pickDownload('jpg')"><span class="dl-i">🖼</span><span><b>JPG image</b><em>Under 500 KB — for WhatsApp, email and posting</em></span></button>
     </div>
   </div>
 
-  <button class="btn ghost icon" data-tip="Reset — throws away your saved version and starts again from the built-in club template. Every name you have typed is cleared." onclick="resetToDefaults()" aria-label="Reset to the built-in defaults">↺</button>
+  <button class="btn ghost icon tip-right" data-tip="Reset — throws away your saved version and starts again from the built-in club template. Every name you have typed is cleared." onclick="resetToDefaults()" aria-label="Reset to the built-in defaults">↺</button>
   <button class="btn ghost icon tip-right" data-tip="Instructions — how every part of the builder works." onclick="openHelp()" aria-label="Instructions">?</button>
 </div>
 <div id="banner" style="display:none; margin:0 16px; padding:8px 14px; border-radius:6px; font-size:12.5px;"></div>
+
+<!-- Narrow windows and phones only: one pane at a time (V30). -->
+<div class="view-tabs" role="group" aria-label="Switch between the form and the sheet">
+  <button type="button" data-view="edit" class="on" aria-pressed="true" onclick="setMobileView('edit')">✎ Edit</button>
+  <button type="button" data-view="preview" aria-pressed="false" onclick="setMobileView('preview')">👁 Preview</button>
+</div>
 
 <div class="builder-body">
   <div class="form-pane">
@@ -75,7 +81,7 @@
       </div>
     </details>
 
-    <details class="section" open>
+    <details class="section">
       <summary>Meeting Info</summary>
       <div class="content">
         <label>Meeting Title / Theme</label>
@@ -94,7 +100,7 @@
       </div>
     </details>
 
-    <details class="section" open>
+    <details class="section">
       <summary>Meeting Roles</summary>
       <div class="content">
         <div class="roles-grid">
@@ -109,17 +115,19 @@
           <div id="rw-saa"><label class="role-lbl"><input type="checkbox" id="rc-saa" checked onchange="toggleRoleActive('saa', this.checked)"> Sergeant-at-Arms</label><input type="text" id="r-saa" placeholder="TBD" oninput="bindRole('saa', this.value)"></div>
         </div>
         <div class="hint">Untick a role that isn't running today — it disappears from the roster under TME Welcome Remarks and its own agenda items switch off. Leave a role blank and the sheet prints a red TBD; it is also listed as still open.</div>
+
+        <label style="margin-top:14px;">Your club's own roles <span class="lbl-hint">(title, then who is doing it)</span></label>
+        <div id="customRoles"></div>
+        <button type="button" class="cr-add" onclick="addCustomRole()">+ Add a role</button>
+        <div class="hint">For anything the standard nine don't cover — Zoom Master, Joke Master, Chief Judge. Each one is introduced with the other role players and behaves like a built-in role.</div>
       </div>
     </details>
 
-    <details class="section" open id="speechSection">
-      <summary>Speeches &amp; Evaluators</summary>
+    <details class="section" id="speechSection">
+      <summary><span class="sum-t">Speeches &amp; Evaluators</span><span class="sp-step" onclick="event.preventDefault(); event.stopPropagation();" title="Speakers tonight"><button type="button" id="spDec" aria-label="One fewer speaker" onclick="stepSpeechCount(-1)">−</button><span id="spCount" aria-live="polite">4</span><button type="button" id="spInc" aria-label="One more speaker" onclick="stepSpeechCount(1)">+</button></span></summary>
       <div class="content">
         <div id="speechList"></div>
-        <div class="addbar">
-          <button onclick="addSpeechSlot()" style="flex:1 1 auto;">+ Add speech (with paired evaluation)</button>
-        </div>
-        <div class="hint">Pick Pathway → Level → Project and the detail line, duration, and timing lights fill in from the official Toastmasters catalog. Type in the Project box to search.</div>
+        <div class="hint">Use <b>−</b> and <b>+</b> in the header above to set how many speakers are on tonight; each one comes with its own evaluation. Click a card to open it. Pick Pathway → Level → Project and the detail line, duration, and timing lights fill in from the official Toastmasters catalog.</div>
       </div>
     </details>
 
@@ -175,6 +183,38 @@
   </div>
 </div>
 
+<!-- Phones and narrow windows only: the two actions that matter, spelled out. -->
+<div class="mobile-bar">
+  <button class="btn secondary" onclick="saveMeeting()">💾 Save meeting</button>
+  <div class="menu-wrap" style="flex:1 1 0;">
+    <button class="btn blue" style="width:100%; justify-content:center;" id="dlBtnM"
+      onclick="toggleDownloadMenu(event)" aria-haspopup="true" aria-expanded="false">⭳ Download</button>
+    <div class="dl-menu" id="dlMenuM" role="menu" onclick="event.stopPropagation()">
+      <button role="menuitem" onclick="pickDownload('html')"><span class="dl-i">&lt;/&gt;</span><span><b>HTML</b><em>Editable file that reopens in any browser</em></span></button>
+      <button role="menuitem" onclick="pickDownload('pdf')"><span class="dl-i">📄</span><span><b>PDF</b><em>A4, under 500 KB, saves straight away</em></span></button>
+      <button role="menuitem" onclick="pickDownload('jpg')"><span class="dl-i">🖼</span><span><b>JPG image</b><em>Under 500 KB — for WhatsApp and email</em></span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Save dialog: name the file before it is written (V30). -->
+<div id="saveDialog" class="save-overlay" onclick="if(event.target===this) closeSaveDialog()">
+  <div class="save-panel" role="dialog" aria-modal="true" aria-labelledby="saveDlgTitle">
+    <div class="save-head" id="saveDlgTitle">Save this meeting</div>
+    <div class="save-body">
+      <label for="saveFileName">File name</label>
+      <input type="text" id="saveFileName" placeholder="e.g. NSE-ProgSheet-2026-08-13"
+        onkeydown="saveDialogKey(event)" autocomplete="off" spellcheck="false">
+      <div class="ext">Saved as <b>&lt;name&gt;.nse.json</b>. Downloads of the sheet use the same name.</div>
+      <div class="hint" id="saveWhere"></div>
+    </div>
+    <div class="save-foot">
+      <button class="btn ghost" onclick="closeSaveDialog()">Cancel</button>
+      <button class="btn" onclick="confirmSaveDialog()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div id="helpOverlay" class="help-overlay" onclick="if(event.target===this) closeHelp()">
   <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="help-head">
@@ -186,14 +226,15 @@
 
       <h3>Saving your meetings</h3>
       <dl>
-        <dt>💾 Save</dt><dd>The first time, you pick a folder to keep meetings in — choose the folder the builder itself sits in. Name the meeting and it becomes a <b>.json</b> file there. From then on it saves itself as you work, so there is nothing to remember.</dd>
+        <dt>💾 Save</dt><dd>Opens a box where you name the file. A name is suggested from your club initials and the meeting date; type over it with anything you like. The first time you save, you also pick the folder meetings live in — choose the folder the builder itself sits in. After that it saves itself as you work.</dd>
+        <dt>Renaming</dt><dd>Press 💾 again on an open meeting and change the name: it is saved under the new one from then on. The name you choose is also used for every download, so the HTML, PDF and images all match the meeting file.</dd>
         <dt>Saved meetings</dt><dd>The dropdown beside 💾 reopens any meeting in that folder. <b>＋ Save as a new file</b> keeps the current one and starts another — handy for copying last month's agenda into this month's. If the browser asks to reconnect the folder after a restart, that is normal; pick it once and it remembers.</dd>
       </dl>
 
       <h3>The rest of the toolbar</h3>
       <dl>
-        <dt>⚖ Balance</dt><dd>Nudges the two FLEXIBLE segments — Break and Table Topics — so the meeting finishes on time. The chip to its left shows where you currently finish.</dd>
-        <dt>⭳ Download</dt><dd><b>HTML</b> reopens and stays editable anywhere. <b>PDF</b> saves a print-ready A4 file of about 450 KB straight away, with no dialog. <b>JPG</b> is an image of the sheet, under 450 KB — for WhatsApp and email.</dd>
+        <dt>Balance Segments</dt><dd>Nudges the two FLEXIBLE segments — Break and Table Topics — so the meeting finishes on time. The chip to its left shows where you currently finish.</dd>
+        <dt>⭳ Download</dt><dd><b>HTML</b> reopens and stays editable anywhere. <b>PDF</b> saves a print-ready A4 file straight away, with no dialog. <b>JPG</b> is an image of the sheet for WhatsApp and email. Both are held under 500 KB — if a week's sheet runs long enough to break that, the message says so rather than quietly shipping a huge file.</dd>
         <dt>Printing on paper</dt><dd>Download the <b>PDF</b> and print that, or press <b>Ctrl&nbsp;+&nbsp;P</b> on the downloaded HTML. There is no print button here any more — the browser dialog's destination setting quietly decided your file size, and the PDF above is the reliable answer.</dd>
         <dt>↺ Reset</dt><dd>Back to the blank club template. This clears every name you have typed, so use it to start a fresh meeting — not to undo a mistake.</dd>
       </dl>
@@ -202,13 +243,13 @@
       <dl>
         <dt>Club Setup</dt><dd>Club name, district line, venue, committee and district officers. Rarely changes — refresh it after the AGM handover.</dd>
         <dt>Meeting Info</dt><dd>Title, date, start and end times, and announcements. Each announcement goes on its own line.</dd>
-        <dt>Meeting Roles</dt><dd>Untick anything not running tonight and its agenda items switch off. Leave a role blank and the sheet prints a red <b>TBD</b> and lists it as still open.</dd>
-        <dt>Speeches &amp; Evaluators</dt><dd>Pick Pathway → Level → Project and the timing fills in from the official catalog. Click ▾ on the Project box to browse all 64, or type to search. Drag the ⠿ grip to reorder speakers.</dd>
+        <dt>Meeting Roles</dt><dd>Untick anything not running tonight and its agenda items switch off. Leave a role blank and the sheet prints a red <b>TBD</b> and lists it as still open. <b>+ Add a role</b> at the foot of the section creates one of your club's own — give it a title and a person, and it is introduced with the rest.</dd>
+        <dt>Speeches &amp; Evaluators</dt><dd>Pick Pathway → Level → Project and the timing fills in from the official catalog. Click ▾ on the Project box to browse the whole catalogue, or type to search. Levels 3, 4 and 5 also offer the <b>Education Series</b> presentations added by the 2025 Pathways enhancements — Successful Club, Better Speaker and Leadership Excellence, all 10–15 minutes. Drag the ⠿ grip to reorder speakers.</dd>
         <dt>Programme Segments</dt><dd>Click any row to open it and change the title, holder or duration. <b>⏱ Apply club standard timings</b> resets the durations to the club standard without touching names.</dd>
       </dl>
 
       <h3>Two more things</h3>
-      <p>Hover any row <i>on the sheet itself</i> and hit <b>✎ Edit</b> to change it in place. Drag the divider between the panes to resize them, or double-click it for 50/50.</p>
+      <p>Hover any row <i>on the sheet itself</i> and hit <b>✎ Edit</b> to change it in place. Drag the divider between the panes to resize them, or double-click it for 50/50. On a phone, or any window under 900 pixels wide, the panes stop sharing the screen: use <b>✎ Edit</b> and <b>👁 Preview</b> at the top to swap between them, and the <b>Save</b> and <b>Download</b> buttons sit along the bottom.</p>
       <p>Timing lights follow the slot automatically — red lands a minute before the slot ends, and 🔔 is thirty seconds after that. Type your own numbers and they stay put; <b>↺ follow the slot again</b> hands control back.</p>
     </div>
   </div>

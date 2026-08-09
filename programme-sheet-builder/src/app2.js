@@ -103,11 +103,17 @@ function signalBoxes(green, amber, red, extra){
 function projectChoices(seg){
   const inLevel = (seg.pathway && seg.pLevel) ? projectsFor(seg.pathway, seg.pLevel) : [];
   const seen = new Set(inLevel.map(p=>p.n));
+  /* An Education Series title says which series it belongs to instead of
+     required/elective — "elective" is true but useless when the member has to
+     give one of them, and the series is what they actually need to recognise. */
   const head = inLevel.map(p=>({
-    n: p.n, meta: `${p.e ? 'elective' : 'required'} · ${timingLabel(p.n)}`, here: true }));
+    n: p.n,
+    meta: `${p.s || (p.e ? 'elective' : 'required')} · ${timingLabel(p.n)}`,
+    here: true }));
   const rest = ALL_PROJECTS.filter(n=>!seen.has(n)).map(n=>{
-    const where = seg.pathway ? levelOfProjectIn(seg.pathway, n) : null;
-    const tag = where ? `${seg.pathway} L${where.level}` : 'other path';
+    const series = seriesOf(n);
+    const where = series ? null : (seg.pathway ? levelOfProjectIn(seg.pathway, n) : null);
+    const tag = series ? series : (where ? `${seg.pathway} L${where.level}` : 'other path');
     return { n, meta: `${tag} · ${timingLabel(n)}`, here: false };
   });
   return head.concat(rest);
@@ -652,14 +658,15 @@ const IMAGE_SCALE = 3;
    then step DOWN until the JPEG fits this budget. Resolution is dropped before
    quality only when quality alone cannot get there, because on fine type a wider
    image at lower quality still reads better than a small crisp one.
-   200 KB (V24) -> 300 KB (V25) -> 450 KB (V26).
+   200 KB (V24) -> 300 KB (V25) -> 450 KB (V26) -> 500 KB (V30, Rama's ceiling for
+   all three image/PDF outputs).
    The budget was never the real problem. The ladder tried the WIDEST size first
    and dropped quality to make it fit, so every rise in budget bought more pixels
    at the same grainy quality 0.44 - at 450 KB it went to 2250px and looked no
    cleaner. Grain is bits-per-pixel, not bytes: 5.6 MP at 450 KB is ~0.6 bpp and
    crisp text wants nearer 1.0. So the export is now CAPPED in resolution and the
    budget is spent on quality instead. */
-const IMAGE_TARGET_BYTES = 450 * 1024;
+const IMAGE_TARGET_BYTES = 500 * 1024;
 /* ~180dpi across an A4 width - past the point where more pixels help a sheet
    that is read on a phone or projected, and the ceiling that lets quality sit at
    0.8+ inside the budget. */
@@ -729,13 +736,18 @@ const IS_TOUCH_DEVICE = (function(){
   return iOS || /Android/i.test(ua);
 })();
 
+/* Every download carries the same name as the saved meeting (V30). */
 function sheetFileStem(){
-  return (state.meeting.title || 'programme-sheet')
-    .replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'') || 'programme-sheet';
+  return fileBaseName() || 'programme-sheet';
 }
 
-/* Rasterise the clean sheet once; the PNG, JPG and mobile-PDF paths all use it. */
+/* Rasterise the clean sheet once; the PNG, JPG and PDF paths all use it.
+   renderSheetParts() also brings back the reference pane on its own, because the
+   PDF needs to repeat it — see the note on downloadPdfImage(). */
 async function renderSheetCanvas(){
+  return (await renderSheetParts()).canvas;
+}
+async function renderSheetParts(){
   const h2c = await loadHtml2Canvas();
   let frame = null;
   try{
@@ -777,7 +789,7 @@ async function renderSheetCanvas(){
     frame.style.height = (h + 40) + 'px';
     await new Promise(r=>setTimeout(r, 60));
 
-    return await h2c(page, {
+    const canvas = await h2c(page, {
       scale: IMAGE_SCALE,
       backgroundColor: '#ffffff',
       useCORS: true,
@@ -787,6 +799,48 @@ async function renderSheetCanvas(){
       windowWidth: IMAGE_WIDTH,
       windowHeight: h,
     });
+
+    /* The pane on its own, at the same scale, plus the two colours needed to
+       continue it down a page: its fill and its column rule. */
+    const aside = idoc.querySelector('aside');
+    let pane = null, paneFrac = 0, paneLeft = 0, footTop = 1;
+    let paneBg = '#ffffff', paneLine = 'rgba(0,0,0,0.12)';
+    /* Where the footer starts, as a fraction of the sheet's height. The repeat
+       must stop there: on paper the pane ends at --print-foot so the full-width
+       footer is never covered, and painting to the bottom of the slice wiped the
+       club name off the left of the last page. */
+    const foot = idoc.querySelector('footer');
+    const pageBox = page.getBoundingClientRect();
+    if(foot){
+      const fb = foot.getBoundingClientRect();
+      footTop = Math.max(0, (fb.top - pageBox.top) / Math.max(1, pageBox.height));
+    }
+    if(aside){
+      const box = aside.getBoundingClientRect();
+      paneFrac = box.width / Math.max(1, pageBox.width);
+      /* Brutalist draws a 3px border on .page, so the pane column does NOT start
+         at the canvas edge. Painting the repeat at x=0 erased that border and
+         left the original column rule showing beside the pasted one. */
+      paneLeft = Math.max(0, (box.left - pageBox.left) / Math.max(1, pageBox.width));
+      const cs = idoc.defaultView.getComputedStyle(aside);
+      const bg = cs.backgroundColor;
+      if(bg && !/rgba\(0,\s*0,\s*0,\s*0\)|transparent/i.test(bg)) paneBg = bg;
+      /* The rule lives on .pane-body in print and on the aside on screen. */
+      const body = aside.querySelector('.pane-body') || aside;
+      const bc = idoc.defaultView.getComputedStyle(body).borderRightColor;
+      if(bc && !/rgba\(0,\s*0,\s*0,\s*0\)|transparent/i.test(bc)) paneLine = bc;
+      pane = await h2c(aside, {
+        scale: IMAGE_SCALE,
+        backgroundColor: paneBg,
+        useCORS: true,
+        logging: false,
+        width: Math.ceil(box.width),
+        height: Math.ceil(box.height),
+        windowWidth: IMAGE_WIDTH,
+        windowHeight: h,
+      });
+    }
+    return {canvas, pane, paneFrac, paneLeft, paneBg, paneLine, footTop};
   }finally{
     if(frame) frame.remove();
   }
@@ -853,16 +907,29 @@ function saveBlob(blob, name){
 }
 
 function busyBtn(on){
-  const btn = document.getElementById('dlBtn');
-  if(!btn) return;
-  if(on){ btn.disabled = true; btn.dataset.label = btn.dataset.label || btn.textContent; btn.textContent = '⏳'; }
-  else  { btn.disabled = false; btn.textContent = btn.dataset.label || '⭳'; }
+  ['dlBtn','dlBtnM'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    if(on){
+      btn.disabled = true;
+      btn.dataset.label = btn.dataset.label || btn.textContent;
+      btn.textContent = '⏳';
+    } else {
+      btn.disabled = false;
+      btn.textContent = btn.dataset.label || '⭳';
+    }
+  });
 }
 
 function exportFailed(err, alt){
   showBanner('Could not build the file (' + ((err && err.message) || 'unknown') + '). ' + alt, true);
 }
 
+/* JPG is the only image format offered (V31). PNG arrived in V30 and is gone
+   again: lossless cannot reach the 500 KB cap on a full sheet at any width where
+   the 9.5px pane type is still readable, so it always shipped at about 680 KB
+   with an apology attached. One image format that always honours the cap beats
+   two where one of them does not. */
 async function downloadImage(){
   busyBtn(true);
   try{
@@ -871,9 +938,9 @@ async function downloadImage(){
     if(!out) throw new Error('encode');
     saveBlob(out.blob, sheetFileStem() + '.jpg');
     const kb = Math.round(out.blob.size / 1024);
+    const over = out.blob.size > IMAGE_TARGET_BYTES;
     showBanner('Saved a ' + out.w + '\u00d7' + out.h + ' JPG (' + kb + ' KB).'
-      + (out.blob.size > IMAGE_TARGET_BYTES
-          ? ' That is over the 200 KB target — the sheet is unusually long this week.' : ''), false);
+      + (over ? ' That is over the 500 KB cap \u2014 the sheet is unusually long this week.' : ''), over);
   }catch(err){
     exportFailed(err, 'the HTML download still works.');
   }finally{ busyBtn(false); }
@@ -891,29 +958,78 @@ async function downloadPdfImage(){
     /* Same resolution cap as the JPG export. Uncapped this embedded 2700px
        slices at q0.9 - a 1.3 MB file for two A4 pages. 1500px at 0.80 is the
        setting already proven clean on the JPG, and lands ~450 KB. */
-    const full = await renderSheetCanvas();
+    const parts = await renderSheetParts();
+    const full = parts.canvas;
     const canvas = full.width > MAX_EXPORT_WIDTH ? downscaleCanvas(full, MAX_EXPORT_WIDTH) : full;
+    /* THE PANE ON PAGE 2 (V30).
+       On paper the reference pane is position:fixed inside @media print, so it
+       repeats identically on every page. The PDF is built from a canvas of the
+       SCREEN layout, where the pane is an ordinary grid column whose content ends
+       after about 1200px - so every page after the first got an empty column.
+       Four themes hid it because their pane fill differs from the paper; Swiss and
+       Brutalist set both to white, so the pane simply vanished and that is what
+       Rama saw. Rather than recolour two themes to make an empty column visible,
+       the pane is rasterised separately and painted onto each later page, which is
+       what the printed sheet does. */
+    const paneW = Math.round(canvas.width * (parts.paneFrac || 0));
+    const paneX = Math.round(canvas.width * (parts.paneLeft || 0));
+    const paneImg = (parts.pane && paneW > 2)
+      ? (parts.pane.width === paneW ? parts.pane : downscaleCanvas(parts.pane, paneW))
+      : null;
+    const ruleW = Math.max(1, Math.round(canvas.width / 900));
+    const footTopPx = Math.round(canvas.height * (parts.footTop == null ? 1 : parts.footTop));
     const M_PT = 10 * 72/25.4, PW_PT = 595.28, PH_PT = 841.89;
     const imgWpt = PW_PT - M_PT*2;
     const pxPerPt = canvas.width / imgWpt;
     const sliceH = Math.floor((PH_PT - M_PT*2) * pxPerPt);
     const cut = document.createElement('canvas');
     const ctx = cut.getContext('2d');
-    const pages = [];
-    for(let y = 0; y < canvas.height; y += sliceH){
-      const h = Math.min(sliceH, canvas.height - y);
-      cut.width = canvas.width; cut.height = h;
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cut.width, cut.height);
-      ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
-      const blob = await new Promise(r => cut.toBlob(r, 'image/jpeg', 0.80));
-      if(!blob) throw new Error('encode');
-      const hPt = h / pxPerPt;
-      pages.push({ bytes: new Uint8Array(await blob.arrayBuffer()),
-                   pxW: cut.width, pxH: h,
-                   wPt: imgWpt, hPt, xPt: M_PT, yPt: PH_PT - M_PT - hPt });
+    /* V29 hardcoded q0.80, which landed ~450 KB on a two-page sheet and would have
+       sailed past any cap on a longer one. Rama's ceiling is 500 KB, so the whole
+       document is built at a quality, measured, and rebuilt one step lower if it
+       is over. Slicing is cheap; the encode is what costs, and it stops at the
+       first fit. */
+    const buildAt = async (q)=>{
+      const pages = [];
+      let pageNo = 0;
+      for(let y = 0; y < canvas.height; y += sliceH){
+        const h = Math.min(sliceH, canvas.height - y);
+        cut.width = canvas.width; cut.height = h;
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cut.width, cut.height);
+        ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+        /* Stop at the footer if it falls on this page, so the repeat never covers
+           the club name running across the bottom. */
+        const limit = Math.max(0, Math.min(h, footTopPx - y));
+        if(pageNo > 0 && paneImg && limit > 0){
+          ctx.fillStyle = parts.paneBg;
+          ctx.fillRect(paneX, 0, paneW, limit);
+          ctx.fillStyle = parts.paneLine;
+          ctx.fillRect(paneX + paneW - ruleW, 0, ruleW, limit);
+          const ph = Math.min(paneImg.height, limit);
+          ctx.drawImage(paneImg, 0, 0, paneImg.width, ph, paneX, 0, paneW, ph);
+        }
+        pageNo++;
+        const blob = await new Promise(r => cut.toBlob(r, 'image/jpeg', q));
+        if(!blob) throw new Error('encode');
+        const hPt = h / pxPerPt;
+        pages.push({ bytes: new Uint8Array(await blob.arrayBuffer()),
+                     pxW: cut.width, pxH: h,
+                     wPt: imgWpt, hPt, xPt: M_PT, yPt: PH_PT - M_PT - hPt });
+      }
+      return {pages, blob: pdfFromJpegs(pages)};
+    };
+    let out = null;
+    /* Starts at 0.78, not 0.82: repeating the pane on later pages costs about
+       40 KB a page, which left only 2% headroom under the cap on a normal sheet. */
+    for(const q of [0.78, 0.72, 0.66, 0.58, 0.50]){
+      out = await buildAt(q);
+      if(out.blob.size <= IMAGE_TARGET_BYTES) break;
     }
-    saveBlob(pdfFromJpegs(pages), sheetFileStem() + '.pdf');
-    showBanner('Saved as a ' + pages.length + '-page A4 PDF.', false);
+    saveBlob(out.blob, sheetFileStem() + '.pdf');
+    const kb = Math.round(out.blob.size / 1024);
+    const over = out.blob.size > IMAGE_TARGET_BYTES;
+    showBanner('Saved as a ' + out.pages.length + '-page A4 PDF (' + kb + ' KB).'
+      + (over ? ' That is over the 500 KB cap — the sheet is unusually long this week.' : ''), over);
   }catch(err){
     exportFailed(err, 'try the JPG option instead.');
   }finally{ busyBtn(false); }
@@ -1018,17 +1134,42 @@ function meetingDateStamp(){
 /* <Initials>-ProgSheet-<meeting date>-<time now>. The time is what stops two
    saves of the same meeting from silently overwriting each other (Rama, V29) -
    the date alone would collide every time you saved a second copy. */
-function suggestedFileName(){
+function suggestedFileStem(){
   const d = new Date();
   const two = n => String(n).padStart(2, '0');
   const now = two(d.getHours()) + two(d.getMinutes());
-  return clubInitials() + '-ProgSheet-' + meetingDateStamp() + '-' + now + FILE_EXT;
+  return clubInitials() + '-ProgSheet-' + meetingDateStamp() + '-' + now;
+}
+function suggestedFileName(){ return suggestedFileStem() + FILE_EXT; }
+
+/* ONE name drives the .json, the HTML, the PDF and the images (V30). Before this
+   the meeting file was named from the club initials and date while every download
+   was named from the meeting TITLE, so a folder held "NSE-ProgSheet-2026-08-13"
+   next to "Voices_of_a_Nation.pdf" and nothing lined up. Whatever is typed in the
+   Save dialog wins for all of them; blank falls back to the suggestion. */
+function fileBaseName(){
+  const set = String(state.meeting.fileName || '').trim();
+  return tidyStem(set) || suggestedFileStem();
+}
+/* Strip the extension and anything a filesystem will not take. Windows also
+   rejects a trailing dot or space, which a typed name picks up easily.
+   Order matters and cost two bugs: stripping the extension FIRST meant a pasted
+   "sheet.pdf " kept its extension (the $ anchor missed it behind the space) and
+   saved as sheet.pdf.nse.json. Trim, strip, repeat until it settles, so the
+   function is idempotent whatever the input. Returns '' for a name that is only
+   punctuation - "////" used to survive as "-" and save a file called -.nse.json. */
+function tidyStem(name){
+  let s = String(name || '').trim();
+  let prev;
+  do{
+    prev = s;
+    s = s.replace(/[\s.]+$/, '').replace(/\.(nse\.json|json|html|pdf|jpe?g|png)$/i, '');
+  } while(s !== prev);
+  return s.replace(/[\\/:*?"<>|]+/g, '-').replace(/^[\s.\-]+|[\s.\-]+$/g, '');
 }
 function tidyFileName(name){
-  name = String(name || '').replace(/[\\/:*?"<>|]+/g, '-').trim();
-  if(!name) return '';
-  if(!/\.json$/i.test(name)) name += FILE_EXT;
-  return name;
+  const stem = tidyStem(name);
+  return stem ? stem + FILE_EXT : '';
 }
 
 /* --- permissions --- */
@@ -1058,16 +1199,69 @@ async function writeHandle(h, text){
   await w.close();
 }
 
+/* --- the Save dialog (V30) ---
+   V29 asked for the filename with window.prompt(). Two problems: a file:// page in
+   some browsers suppresses prompt() entirely, so the name silently became the
+   default; and it only appeared the FIRST time, leaving no way to rename or to see
+   what the meeting was saved as. This is an in-page dialog instead, so it renders
+   the same everywhere, shows the folder and the extension, and doubles as the
+   phone's "clear save option". */
+let saveAsNew = false;
+function openSaveDialog(asNew){
+  saveAsNew = !!asNew;
+  const dlg = document.getElementById('saveDialog');
+  const inp = document.getElementById('saveFileName');
+  if(!dlg || !inp) return saveMeetingDirect();          /* dialog stripped: fall back */
+  /* Renaming an open file means Save As, whatever button was pressed. */
+  const current = (!asNew && fileHandle) ? tidyStem(fileHandle.name) : '';
+  inp.value = current || fileBaseName();
+  const where = document.getElementById('saveWhere');
+  if(where){
+    where.textContent = !FS_SUPPORTED
+      ? 'This browser cannot write to a folder, so it will go to your Downloads.'
+      : (folderHandle ? 'Saves into the meetings folder you connected.'
+                      : 'You will be asked to pick the meetings folder once.');
+  }
+  dlg.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(()=>{ inp.focus(); inp.select(); }, 20);
+}
+function closeSaveDialog(){
+  const dlg = document.getElementById('saveDialog');
+  if(dlg) dlg.classList.remove('open');
+  document.body.style.overflow = '';
+}
+/* Keeping the typed name on state means the downloads match it too, and it
+   survives into the .json so reopening the meeting keeps its name. */
+function confirmSaveDialog(){
+  const inp = document.getElementById('saveFileName');
+  const stem = tidyStem(inp ? inp.value : '');
+  if(!stem){
+    showBanner('Give the file a name first.', true);
+    if(inp) inp.focus();
+    return;
+  }
+  state.meeting.fileName = stem;
+  const renamed = fileHandle && tidyStem(fileHandle.name) !== stem;
+  if(saveAsNew || renamed) fileHandle = null;
+  closeSaveDialog();
+  saveMeetingDirect(stem + FILE_EXT);
+}
+function saveDialogKey(e){
+  if(e.key === 'Enter'){ e.preventDefault(); confirmSaveDialog(); }
+}
+
 /* --- save --- */
-async function saveMeeting(){
+/* The dialog is the front door; this is the part that actually writes. */
+async function saveMeetingDirect(name){
   if(!FS_SUPPORTED) return downloadMeetingJSON();
   try{
     if(!await ensureFolder(true)) await linkFolder();
     if(!folderHandle) return;
     if(!fileHandle){
-      const name = tidyFileName(prompt('Save this meeting as:', suggestedFileName()));
-      if(!name) return;
-      fileHandle = await folderHandle.getFileHandle(name, {create:true});
+      const fname = tidyFileName(name || fileBaseName());
+      if(!fname) return;
+      fileHandle = await folderHandle.getFileHandle(fname, {create:true});
     }
     await writeHandle(fileHandle, meetingPayload());
     await refreshFileList();
@@ -1080,10 +1274,8 @@ async function saveMeeting(){
       + '). Your work is still held in this browser.', true);
   }
 }
-async function saveMeetingAs(){
-  fileHandle = null;
-  await saveMeeting();
-}
+function saveMeeting(){ return openSaveDialog(false); }
+function saveMeetingAs(){ return openSaveDialog(true); }
 /* Autosave into the open file. Silent by design - it runs on every keystroke's
    debounce, so it must never nag; a failure downgrades the badge instead. */
 function queueFileSave(){
@@ -1171,7 +1363,7 @@ function applyMeetingText(text, label){
 
 /* --- fallback for browsers without the API --- */
 function downloadMeetingJSON(){
-  saveBlob(new Blob([meetingPayload()], {type:'application/json'}), suggestedFileName());
+  saveBlob(new Blob([meetingPayload()], {type:'application/json'}), fileBaseName() + FILE_EXT);
   showBanner('Saved a .json copy to your Downloads folder. Open it again with the dropdown.', false);
 }
 function openMeetingJSON(){
@@ -1185,17 +1377,26 @@ function openMeetingJSON(){
 }
 
 /* ================= Download menu + instructions ================= */
+/* Two download buttons now — the toolbar icon on desktop and the labelled one in
+   the phone bar (V30). Only one is ever visible, but both are in the DOM, so these
+   work off the button that was pressed rather than a fixed id. */
 function toggleDownloadMenu(e){
   if(e) e.stopPropagation();
-  const m = document.getElementById('dlMenu'), b = document.getElementById('dlBtn');
-  const open = m.classList.toggle('open');
-  b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  const btn = e && e.currentTarget && e.currentTarget.closest ? e.currentTarget : null;
+  const wrap = btn ? btn.closest('.menu-wrap') : null;
+  const m = wrap ? wrap.querySelector('.dl-menu') : document.getElementById('dlMenu');
+  if(!m) return;
+  const willOpen = !m.classList.contains('open');
+  closeDownloadMenu();
+  if(willOpen){
+    m.classList.add('open');
+    if(btn) btn.setAttribute('aria-expanded','true');
+  }
 }
 function closeDownloadMenu(){
-  const m = document.getElementById('dlMenu'), b = document.getElementById('dlBtn');
-  if(!m) return;
-  m.classList.remove('open');
-  if(b) b.setAttribute('aria-expanded','false');
+  document.querySelectorAll('.dl-menu.open').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.menu-wrap [aria-haspopup]')
+    .forEach(b => b.setAttribute('aria-expanded','false'));
 }
 function pickDownload(kind){
   closeDownloadMenu();
@@ -1225,6 +1426,8 @@ document.addEventListener('click', closeDownloadMenu);
 document.addEventListener('keydown', e=>{
   if(e.key !== 'Escape') return;
   closeDownloadMenu();
+  const s = document.getElementById('saveDialog');
+  if(s && s.classList.contains('open')) return closeSaveDialog();
   const h = document.getElementById('helpOverlay');
   if(h && h.classList.contains('open')) closeHelp();
 });
@@ -1265,6 +1468,67 @@ function bindRole(key, val){
 }
 function bindText(key, val){ state[key] = val; updatePreview(); }
 
+/* ================= Custom roles (V30) =================
+   A club role the built-in nine do not cover: the user gives it a title and a
+   person, and from there it behaves like any other role — it is introduced in the
+   roster under TME Welcome Remarks, it prints a red TBD while unnamed, it appears
+   in the still-open list, it can be unticked for a night it is not running, and it
+   can hold a Custom Item segment.
+   The name lives in state.roles[key] rather than on the role object, so it reaches
+   holderFor() and the roster with no new code path (see customRoles() in app.js). */
+function renderCustomRoles(){
+  const box = document.getElementById('customRoles');
+  if(!box) return;
+  box.innerHTML = customRoles().map(r=>{
+    const on = roleIsActive(r.key);
+    return `<div class="cr-row${on?'':' role-off'}" id="rw-${r.key}">
+      <input type="checkbox" id="rc-${r.key}"${on?' checked':''}
+        onchange="toggleRoleActive('${r.key}', this.checked)"
+        aria-label="Include this role tonight">
+      <input type="text" class="cr-label" placeholder="Role title, e.g. Zoom Master"
+        value="${esc(r.label)}" oninput="updCustomRole('${r.key}','label',this.value)">
+      <input type="text" id="r-${r.key}" placeholder="TBD" value="${esc(state.roles[r.key]||'')}"
+        ${on?'':'disabled'} oninput="bindRole('${r.key}', this.value)">
+      <button class="cr-del" title="Remove this role" aria-label="Remove this role"
+        onclick="removeCustomRole('${r.key}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function addCustomRole(){
+  if(!Array.isArray(state.customRoles)) state.customRoles = [];
+  const key = nextCustomRoleKey();
+  state.customRoles.push({key, label:''});
+  state.roles[key] = '';
+  if(!state.roleActive) state.roleActive = {};
+  state.roleActive[key] = true;
+  renderCustomRoles();
+  const el = document.querySelector('#rw-'+key+' .cr-label');
+  if(el) el.focus();
+  updatePreview();
+}
+function updCustomRole(key, field, value){
+  const r = customRoles().find(x=>x.key===key);
+  if(!r) return;
+  r[field] = value;
+  /* Deliberately no re-render: retyping the label would lose the caret. Only the
+     sheet needs to know. */
+  updatePreview();
+}
+function removeCustomRole(key){
+  const r = customRoles().find(x=>x.key===key);
+  const named = r && (r.label || state.roles[key]);
+  if(named && !confirm('Remove ' + (r.label || 'this role') + ' from the meeting?')) return;
+  state.customRoles = customRoles().filter(x=>x.key!==key);
+  delete state.roles[key];
+  if(state.roleActive) delete state.roleActive[key];
+  /* A segment pointing at a role that no longer exists would print a permanent
+     TBD nobody can fill, so hand those rows back to a typed holder. */
+  state.segments.forEach(sg=>{ if(sg.roleKey === key) sg.roleKey = ''; });
+  renderCustomRoles();
+  renderFormPane();
+  updatePreview();
+}
+
 /* ================= Speeches & Evaluators ================= */
 function speechSegs(){ return state.segments.filter(s=>s.isSpeech); }
 /* A speech and its evaluation are paired by position — keep the name in step. */
@@ -1277,8 +1541,10 @@ function mirrorSpeakerToEvaluation(seg){
 const cardPreviewHTML = seg => '<b>' + esc(titleFor(seg)) + '</b><br>' + esc(speechComment(seg));
 function refreshCardPreview(seg){
   if(!seg) return;
-  const card = document.querySelectorAll('#speechList .sc-preview')[speechSegs().indexOf(seg)];
-  if(card) card.innerHTML = cardPreviewHTML(seg);
+  /* Found by card id, not by index into the .sc-preview list: a collapsed card
+     has no preview node, so the index and the speech no longer line up (V31). */
+  const el = document.querySelector(`#speechList .speech-card[data-sp-id="${seg.id}"] .sc-preview`);
+  if(el) el.innerHTML = cardPreviewHTML(seg);
 }
 function evalSegs(){ return state.segments.filter(s=>s.isEvaluation); }
 
@@ -1302,9 +1568,65 @@ function applyProjectChoice(seg, value){
   }
 }
 
+/* ================= Speech cards: collapsed by default (V31) =================
+   Four speeches, each a dozen fields, made the section a wall the moment it was
+   opened. Cards now collapse like the Programme Segments rows do, and open one at
+   a time; the head carries enough to work from without opening anything - who is
+   speaking, and the project or a prompt for it. Nothing is remembered across a
+   reload on purpose: this is a view preference, not part of the meeting. */
+const expandedSpeeches = new Set();
+function toggleSpeech(id){
+  expandedSpeeches.has(id) ? expandedSpeeches.delete(id) : expandedSpeeches.add(id);
+  renderSpeechCards();
+}
+/* One line of head summary, so a shut card still says something useful. */
+function speechHeadSummary(seg, ev){
+  const bits = [];
+  bits.push(seg.project ? seg.project : 'no project yet');
+  if(seg.durMin) bits.push(seg.durMin + ' min');
+  bits.push('Ev: ' + ((ev && ev.holderOverride) || 'TBD'));
+  return bits.join(' · ');
+}
+
+/* The +/- stepper in the section header. Adding pushes a speech AND its paired
+   evaluation; removing takes the LAST pair, so the ones already filled in are
+   never the ones that disappear. Four is the club standard and the number the
+   blank template's exact 150 minutes is built on, so moving off it will make the
+   end-check complain - that is correct, not a bug. */
+const MIN_SPEECHES = 1, MAX_SPEECHES = 8;
+function stepSpeechCount(delta){
+  setSpeechCount(speechSegs().length + delta);
+}
+function setSpeechCount(n){
+  const want = Math.max(MIN_SPEECHES, Math.min(MAX_SPEECHES, Math.round(Number(n) || 0)));
+  let have = speechSegs().length;
+  if(want === have) return;
+  while(have < want){ addSpeechSlot(true); have++; }
+  while(have > want){
+    const last = speechSegs()[have-1];
+    if(!last) break;
+    removeSpeechSlot(last.id, true);
+    have--;
+  }
+  rebalanceFlexSilent();
+  renderFormPane();
+  renderPreviewNow();
+  updateSpeechCount();
+  showBanner(want + ' prepared speech' + (want===1?'':'es') + ' tonight, each with its own evaluation.'
+    + (want === 4 ? '' : ' Check the end time - the club standard is four.'), want !== 4);
+}
+function updateSpeechCount(){
+  const el = document.getElementById('spCount');
+  if(el) el.textContent = speechSegs().length;
+  const dec = document.getElementById('spDec'), inc = document.getElementById('spInc');
+  if(dec) dec.disabled = speechSegs().length <= MIN_SPEECHES;
+  if(inc) inc.disabled = speechSegs().length >= MAX_SPEECHES;
+}
+
 function renderSpeechCards(){
   const container = document.getElementById('speechList');
   if(!container) return;
+  updateSpeechCount();
   const speeches = speechSegs();
   const evals = evalSegs();
   container.innerHTML = speeches.map((seg, i)=>{
@@ -1324,15 +1646,19 @@ function renderSpeechCards(){
     const altBtn = info && info.alt
       ? `<button class="sc-alt" onclick="applyAltTiming('${seg.id}')" title="Switch to the alternative timing">${esc(info.alt.label)}</button>`
       : '';
-    return `<div class="speech-card" data-sp-id="${seg.id}" draggable="false"
+    const open = expandedSpeeches.has(seg.id);
+    return `<div class="speech-card${open?' open':''}" data-sp-id="${seg.id}" draggable="false"
         ondragstart="spDragStart(event,'${seg.id}')" ondragover="spDragOver(event,'${seg.id}')"
         ondragleave="spDragLeave(event)" ondrop="spDrop(event,'${seg.id}')" ondragend="spDragEnd(event)">
-      <div class="sc-head">
-        <span class="sc-grip" title="Drag to reorder speakers" onmousedown="dragArm(this)">⠿</span>
+      <div class="sc-head" onclick="toggleSpeech('${seg.id}')">
+        <span class="sc-grip" title="Drag to reorder speakers" onmousedown="dragArm(this)" onclick="event.stopPropagation()">⠿</span>
         <span class="sc-badge">Speech ${i+1}</span>
         <span class="sc-name">${esc(seg.speakerName || '—')}</span>
-        <button class="sc-remove" title="Remove this speech and its evaluation" onclick="removeSpeechSlot('${seg.id}')">✕</button>
+        <span class="sc-sum">${esc(speechHeadSummary(seg, ev))}</span>
+        <button class="sc-remove" title="Remove this speech and its evaluation" onclick="event.stopPropagation(); removeSpeechSlot('${seg.id}')">✕</button>
+        <span class="caret">${open ? '▴' : '▾'}</span>
       </div>
+      <div class="sc-details">${!open ? '' : `
       <div class="row2">
         <div><label>Speaker</label><input type="text" placeholder="Speaker name" value="${esc(seg.speakerName)}" oninput="updSpeech('${seg.id}','speakerName',this.value)"></div>
         <div><label>Evaluator</label><input type="text" placeholder="TBD" value="${esc(ev ? ev.holderOverride : '')}" oninput="updEvaluator(${i}, this.value)"${ev?'':' disabled title="No paired evaluation segment"'}></div>
@@ -1362,9 +1688,9 @@ function renderSpeechCards(){
                  value="${seg.signalMax}" oninput="updSpeech('${seg.id}','signalMax',this.value)"></div>
       </div>
       <div class="sc-lightstate">${lightStateHTML(seg)}</div>
-      ${mismatchNote}${timingNote}${altBtn}
+      ${mismatchNote}${timingNote}${altBtn}`}</div>
     </div>`;
-  }).join('') || '<div class="hint">No speeches yet — add one below.</div>';
+  }).join('') || '<div class="hint">No speeches yet — use + in the section header.</div>';
 }
 
 function lightStateHTML(seg){
@@ -1547,7 +1873,9 @@ function spDragEnd(){
   document.querySelectorAll('.speech-card').forEach(c=>c.classList.remove('dragging','drop-above','drop-below'));
 }
 
-function addSpeechSlot(){
+/* quiet=true is the stepper adding several at once — it redraws once at the end
+   rather than after every pair. */
+function addSpeechSlot(quiet){
   const speeches = speechSegs();
   const sp = newSegment('speech');
   const lastSp = speeches[speeches.length-1];
@@ -1558,14 +1886,17 @@ function addSpeechSlot(){
   const lastEv = evals[evals.length-1];
   state.segments.splice(lastEv ? state.segments.indexOf(lastEv)+1 : state.segments.length, 0, ev);
 
+  if(quiet) return;
   renderFormPane();
   updatePreview();
 }
-function removeSpeechSlot(id){
+function removeSpeechSlot(id, quiet){
   const i = speechSegs().findIndex(s=>s.id===id);
   if(i < 0) return;
   const ev = evalSegs()[i];
   state.segments = state.segments.filter(s=>s.id!==id && (!ev || s.id!==ev.id));
+  expandedSpeeches.delete(id);
+  if(quiet) return;
   renderFormPane();
   updatePreview();
 }
@@ -1866,13 +2197,46 @@ function initSplitter(){
   splitter.addEventListener('dblclick', ()=>{ state.paneWidth = 50; applyPaneWidth(); queueSave(); });
 }
 
+/* ================= Narrow / phone layout (V30) =================
+   Below NARROW_PX the two panes stop being side by side. Splitting a 380px phone
+   into a form and a preview left both unusable, and the old rule only capped the
+   form at 70vh, which meant the preview was always somewhere below the fold.
+   Now it is one column at a time: the form fills the screen, and ✎ Edit / 👁 Preview
+   swaps to the sheet. The preview is only rendered when it is actually shown, so a
+   phone is not rasterising an iframe it cannot see on every keystroke.
+   This is a viewport fact, not a meeting fact, so it is deliberately NOT in state -
+   it must not travel in the .json to someone else's desktop. */
+const NARROW_PX = 900;
+let mobileView = 'edit';
+function isNarrow(){ return window.matchMedia('(max-width: ' + NARROW_PX + 'px)').matches; }
+function setMobileView(view){
+  mobileView = (view === 'preview') ? 'preview' : 'edit';
+  document.body.classList.toggle('show-preview', mobileView === 'preview');
+  document.querySelectorAll('[data-view]').forEach(b=>{
+    const on = b.dataset.view === mobileView;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  /* Coming back to the sheet after editing behind it: redraw before it is seen. */
+  if(mobileView === 'preview') renderPreviewNow();
+  window.scrollTo(0, 0);
+}
+function initNarrowLayout(){
+  setMobileView('edit');
+  /* Rotating a phone, or dragging a desktop window narrow, must not strand the
+     user on a hidden pane. */
+  window.addEventListener('resize', ()=>{
+    if(!isNarrow() && mobileView === 'preview') setMobileView('edit');
+  });
+}
+
 /* ================= Print / download (clean sheet only) ================= */
 function downloadSheet(){
   const blob = new Blob([buildSheetHTML(false)], {type:'text/html'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = (state.meeting.title || 'programme-sheet').replace(/[^a-z0-9]+/gi,'_').replace(/^_+|_+$/g,'') + '.html';
+  a.download = sheetFileStem() + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1881,6 +2245,8 @@ function downloadSheet(){
 
 /* ================= Init ================= */
 function syncFormInputs(){
+  /* Custom-role rows must exist before the loop below tries to fill them. */
+  renderCustomRoles();
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };
   set('f-clubName', state.meeting.clubName);
   set('f-clubNumber', state.meeting.clubNumber);
@@ -1927,6 +2293,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   if(c1 || c2) rebalanceFlexSilent();
   applyPaneWidth();
   initSplitter();
+  initNarrowLayout();
   syncFormInputs();
   renderFormPane();
   renderPreviewNow();

@@ -113,6 +113,10 @@ function defaultState(){
       startTime: '19:00',
       endTime: '21:30',
       footerNote: 'District 80, Division Y, Area 01',
+      /* Base name for the saved .json AND for every download, without extension.
+         Blank means "use the suggested name", which is what a fresh meeting wants;
+         type anything here (or in the Save dialog) and that wins from then on. */
+      fileName: '',
     },
     /* Blank by default — the sheet is a template, not last month's meeting.
        Every empty role renders as a TBD chip and is listed as still open. */
@@ -129,8 +133,11 @@ function defaultState(){
       tmod: true, president: true, ttmaster: true, ttevaluator: true,
       langeval: false, timer: true, ahcounter: true, photographer: true, saa: true,
     },
-    /* Club officers for the current term, for the current term. Replace the <placeholders> with your own
-       club's names - see customise-for-your-club.md. These are NOT meeting-specific:
+    /* [{key:'cr1', label:'Zoom Master'}] — the club's own roles. Empty in the
+       template: this is a per-club addition, not part of the standard meeting. */
+    customRoles: [],
+    /* Club officers for the current term, hardcoded on Rama's instruction (V21)
+       and taken from his live 13 Aug 2026 sheet. These are NOT meeting-specific:
        they hold for the whole term, so unlike the roster they belong in the
        defaults and must survive a Reset. The V13 "no names in the template"
        rule still governs everything that changes weekly — roles, speakers,
@@ -236,7 +243,7 @@ function queueSave(){
 /* Themes retired in V25 (Bauhaus, Broadsheet, Jetset). A meeting saved under one
    of them would otherwise load with a body class no stylesheet answers to and
    render unstyled, so it falls back to Classic on load. */
-const RETIRED_THEMES = ['bauhaus','broadsheet','jetset','terminal','overprint','confessional'];
+const RETIRED_THEMES = ['bauhaus','broadsheet','jetset','terminal','overprint','confessional','handmade'];
 
 /* Take a saved payload - from localStorage OR from a .json file on disk - and
    make it the live state. Merging over defaultState() is what lets a meeting
@@ -253,6 +260,11 @@ function adoptState(parsed){
   state.roles   = Object.assign(fresh.roles,   raw.roles   || {});
   state.roleActive = Object.assign(fresh.roleActive, raw.roleActive || {});
   state.segments = raw.segments.map(sg => Object.assign(newSegment('custom'), sg));
+  /* A file written before V30 has no customRoles; one hand-edited could have
+     anything. Keep only well-formed entries so the roster cannot render undefined. */
+  state.customRoles = (Array.isArray(raw.customRoles) ? raw.customRoles : [])
+    .filter(r => r && typeof r === 'object' && r.key)
+    .map(r => ({key: String(r.key), label: String(r.label == null ? '' : r.label)}));
   if(RETIRED_THEMES.includes(state.theme)) state.theme = 'classic';
   /* keep new IDs from colliding with restored ones */
   let maxId = 0;
@@ -397,11 +409,113 @@ function titleFor(seg){
   return seg.title;
 }
 
+/* ================= 2025 Pathways enhancements: Education Series =================
+   From Toastmasters International's "Club Officer Guide to the 2025 Pathways
+   Enhancements" (effective October 2025). The enhancement REMOVES nothing: every
+   project already required in a level stays exactly where it was. What it adds is
+   an Education Series presentation at Levels 3, 4 and 5, chosen from a fixed list
+   per level, plus meeting-role requirements the club does not schedule from here.
+
+   These are speaking slots like any other, so they belong in the project picker —
+   but they are NOT path-specific: a member on any of the eleven paths picks from
+   the same list. So they live in their own block and projectsFor() appends them to
+   whichever path is selected, rather than being copied into 11 x levels.
+
+   TI: "The Education Series presentations are expected to take 10 to 15 minutes to
+   present, which is longer than a typical speech." One figure for all of them. */
+const EDU_MIN = 10, EDU_MAX = 15;
+const EDU_SERIES = {
+  '3': [
+    {s:'Successful Club Series', t:[
+      'Creating the Best Club Climate',
+      'Meeting Roles and Responsibilities',
+      'Keeping the Commitment',
+      'Going Beyond Our Club']},
+  ],
+  '4': [
+    {s:'Successful Club Series', t:[
+      'Finding New Members',
+      'Closing the Sale',
+      'How to Be a Distinguished Club',
+      'Toastmasters Educational Program']},
+    {s:'Better Speaker Series', t:[
+      'Beginning Your Speech',
+      'Concluding Your Speech',
+      'Controlling Your Fear',
+      'Impromptu Speaking',
+      'Selecting Your Topic',
+      'Know Your Audience',
+      'Organizing Your Speech',
+      'Creating an Introduction',
+      'Preparation and Practice',
+      'Using Body Language']},
+  ],
+  '5': [
+    {s:'Successful Club Series', t:[
+      'Moments of Truth',
+      'Evaluate to Motivate',
+      'Mentoring']},
+    {s:'Leadership Excellence Series', t:[
+      'Service and Leadership',
+      'The Leader as a Coach',
+      'Developing a Mission',
+      'Motivating People',
+      'Building a Team',
+      'Delegate to Empower',
+      'Resolving Conflict',
+      'Visionary Leader',
+      'Values and Leadership',
+      'Goal Setting and Planning',
+      'Giving Effective Feedback']},
+  ],
+};
+/* Registered into PATHWAYS_DATA.projects so timingLabel(), projectInfo() and the
+   mismatch check treat them exactly like a catalogue project. A title that somehow
+   collided with an existing project would silently retime it, so collisions are
+   refused rather than merged. */
+const EDU_BY_LEVEL = {};
+const EDU_SKIPPED = [];
+(function registerEduSeries(){
+  /* "A real project" means one a path actually offers at some level. The
+     catalogue also carries orphans no level references — "Mentoring" is one, and
+     it collides head-on with the Successful Club Series title of the same name.
+     Guarding on mere presence silently dropped that title and left the ordinary
+     5-7 min entry in its place, so a member picking it got 5/6/7 lights on what
+     is a 10-15 min presentation. Only a REFERENCED project is protected; an
+     orphan is replaced. A genuine collision is recorded rather than swallowed. */
+  const referenced = new Set();
+  Object.values(PATHWAYS_DATA.levels).forEach(lv =>
+    Object.values(lv).forEach(list => list.forEach(p => referenced.add(p.n))));
+  Object.entries(EDU_SERIES).forEach(([lvl, groups])=>{
+    EDU_BY_LEVEL[lvl] = [];
+    groups.forEach(g=>{
+      g.t.forEach(name=>{
+        if(referenced.has(name)){ EDU_SKIPPED.push(name); return; }
+        PATHWAYS_DATA.projects[name] = {min:EDU_MIN, max:EDU_MAX, series:g.s};
+        EDU_BY_LEVEL[lvl].push({n:name, e:true, s:g.s});
+      });
+    });
+  });
+  if(EDU_SKIPPED.length && typeof console !== 'undefined'){
+    console.warn('Education Series titles clashing with a path project, not added: '
+      + EDU_SKIPPED.join(', '));
+  }
+})();
+function eduFor(lvl){ return EDU_BY_LEVEL[String(lvl)] || []; }
+/* The series a project belongs to, or '' for an ordinary path project. */
+function seriesOf(name){
+  const pi = PATHWAYS_DATA.projects[name];
+  return (pi && pi.series) || '';
+}
+
 /* ================= Pathways catalog lookups ================= */
 const ALL_PROJECTS = Object.keys(PATHWAYS_DATA.projects).sort();
 
 function projectsFor(abbr, lvl){
-  return (PATHWAYS_DATA.levels[abbr] && PATHWAYS_DATA.levels[abbr][String(lvl)]) || [];
+  const own = (PATHWAYS_DATA.levels[abbr] && PATHWAYS_DATA.levels[abbr][String(lvl)]) || [];
+  /* Education Series options sit AFTER the path's own projects: they are an extra
+     requirement at that level, not a substitute for the project list. */
+  return own.concat(eduFor(lvl));
 }
 function projectInfo(name){
   return PATHWAYS_DATA.projects[name] || null;
@@ -439,6 +553,40 @@ const ROLE_LABELS = {
   ttevaluator:'Table Topics Evaluator', langeval:'Language Evaluator', timer:'Timer',
   ahcounter:'Ah-Counter', photographer:'Photographer', saa:'Sergeant-at-Arms',
 };
+
+/* ================= Custom roles (V30) =================
+   Clubs run roles the built-in nine do not cover — Zoom Master, Joke Master,
+   Grammarian where the club splits it off the Language Evaluator, a Contest
+   Chief Judge. Each is just a label plus a person, so a custom role is stored the
+   same way a built-in one is: the NAME goes in state.roles under its key and the
+   tick in state.roleActive, which means every existing consumer (holderFor, the
+   roster, the still-open list, the .json round-trip, syncFormInputs) picks it up
+   with no special case. Only the LABEL needs its own list, because the built-in
+   labels are a constant.
+   Keys are 'cr1', 'cr2'... and are never reused within a meeting, so a segment
+   pointing at a custom role via roleKey cannot silently re-target if one is
+   deleted and another added. */
+function customRoles(){ return Array.isArray(state.customRoles) ? state.customRoles : []; }
+function nextCustomRoleKey(){
+  let max = 0;
+  customRoles().forEach(r=>{
+    const n = parseInt(String(r.key).replace(/\D/g,''), 10);
+    if(!isNaN(n) && n > max) max = n;
+  });
+  return 'cr' + (max + 1);
+}
+/* Label + name in one place, for anything that needs to print or list them. */
+function customRoleLines(){
+  return customRoles()
+    .filter(r => r.label && roleIsActive(r.key))
+    .map(r => ({key:r.key, label:r.label, name: state.roles[r.key] || '', tbd: !state.roles[r.key]}));
+}
+/* Built-in labels plus whatever the club has added. */
+function roleLabelMap(){
+  const m = Object.assign({}, ROLE_LABELS);
+  customRoles().forEach(r=>{ if(r.label) m[r.key] = r.label; });
+  return m;
+}
 /* Which agenda items exist ONLY because a role is running. Deliberately NOT the same
    as a segment's roleKey: the TME *holds* Welcome Remarks, Returns Control, and the two
    introductions, but those are meeting infrastructure — they must survive even if the
@@ -474,13 +622,15 @@ function syncRoleSegments(){
 }
 
 function rolePlayerLines(){
-  return ROLE_PLAYER_KEYS.filter(([k]) => roleIsActive(k)).map(([k,label])=>({
+  const builtIn = ROLE_PLAYER_KEYS.filter(([k]) => roleIsActive(k)).map(([k,label])=>({
     label, name: state.roles[k] || '', tbd: !state.roles[k]
   }));
+  /* Custom roles are introduced with the rest of the role players, after them. */
+  return builtIn.concat(customRoleLines().map(r=>({label:r.label, name:r.name, tbd:r.tbd})));
 }
 /* A role that isn't running today is not "still open" — don't chase it. */
 function openRoleLabels(){
-  return Object.entries(ROLE_LABELS)
+  return Object.entries(roleLabelMap())
     .filter(([k]) => roleIsActive(k) && !state.roles[k])
     .map(([,label]) => label);
 }
@@ -521,8 +671,10 @@ const THEMES = [
   {key:'swiss',      name:'Swiss'},       /* Müller-Brockmann grid, International Typographic Style */
   {key:'brutalist',  name:'Brutalist'},   /* neo-brutalist landing page, hard borders + shadows */
   {key:'retrofuture',name:'Retro-Futurism'},        /* 1970s space-age, NASA-worm capsules */
-  {key:'handmade',   name:'Handmade & Village'},    /* kraft paper, warm ink, hand-ruled */
 ];
+/* Handmade retired in V31 at Rama's request - five themes now. Its CSS block is
+   still in sheet.css so an old saved meeting is not left unstyled while the
+   RETIRED_THEMES fallback swaps it to Classic on load. */
 
 /* "4 Aug 2026" — stamped at render time, so the footer always carries the date
    the sheet was actually generated. */
