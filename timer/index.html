@@ -21,6 +21,7 @@
       --panel-border: rgba(255,255,255,0.12);
       --field-bg: rgba(255,255,255,0.07);
       --field-border: rgba(255,255,255,0.18);
+      --ease: 0.5s ease;
     }
 
     body {
@@ -37,6 +38,7 @@
       user-select: none;
     }
 
+    /* Scanline texture */
     body::after {
       content: '';
       position: fixed;
@@ -58,7 +60,7 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       box-shadow: 0 12px 40px rgba(0,0,0,0.22);
-      transition: background 0.5s ease, border-color 0.5s ease, opacity 0.45s ease;
+      transition: background var(--ease), border-color var(--ease);
       z-index: 10;
     }
 
@@ -71,8 +73,8 @@
     }
 
     /* ── Shared control surface ── */
-    .btn, .preset-btn, .step-btn, .mini-btn {
-      font-family: 'Chakra Petch', sans-serif;
+    .btn, .preset-btn, .step-btn, .mini-btn, .spin-btn {
+      font-family: inherit;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.1em;
@@ -81,24 +83,30 @@
       background: var(--btn-bg);
       color: var(--btn-fg);
       cursor: pointer;
-      transition: background 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease, border-color 0.5s ease, opacity 0.45s ease;
+      transition: background 0.2s ease, transform 0.12s ease, box-shadow 0.2s ease, border-color var(--ease);
       backdrop-filter: blur(4px);
     }
-    .btn:hover, .preset-btn:hover, .mini-btn:hover { background: var(--btn-hover); }
-    .btn:active, .preset-btn:active, .step-btn:active { transform: scale(0.97); }
+    .btn:hover, .preset-btn:hover, .step-btn:hover,
+    .mini-btn:hover, .spin-btn:hover { background: var(--btn-hover); }
+    .btn:active, .preset-btn:active, .step-btn:active,
+    .mini-btn:active, .spin-btn:active { transform: scale(0.97); }
 
-    input[type="text"] {
-      font-family: 'Chakra Petch', sans-serif;
+    /* ── Shared field surface ── */
+    input[type="text"], select {
+      font-family: inherit;
       font-variant-numeric: tabular-nums;
       color: inherit;
       outline: none;
       border: 1px solid var(--field-border);
       border-radius: 9px;
       background: var(--field-bg);
-      transition: border-color 0.2s, background 0.5s, color 0.5s, opacity 0.45s ease;
+      transition: border-color 0.2s ease, background var(--ease), color var(--ease);
     }
-    input[type="text"]:focus { border-color: var(--fg); }
+    input[type="text"]:focus, select:focus { border-color: var(--fg); }
     input[type="text"]::placeholder { color: currentColor; opacity: 0.4; }
+    select { cursor: pointer; -webkit-appearance: none; appearance: none; }
+    /* Native dropdown lists ignore the glass palette, so force a readable pair. */
+    select option { color: #1a1a1a; background: #fff; }
 
     /* ══ Combined box: cockpit + segment ══ */
     .dock {
@@ -137,7 +145,6 @@
       text-transform: uppercase;
       letter-spacing: 0.12em;
       opacity: 0.8;
-      transition: opacity 0.45s ease;
     }
     .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
     .dot.green { background: #00c853; box-shadow: 0 0 7px rgba(0,200,83,0.6); }
@@ -162,9 +169,8 @@
       justify-content: center;
       padding: 0;
     }
-    .step-btn:hover { background: var(--btn-hover); }
 
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer; transition: opacity 0.45s ease; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
       position: absolute; inset: 0;
@@ -185,8 +191,6 @@
     .switch input:checked + .slider { background: #00c853; }
     .switch input:checked + .slider::before { transform: translateX(20px); }
 
-    /* Bell row spans the full grid width so label, delay, sound, toggle
-       and Test all fit on one line. */
     /* Bell controls sit in the arrow columns, directly under the -/value/+ stack
        of the Red row above; the BELL label lines up with GREEN/AMBER/RED in col 1. */
     .bell-cell {
@@ -198,7 +202,6 @@
     }
     #testBell { padding: 0.3em 0.5em; flex-shrink: 0; }
 
-
     /* Compact bell-delay spinner (seconds after Red) */
     .bell-delay { display: flex; align-items: center; gap: 0.2rem; flex-shrink: 0; }
     #bellDelay {
@@ -206,7 +209,6 @@
       text-align: center;
       font-size: 15px;
       font-weight: 600;
-      font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
     .spin { display: flex; flex-direction: column; gap: 2px; }
@@ -221,42 +223,6 @@
       padding: 0;
       border-radius: 5px;
     }
-    .spin-btn:hover { background: var(--btn-hover); }
-    body.running .bell-delay { pointer-events: none; opacity: 0.45; }
-
-    /* Lock threshold controls while running */
-    body.running .thr,
-    body.running .step-btn,
-    body.running .preset-btn {
-      pointer-events: none;
-      opacity: 0.32;
-    }
-    body.running .thr { border-color: transparent; }
-
-    /* Running: recede everything but Stop */
-    body.running .record-panel { opacity: 0.9; }
-    body.running .presets .card-title { opacity: 0.35; }
-    body.running .s-label,
-    body.running #resetBtn,
-    body.running #testBell { opacity: 0.45; }
-    body.running .timer { opacity: 0.5; }
-    body.running #stopBtn {
-      opacity: 1;
-      box-shadow: 0 0 0 1px var(--btn-border), 0 5px 16px rgba(0,0,0,0.35);
-    }
-
-    /* Lockdown while running: Start/Reset + threshold controls freeze.
-       Stop, Bell toggle, Speaker name and the whole log stay live. */
-    body.running .btn {
-      pointer-events: none;
-    }
-    body.running #stopBtn { pointer-events: auto; }
-    body.running .switch,
-    body.running #bellToggle {
-      pointer-events: auto;
-      opacity: 0.9;
-    }
-    body.running .name-input { pointer-events: auto; opacity: 0.9; }
 
     /* Timer + transport */
     .timer-row { display: flex; align-items: center; gap: 0.6rem; width: 100%; }
@@ -267,7 +233,7 @@
       letter-spacing: 0.05em;
       opacity: 0.78;
       margin-right: auto;
-      transition: color 0.5s ease, opacity 0.45s ease;
+      transition: color var(--ease);
     }
     .controls { display: flex; gap: 0.5rem; }
     .control-slot { display: flex; }
@@ -279,6 +245,17 @@
       text-align: center;
     }
     .btn.hidden { display: none; }
+
+    /* Nothing locks while the clock runs; Stop just takes the emphasis. */
+    body.running #stopBtn { box-shadow: 0 0 0 1px var(--btn-border), 0 5px 16px rgba(0,0,0,0.35); }
+
+    /* Once a colour is showing, the whole interface steps back a touch so the
+       light and the word carry the room. The phase word sits outside these two
+       containers on purpose, so it stays fully opaque. */
+    .left-stack, .record-panel { transition: opacity 0.45s ease; }
+    body.phase-green .left-stack, body.phase-green .record-panel,
+    body.phase-amber .left-stack, body.phase-amber .record-panel,
+    body.phase-red   .left-stack, body.phase-red   .record-panel { opacity: 0.8; }
 
     /* Segment column (inside combined box, divider on the left) */
     .presets {
@@ -300,7 +277,6 @@
       padding: 0.25em 0.5em;
       border-radius: 6px;
     }
-    body.running #segTest { pointer-events: none; opacity: 0.35; }
     .preset-btns {
       flex: 1;
       display: flex;
@@ -363,7 +339,7 @@
     .log-entry {
       display: flex;
       align-items: center;
-      gap: 0.55rem;
+      gap: 0.4rem;
       font-size: 16px;
       font-weight: 500;
       padding: 0.2rem 0;
@@ -389,16 +365,23 @@
       background: var(--field-bg);
       box-shadow: 0 0 0 1px var(--field-border);
     }
+    /* Segment is a real select so a mislabelled row can be corrected later. */
     .lg-seg {
+      font-family: inherit;
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.06em;
-      padding: 0.15em 0.45em;
+      text-transform: uppercase;
+      padding: 0.15em 0.3em;
       border: 1px solid var(--field-border);
       border-radius: 5px;
+      background: transparent;
+      color: inherit;
       opacity: 0.85;
       flex-shrink: 0;
+      text-align: center;
     }
+    .lg-seg:hover { background: var(--field-bg); opacity: 1; }
     .lg-time { font-weight: 600; opacity: 0.9; min-width: 3.4em; text-align: right; }
     .lg-del {
       cursor: pointer;
@@ -423,7 +406,7 @@
       z-index: 10;
     }
 
-    /* Always-visible "HOW TO USE" (collapses only on mobile) */
+    /* Always-visible "HOW TO USE" (collapses only when narrow or short) */
     .howto { width: 100%; opacity: 0.92; }
     .howto summary {
       list-style: none;
@@ -436,12 +419,9 @@
       letter-spacing: 0.18em;
       opacity: 0.6;
       cursor: default;
-      pointer-events: none;   /* fixed-open on desktop */
+      pointer-events: none;
     }
     .howto summary::-webkit-details-marker { display: none; }
-    .howto summary::after {
-      content: '';
-    }
     .howto ol {
       margin: 0.75rem 0 0;
       padding-left: 1.4rem;
@@ -453,7 +433,6 @@
     }
     .howto li { opacity: 0.9; margin-bottom: 0.6rem; break-inside: avoid; }
     .howto li:last-child { margin-bottom: 0; }
-    body.running .howto { opacity: 0.3; }
 
     /* ══ Phase palettes ══ */
     body.phase-white {
@@ -509,18 +488,17 @@
       opacity: 0;
       pointer-events: none;
       z-index: 6;
-      transition: opacity 0.4s ease, color 0.5s ease;
+      transition: opacity 0.4s ease, color var(--ease);
       text-transform: uppercase;
     }
     body.phase-green .phase-word,
     body.phase-amber .phase-word,
-    body.phase-red .phase-word { opacity: 0.9; }
-    .pw-short { display: none; }
+    body.phase-red .phase-word { opacity: 1; }
 
-    /* Short G/A/R labels hidden on desktop */
-    .lbl-short { display: none; }
+    /* Short labels are a phone-only affordance */
+    .pw-short, .lbl-short { display: none; }
 
-    /* ══════════ Phone / narrow screens (stack before the log meets the segment box) ══════════ */
+    /* ══════════ Phone / narrow screens ══════════ */
     @media (max-width: 980px) {
       body {
         display: flex;
@@ -533,35 +511,22 @@
       .lbl-short { display: inline; }
       .card { padding: 0.7rem 0.75rem; border-radius: 13px; }
 
-      /* Phase word → single letter, centred, extra large */
-      .phase-word { top: 13vh; bottom: auto; align-items: flex-start; font-size: 38vw; }
+      .phase-word { top: 13vh; font-size: 38vw; }
       .pw-full { display: none; }
       .pw-short { display: inline; }
 
-      /* Left stack — pinned to the bottom of the column */
       .left-stack {
         position: static;
-        bottom: auto; left: auto;
         width: auto;
         order: 2;
         margin-top: auto;
         gap: 0.6rem;
       }
 
-      /* HOW TO USE — collapsible on mobile */
-      .howto summary {
-        pointer-events: auto;
-        cursor: pointer;
-        justify-content: space-between;
-      }
-      .howto summary::after { content: '▸'; font-size: 10px; opacity: 0.7; }
-      .howto[open] summary::after { content: '▾'; }
       .howto ol { columns: 1; font-size: 13px; }
 
-      /* Timer's log */
       .record-panel {
         position: static;
-        bottom: auto; right: auto;
         width: auto;
         height: auto;
         max-height: 26vh;
@@ -569,12 +534,7 @@
         border-radius: 13px;
       }
 
-      /* Combined box — stacked (segment below cockpit) */
-      .dock {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.7rem;
-      }
+      .dock { flex-direction: column; align-items: stretch; gap: 0.7rem; }
       .cockpit { width: auto; gap: 0.6rem; }
       .presets {
         width: auto;
@@ -615,23 +575,25 @@
       .record-panel { bottom: 1rem; height: min(17rem, calc(100dvh - 2rem)); }
       .card { padding: 0.85rem 1.05rem; }
       .cockpit { gap: 0.6rem; }
-      /* columns follow the shrunken step buttons so the bell row below still
-         lines up exactly with the arrows */
+      /* Columns follow the shrunken step buttons so the bell row below still
+         lines up exactly with the arrows. */
       .settings { gap: 0.45rem 0.5rem; grid-template-columns: 1fr 2.15rem 4.7rem 2.15rem; }
       .name-input { height: 2.2rem; }
       .thr, .step-btn { height: 2.15rem; }
       .step-btn { width: 2.15rem; }
       .timer { font-size: 24px; }
+      .howto ol { columns: 1; margin-top: 0.5rem; }
+    }
 
-      /* Collapse the How-to box to reclaim height */
+    /* The how-to is collapsible whenever the screen is narrow OR short. */
+    @media (max-width: 980px), (max-height: 660px) {
       .howto summary {
         pointer-events: auto;
         cursor: pointer;
         justify-content: space-between;
       }
-      .howto summary::after { content: '▸'; font-size: 10px; opacity: 0.6; }
+      .howto summary::after { content: '▸'; font-size: 10px; opacity: 0.7; }
       .howto[open] summary::after { content: '▾'; }
-      .howto ol { columns: 1; margin-top: 0.5rem; }
     }
   </style>
 </head>
@@ -647,72 +609,73 @@
     <details class="howto card" id="howto" open>
       <summary>How to use</summary>
       <ol>
-        <li>Pick a segment — or set Green / Amber / Red with ± or by typing.</li>
+        <li>Pick a segment — or set Green / Amber / Red with ± or by typing (m:ss).</li>
         <li>Enter the speaker's name (optional — blank auto-fills as "PS 1", "TT 2", …).</li>
-        <li>Start — screen &amp; centre word show WHITE → GREEN → AMBER → RED, then BELL when the overtime bell rings (set the seconds after Red with the ± beside the bell).</li>
-        <li>Stop, then Reset — Reset logs the speaker (name · segment · time) and clears for the next.</li>
-        <li>Click any logged name or time to edit it. Copy exports the list · ✕ removes a row (asks first). While running you can still edit the name and the log; only Stop and the Bell stay active.</li>
-        <li>Pick the bell sound — Desk Bell, Chime or Beep. <strong>On a phone, tap Test once before the meeting starts</strong>: that unlocks audio and confirms it's loud enough for the room.</li>
+        <li>Start — the screen and centre word go WHITE → GREEN → AMBER → RED, then BELL rings after the extra seconds set beside the bell.</li>
+        <li>Reset logs the speaker (name · segment · time) and zeroes the clock. Pressed mid-run it rolls straight into the next speaker; Stop just pauses.</li>
+        <li><strong>Nothing locks while the clock runs.</strong> Started on the wrong segment? Switch it — or adjust any time — mid-speech and the lights, the bell and the log all follow.</li>
+        <li>In the log: click a name or time to edit it, change the segment with its dropdown, ✕ removes a row. Copy exports the list.</li>
+        <li><strong>On a phone, tap Test once before the meeting starts.</strong> That unlocks audio and confirms the bell is loud enough for the room.</li>
       </ol>
     </details>
 
     <div class="dock card">
-    <div class="cockpit">
-      <input type="text" id="nameInput" class="name-input" placeholder="Speaker name">
+      <div class="cockpit">
+        <input type="text" id="nameInput" class="name-input" placeholder="Speaker name">
 
-      <div class="settings" id="settings">
-        <div class="s-label"><span class="dot green"></span><span class="lbl-full">Green</span><span class="lbl-short">G</span></div>
-        <button class="step-btn" onclick="step('greenAt', -30)">&minus;</button>
-        <input type="text" id="greenAt" class="thr" value="5:00" placeholder="m:ss" oninput="clearActivePreset()">
-        <button class="step-btn" onclick="step('greenAt', 30)">+</button>
+        <div class="settings" id="settings">
+          <div class="s-label"><span class="dot green"></span><span class="lbl-full">Green</span><span class="lbl-short">G</span></div>
+          <button class="step-btn" data-step="greenAt" data-by="-30" aria-label="Green minus 30 seconds">&minus;</button>
+          <input type="text" id="greenAt" class="thr" value="5:00" placeholder="m:ss">
+          <button class="step-btn" data-step="greenAt" data-by="30" aria-label="Green plus 30 seconds">+</button>
 
-        <div class="s-label"><span class="dot amber"></span><span class="lbl-full">Amber</span><span class="lbl-short">A</span></div>
-        <button class="step-btn" onclick="step('amberAt', -30)">&minus;</button>
-        <input type="text" id="amberAt" class="thr" value="6:00" placeholder="m:ss" oninput="clearActivePreset()">
-        <button class="step-btn" onclick="step('amberAt', 30)">+</button>
+          <div class="s-label"><span class="dot amber"></span><span class="lbl-full">Amber</span><span class="lbl-short">A</span></div>
+          <button class="step-btn" data-step="amberAt" data-by="-30" aria-label="Amber minus 30 seconds">&minus;</button>
+          <input type="text" id="amberAt" class="thr" value="6:00" placeholder="m:ss">
+          <button class="step-btn" data-step="amberAt" data-by="30" aria-label="Amber plus 30 seconds">+</button>
 
-        <div class="s-label"><span class="dot red"></span><span class="lbl-full">Red</span><span class="lbl-short">R</span></div>
-        <button class="step-btn" onclick="step('redAt', -30)">&minus;</button>
-        <input type="text" id="redAt" class="thr" value="7:00" placeholder="m:ss" oninput="clearActivePreset()">
-        <button class="step-btn" onclick="step('redAt', 30)">+</button>
+          <div class="s-label"><span class="dot red"></span><span class="lbl-full">Red</span><span class="lbl-short">R</span></div>
+          <button class="step-btn" data-step="redAt" data-by="-30" aria-label="Red minus 30 seconds">&minus;</button>
+          <input type="text" id="redAt" class="thr" value="7:00" placeholder="m:ss">
+          <button class="step-btn" data-step="redAt" data-by="30" aria-label="Red plus 30 seconds">+</button>
 
-        <div class="s-label"><span class="lbl-full">Bell</span><span class="lbl-short">Bell</span></div>
-        <div class="bell-cell">
-          <div class="bell-delay" title="Seconds after Red before the bell rings">
-            <span id="bellDelay">+30s</span>
-            <div class="spin">
-              <button class="spin-btn" onclick="stepBell(5)" aria-label="Increase bell delay">▲</button>
-              <button class="spin-btn" onclick="stepBell(-5)" aria-label="Decrease bell delay">▼</button>
+          <div class="s-label"><span class="lbl-full">Bell</span><span class="lbl-short">Bell</span></div>
+          <div class="bell-cell">
+            <div class="bell-delay" title="Seconds after Red before the bell rings">
+              <span id="bellDelay">+30s</span>
+              <div class="spin">
+                <button class="spin-btn" data-bell="5" aria-label="Increase bell delay">▲</button>
+                <button class="spin-btn" data-bell="-5" aria-label="Decrease bell delay">▼</button>
+              </div>
             </div>
+            <label class="switch"><input type="checkbox" id="bellToggle" checked aria-label="Bell on"><span class="slider"></span></label>
+            <button class="mini-btn" id="testBell">Test</button>
           </div>
-          <label class="switch"><input type="checkbox" id="bellToggle" checked><span class="slider"></span></label>
-          <button class="mini-btn" id="testBell" onclick="playBell()">Test</button>
+        </div>
+
+        <div class="timer-row">
+          <div class="timer" id="timer">00:00</div>
+          <div class="controls">
+            <div class="control-slot">
+              <button class="btn" id="startBtn">Start</button>
+              <button class="btn hidden" id="stopBtn">Stop</button>
+            </div>
+            <button class="btn" id="resetBtn">Reset</button>
+          </div>
         </div>
       </div>
 
-      <div class="timer-row">
-        <div class="timer" id="timer">00:00</div>
-        <div class="controls">
-          <div class="control-slot">
-            <button class="btn" id="startBtn" onclick="startTimer()">Start</button>
-            <button class="btn hidden" id="stopBtn" onclick="stopTimer()">Stop</button>
-          </div>
-          <button class="btn" id="resetBtn" onclick="resetTimer()">Reset</button>
+      <div class="presets" id="presets">
+        <div class="preset-head">
+          <span class="card-title">Segment</span>
+          <button class="mini-btn" id="segTest" title="Quick test run: 2 / 4 / 6s, bell +2s">Test</button>
+        </div>
+        <div class="preset-btns">
+          <button class="preset-btn" data-seg="PS" data-g="5:00" data-a="6:00" data-r="7:00">Prepared Speech</button>
+          <button class="preset-btn" data-seg="TT" data-g="1:00" data-a="1:30" data-r="2:00">Table Topics</button>
+          <button class="preset-btn" data-seg="EV" data-g="2:00" data-a="2:30" data-r="3:00">Evaluation</button>
         </div>
       </div>
-    </div>
-
-    <div class="presets" id="presets">
-      <div class="preset-head">
-        <span class="card-title">Segment</span>
-        <button class="mini-btn" id="segTest" onclick="testPreset()" title="Quick test run: 2 / 4 / 6s, bell +2s">Test</button>
-      </div>
-      <div class="preset-btns">
-        <button class="preset-btn" data-seg="PS" data-g="5:00" data-a="6:00" data-r="7:00" onclick="applyPreset(this)">Prepared Speech</button>
-        <button class="preset-btn" data-seg="TT" data-g="1:00" data-a="1:30" data-r="2:00" onclick="applyPreset(this)">Table Topics</button>
-        <button class="preset-btn" data-seg="EV" data-g="2:00" data-a="2:30" data-r="3:00" onclick="applyPreset(this)">Evaluation</button>
-      </div>
-    </div>
     </div>
   </div>
 
@@ -721,8 +684,8 @@
     <div class="log-head">
       <span class="card-title">Recorded Times</span>
       <div class="log-actions">
-        <button class="mini-btn" onclick="copyLog()">Copy</button>
-        <button class="mini-btn" onclick="clearLog()">Clear</button>
+        <button class="mini-btn" id="copyLog">Copy</button>
+        <button class="mini-btn" id="clearLog">Clear</button>
       </div>
     </div>
     <div class="log-entries" id="logEntries"></div>
@@ -730,185 +693,79 @@
   </div>
 
   <script>
-    /* Bell recordings, synthesised offline (modal synthesis) and encoded as
-       mono MP3. Embedded so the page stays a single portable file. */
+    'use strict';
+
     /* Desk bell: one clean strike, 0.6 s, mono 16 kHz 32 kbps MP3, inlined as
        base64 so the page stays self-contained and rings with no network.
        The source sample was three struck bells over 2.2 s, which read as a long
        echo in a room; only the first strike is kept, faded out to avoid a click. */
     const BELL_MP3 = 'SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NYwAAAAAAAAAAAAEluZm8AAAAPAAAAEwAAC2QAHBwcHBwpKSkpKTU1NTU1QkJCQkJCT09PT09bW1tbW2hoaGhodHR0dHR0gYGBgYGOjo6Ojpqampqap6enp6entLS0tLTAwMDAwM3Nzc3N2tra2tra5ubm5ubz8/Pz8///////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQDLQAAAAAAAAtkce/OMgAAAAAAAAAAAAAA//NIxAAZw462+UE4AXeGZoyAIAJjGNjGOAAFkCMY+YzDG6GDQH4PwfkxQAIAAAQRBYAwSCBn+////mN//U88wwwwwwwzPPPeYZMMMMMM//c8888889zDP///57//+e/7mGN/555555hhhhhjGGDcmeACMACgcDgXBAADXMAgOZAAJh7w2NvAFAR5dKRH1Jei//NIxBwkU/LaX4eQAk0Ono9EIEDLJMrhCgaGp4dYH2ceQ4R8blkxOGBHIaJPJGrZ0ipdcxKBj//ooqRRWUAy2O79YZOND9YnkTQMskRYixAiZIqZGKJMrFwk89X8VRmy0P865w+o2zIvOYo/////9aOtUcbIo2//mYwn//1ow4YnZNUICIGAN9SSdFRSD8gt//NIxA0f+6qEV8CwAZBg4EI5wNKY2gMNoKgMDYHgMBAAwBABhayMA3MknqSZE8pJ/v////tW6/VepFFRSK5IhbUDAYAsDGEQYDA8EMDAsAcMElIgRWRRZdey//v///////////rWq7tMyyOaVR0hYiAcAkBomAgsQ8ipqkrZE/QgSGB//refaV3nacFTItSY//NIxBAes8p0NAdq7BYOGLCwn2jVGMQOjQFMxBIBCQYJmy7CtutzdJ7nKv9f///VSuy9dlqRrQSMDMuFcRoB3+NgYPGQcqRYxN1o1qXW9SkqNf3//////////96nXRqMjrEYfUVkiAghBAG3SCF1RVMK6SLMo/YuHAgBAH//++fjW1jzdmbfReYgAIwFCkxE//NIxBgg89J0Vgdq0FyO5n3MTguMDQNLbgYABIQku52rrPlblrZmkm1Sv////tWq9a1KosgmxeLhfIIFw4HfDYBhQXjnEycSMnspJlU6XdX3///////////VdSZsmk6yZNDeshwTBYGejIISlwzMCimaHjYwNDacqiQAL///58ohwVY85LOV1JIgoAowKAGT//NIxBch665oFA+tCQoxRjYhFNMLcAwWA4FABBAAqDgH06pTaxz+rQd46elTetkG///176amsy3QWcmBmalccgQnAIAYBoFDgBg3B8Q84mcO2WhWplJ2St////////////7os6LMZG7OZDPgUAYBgpEmHqEXNCmsqNOq4981J////lOkWUVnm7KJjgDCEIzA//NIxBIgS6ZgCA9tCkGgxDus5V9gw9HEwUCIwIAAFBuGFqRBA51JnSbnsrWBg/qb1of//6rdVfN0lLL7E4WSYHLD9ADQRgaIiugYPAcicSXKhkvTUmx1KtBaev///////////+1d1JrUiYGaCRFAxOBgxD0FpY7C2hMsDSoX8/X/cj8ecZtVxiwBA8CEYTQJ//NIxBMbS6poCAeq7Ga2AIoYKwBgOwqAKQAIJpM9wr3aevd1rzM+//////dmZfRTZJJUyOHjcjBrg0CQHI5YBg8DCTForlxanqXv2/////////////+6Ka1vOkCC+IGEAeIaVjxu1dUgv7zv5UVBSOC6SZI6BRAHoFfQ1VnUwTDoRgOr8WBErC8KAY1lw1uU//NIxCgbC65oKAdq6YrrNkjT/////tVq51k2PJsi5kYkABAAQNWP8SiGCRmkVKUv16v////////////+83porNy+mkZGITAgBxZHKMWPzrzNqg///vm70zZg9xAwAcwFABjB5CFNIETwwhQFzAUAGAgAQXAJDAFXQoeVsakzKe2ln1P//////9bIqzKaJl5E//NIxD4bc6poAgeq7T4gMmpAFACLEQV0HRb//////////////VnUluYprKCLKUQwNeDEKJ/J0zQPjYfflv/X/ytVl0PNZT2EACgkLjDJrzuh4jEgJ0TmWloigPE4ZPbra3Xn7d5Axf//////+1SC7SbNCBh6gGOggDA2K1J5FAupr//////////////1cvrS//NIxFMau7JkAAdq7VmyJZNThfKhbD4ANlDgOaT6Dnkj4F12+wgAwAv1v956/DscZ2pgYAgaYcFcdAKCYeAgAgHRXQkBwJNvc3U3h27fxWaf/////VZS+qm9bpTWQAMhgZRRYDAoPGTppqS//////////////+tCmt1l5MxOG5qIWA0aXRBxVMjREzNFl1Oe//NIxGsbI8psVAdq7c/FUHHlmKu85KwwEAswvOY6LLUw/ARcDwJopRi3F1BSTuhY7Z/r////3Va3pKr1pLPEPBoAgNXOYDCYPHonS+yZr9S/////////////9d0WUm6VFjIul0pAgAYGaEwKVLzKRSRZAvLW52kP/+v/uGdybdBNMGA4xa6T0eAMLhkuImAl//NIxIEaA9JoCgdrBnhglFEK83PLqNElIt/////22UvrTRUi0wQNDpQBqCwOwzMDAQwDBI5xdNluy1rrWtlurV///////////+utdlHzCkWzyRkM6DQJAEt8Uwj1HTCGdDCDehB///9VvtS6Ku8y0vEYYGmchDWLDqn26aj0WHC6KlMYpLZFX////9e7sjr0//NIxJwb+6pgAgcq6dJJVFBRfPGJMAVAIHwl8BioejiIKmaoXazM2jWqv///////////3ru65obVmhoX0jccgG3wNEtgFgWQQrnA0FVJVutqxy5dmI23BBGYUpGWSJCBNLh9syPw9IO1SkklV/////+y1PdmSo6K1JnCmOgQHAEA0BoDCYBhFBsO8iBfQWyM//NIxK8b86ZcCgdq6dFJonqNn////////////9anW61pKLJdOGJdJIG1QMZQqwoBEly0fNAyWTRV/WplnyoOoOMAwAhqAwZhqBQEYgAOQPsWE2d///////260XaldK5gsuDLk0T4GAYFQGCQCYGnIxYKDsAwPAFBEBMdI4iIGTeyaF6X////////////1Oi6//NIxMIai6pUAAbtBKaolgmioTQ4g14GAcEQGOURgAQAhApPF1NpK1T0Lb3ENPotrzUvm6nMdY6SmT6AhHMSKjkhCJADBcB0iIwkQMBYVAJB+E3CjyKEGrLql+T6SDoVo//ZN03ND+jRo0kkVB7YGAYEwGLFRwGTkCxME4Rg4ExBQLWAMNoCAMOITGJqTQ5w//NIxNocu6pEAUCwALUIOAAAmAsAEFgLDQROL/g4DBXEECKi4x4HPImUyfMCJh9A+YpEWPmR8mZiXTH//lAnC8RQ8XDUvlovm503QNzVSKi8pJ0nMa0V6+awMAAcQGh2BvCrfnDRI0Y0OjjAcCMDB0Bc2LpFz5PmxcLZMGiKqklOTJMlg3SWXVosixlVk/////NIxOo5jBY0AYOwAOIUIdra3ctlpq1u42NoSNj1ta2tra///////////9rW6RtSR65bUObSQ7g9DqTBBAlLwQQEQRViUO4dx6CUO49KLREAgaDolDYKjA6CoFBV3KnQaLB3lg7BVbqzold/8qdER6oGoKlQ11grBpVMQU1FMy4xMDBVVVVVVVVVVVVVVVVV//NIxIYb0hWoAcFYAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
 
-    let interval = null;
-    let seconds = 0;
-    let bellPlayed = false;
-    let records = [];
+    /* ══════════════════════════════════════════════════════════════
+       DOM handles — looked up once
+       ══════════════════════════════════════════════════════════════ */
+    const $ = id => document.getElementById(id);
+    const ui = {
+      body:       document.body,
+      timer:      $('timer'),
+      startBtn:   $('startBtn'),
+      stopBtn:    $('stopBtn'),
+      resetBtn:   $('resetBtn'),
+      name:       $('nameInput'),
+      settings:   $('settings'),
+      presets:    $('presets'),
+      bellDelay:  $('bellDelay'),
+      bellToggle: $('bellToggle'),
+      entries:    $('logEntries'),
+      empty:      $('logEmpty'),
+      pwFull:     document.querySelector('.pw-full'),
+      pwShort:    document.querySelector('.pw-short')
+    };
 
-    const timerEl  = document.getElementById('timer');
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn  = document.getElementById('stopBtn');
-    const nameInput = document.getElementById('nameInput');
-    const logEntriesEl = document.getElementById('logEntries');
-    const logEmptyEl = document.getElementById('logEmpty');
-    const pwFull = document.querySelector('.pw-full');
-    const pwShort = document.querySelector('.pw-short');
+    const THR = ['greenAt', 'amberAt', 'redAt'];
+    THR.forEach(id => { ui[id] = $(id); });
 
+    /* The preset buttons never change, so query them once; the segment list
+       derives from them so a new preset needs no second edit. */
+    const PRESET_BTNS = [...ui.presets.querySelectorAll('.preset-btn')];
+    const SEGMENTS = [...PRESET_BTNS.map(b => b.dataset.seg), 'Other'];
+
+    /* ══════════════════════════════════════════════════════════════
+       State — one object, so nothing goes stale in two places
+       ══════════════════════════════════════════════════════════════ */
+    const state = {
+      seconds: 0,
+      ticker: null,
+      bellRung: false,
+      bellAfter: 30,
+      records: [],
+      /* Last values that actually parsed. A half-typed "1:" must not throw the
+         lights back to the defaults in the middle of a speech. */
+      limits: { greenAt: 300, amberAt: 360, redAt: 420 }
+    };
+
+    const running = () => state.ticker !== null;
+
+    /* ══════════════════════════════════════════════════════════════
+       Time helpers
+       ══════════════════════════════════════════════════════════════ */
+    /* "6:30" or "6.30" — the dot matters on phones, whose numeric keypads
+       often have no colon key. Seconds above 59 are rejected, not rolled over. */
     function parseTime(str) {
-      const parts = str.trim().split(':');
-      if (parts.length !== 2) return null;
-      const m = parseInt(parts[0], 10);
-      const s = parseInt(parts[1], 10);
-      if (isNaN(m) || isNaN(s)) return null;
-      return m * 60 + s;
+      const m = /^\s*(\d+)\s*[:.]\s*([0-5]?\d)\s*$/.exec(String(str));
+      return m ? (+m[1]) * 60 + (+m[2]) : null;
     }
+    const pad = n => String(n).padStart(2, '0');
+    const clock = t => `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;   // 07:30 — display + log
+    const field = t => `${Math.floor(t / 60)}:${pad(t % 60)}`;        // 7:30  — threshold inputs
 
-    function formatClock(t) {
-      return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
-    }
-    function formatField(t) {
-      return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
-    }
-
-    function getThresholds() {
-      return {
-        green: parseTime(document.getElementById('greenAt').value) ?? 300,
-        amber: parseTime(document.getElementById('amberAt').value) ?? 360,
-        red:   parseTime(document.getElementById('redAt').value)   ?? 420,
-      };
-    }
-
-    function step(fieldId, delta) {
-      if (interval) return;
-      const el = document.getElementById(fieldId);
-      let val = parseTime(el.value);
-      if (val === null) val = 0;
-      val = Math.max(0, val + delta);
-      el.value = formatField(val);
-      clearActivePreset();
-    }
-
-    function stepBell(delta) {
-      if (interval) return;
-      const el = document.getElementById('bellDelay');
-      let val = parseInt(el.textContent, 10);
-      if (isNaN(val)) val = 0;
-      val = Math.min(300, Math.max(0, val + delta));
-      el.textContent = '+' + val + 's';
-    }
-
-    function applyPreset(btn) {
-      if (interval) return;
-      document.getElementById('greenAt').value = btn.dataset.g;
-      document.getElementById('amberAt').value = btn.dataset.a;
-      document.getElementById('redAt').value   = btn.dataset.r;
-      document.getElementById('bellDelay').textContent = '+30s';
-      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    }
-
-    function clearActivePreset() {
-      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-    }
-
-    /* Quick test run: short thresholds + fast bell */
-    function testPreset() {
-      if (interval) return;
-      document.getElementById('greenAt').value = '0:02';
-      document.getElementById('amberAt').value = '0:04';
-      document.getElementById('redAt').value   = '0:06';
-      document.getElementById('bellDelay').textContent = '+2s';
-      clearActivePreset();
-    }
-
-    function segCodeFromThresholds() {
-      const t = getThresholds();
-      for (const b of document.querySelectorAll('.preset-btn')) {
-        if (parseTime(b.dataset.g) === t.green &&
-            parseTime(b.dataset.a) === t.amber &&
-            parseTime(b.dataset.r) === t.red) {
-          return b.dataset.seg;
-        }
-      }
-      return 'Other';
-    }
-
-    /* Log the just-finished speaker (fired on Reset) */
-    function logSpeaker() {
-      const typed = nameInput.value.trim();
-      if (seconds === 0 && !typed) return;
-      const seg = segCodeFromThresholds();
-      let name = typed;
-      if (!name) {
-        const n = records.filter(r => r.seg === seg).length + 1;
-        name = `${seg} ${n}`;   // auto: "PS 1", "TT 2", ...
-      }
-      records.push({ name, seg, time: formatClock(seconds) });
-      nameInput.value = '';
-      renderLog();
-    }
-
-    function renderLog() {
-      logEntriesEl.innerHTML = '';
-      records.forEach((r, i) => {
-        const row = document.createElement('div');
-        row.className = 'log-entry';
-
-        const name = document.createElement('span');
-        name.className = 'lg-name';
-        name.textContent = r.name;
-        name.contentEditable = 'true';
-        name.spellcheck = false;
-        name.title = 'Click to edit name';
-        name.addEventListener('blur', () => {
-          const v = name.textContent.trim();
-          if (v) { records[i].name = v; } else { name.textContent = records[i].name; }
-        });
-        name.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); name.blur(); } });
-
-        const seg = document.createElement('span');
-        seg.className = 'lg-seg';
-        seg.textContent = r.seg || 'Other';
-
-        const time = document.createElement('span');
-        time.className = 'lg-time';
-        time.textContent = r.time;
-        time.contentEditable = 'true';
-        time.spellcheck = false;
-        time.title = 'Click to edit time (m:ss)';
-        time.addEventListener('blur', () => {
-          const parsed = parseTime(time.textContent);
-          if (parsed !== null) { records[i].time = formatClock(parsed); }
-          time.textContent = records[i].time;
-        });
-        time.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); time.blur(); } });
-
-        const del = document.createElement('span');
-        del.className = 'lg-del';
-        del.textContent = '✕';
-        del.title = 'Remove';
-        del.onclick = () => {
-          if (confirm(`Delete "${records[i].name}" (${records[i].time})?`)) {
-            records.splice(i, 1);
-            renderLog();
-          }
-        };
-
-        row.append(name, seg, time, del);
-        logEntriesEl.appendChild(row);
-      });
-      logEmptyEl.style.display = records.length ? 'none' : '';
-    }
-
-    function copyLog() {
-      if (!records.length) return;
-      const text = records.map(r => `${r.name}\t${r.seg || 'Other'}\t${r.time}`).join('\n');
-      navigator.clipboard.writeText(text).catch(() => {});
-    }
-
-    function clearLog() {
-      if (!records.length) return;
-      if (confirm(`Clear all ${records.length} recorded time${records.length > 1 ? 's' : ''}?`)) {
-        records = [];
-        renderLog();
+    /* Re-reads the three threshold fields, keeping the last valid value of
+       each so a partially typed entry never moves the lights. Called only
+       when a setting changes — the once-a-second tick uses the cache. */
+    function readLimits() {
+      for (const id of THR) {
+        const v = parseTime(ui[id].value);
+        if (v !== null) state.limits[id] = v;
       }
     }
 
@@ -917,85 +774,76 @@
 
        Web Audio oscillators are silenced by the iPhone ringer switch;
        <audio> elements are not. So the bell is a real recording played
-       through an <audio> element, with the old two-sine synth kept only
-       as a fallback for when the element refuses to play.
+       through an <audio> element, with a two-sine synth kept only as the
+       fallback for when the element refuses to play.
 
        Safari also rejects `data:` URIs for media (it wants byte-range
-       support), so the base64 is turned into a Blob URL at load.
+       support), so the base64 becomes a Blob URL at load.
        ══════════════════════════════════════════════════════════════ */
-
     let bellAudio = null;
     let audioCtx = null;
     let audioUnlocked = false;
-    let priming = false;      // true while the silent iOS unlock pass is in flight
-
-    function b64ToBlobUrl(b64, mime) {
-      const bin = atob(b64);
-      const bytes = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      return URL.createObjectURL(new Blob([bytes], { type: mime }));
-    }
+    let priming = false;   // true while the silent iOS unlock pass is in flight
 
     (function buildSound() {
       try {
+        const bin = atob(BELL_MP3);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
         bellAudio = new Audio();
-        bellAudio.src = b64ToBlobUrl(BELL_MP3, 'audio/mpeg');
+        bellAudio.src = URL.createObjectURL(new Blob([bytes], { type: 'audio/mpeg' }));
         bellAudio.preload = 'auto';
         bellAudio.load();
       } catch (e) { bellAudio = null; }
     })();
 
-    function currentSound() { return bellAudio; }
-
-    /* iOS gives audio permission only inside a user gesture, and only to
-       elements that have already been played once. Prime every element on
-       the first tap so the automatic bell can fire later, unattended. */
+    /* iOS grants playback only inside a user gesture, and only to an element
+       that has already played once. Prime it on the first interaction so the
+       automatic bell can fire later, unattended. */
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
-      try {
-        if (navigator.audioSession) navigator.audioSession.type = 'playback';
-      } catch (e) {}
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
       if (bellAudio) {
         const a = bellAudio;
-        const wasMuted = a.muted;
         priming = true;
         a.muted = true;
-        const p = a.play();
         /* settle() lands one tick later. If a real ring started in the meantime
            it will have cleared `priming`, and we must not pause it — that raced
            and left the very first Test press silent. */
         const settle = () => {
-          if (priming) { a.pause(); a.currentTime = 0; a.muted = wasMuted; priming = false; }
+          if (!priming) return;
+          a.pause(); a.currentTime = 0; a.muted = false; priming = false;
         };
-        if (p && p.then) { p.then(settle).catch(() => { a.muted = wasMuted; priming = false; }); }
-        else { settle(); }
+        const p = a.play();
+        if (p && p.then) p.then(settle).catch(() => { a.muted = false; priming = false; });
+        else settle();
       }
       try {
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
       } catch (e) {}
     }
-    document.addEventListener('pointerdown', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
-    document.addEventListener('keydown', unlockAudio, { once: true });
+    /* pointerdown covers mouse, touch and pen on every browser this tool
+       supports; keydown catches keyboard-only use. */
+    ['pointerdown', 'keydown'].forEach(ev =>
+      document.addEventListener(ev, unlockAudio, { once: true, passive: true }));
 
-    /* Fallback only: the V25 two-sine tone, on the shared context. */
     function synthBell() {
       try {
         audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        const ctx = audioCtx;
+        const t0 = audioCtx.currentTime;
         [880, 1320].forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, ctx.currentTime);
-          gain.gain.setValueAtTime(0.3, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + i * 0.08);
-          osc.stop(ctx.currentTime + 1.8);
+          osc.frequency.setValueAtTime(freq, t0);
+          gain.gain.setValueAtTime(0.3, t0);
+          gain.gain.exponentialRampToValueAtTime(0.001, t0 + 1.5);
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.start(t0 + i * 0.08);
+          osc.stop(t0 + 1.8);
         });
       } catch (e) {}
     }
@@ -1003,17 +851,14 @@
     function playBell() {
       unlockAudio();
       priming = false;          // a real ring outranks the silent priming pass
-      const a = currentSound();
-      if (!a) { synthBell(); return; }
+      if (!bellAudio) { synthBell(); return; }
       try {
-        a.pause();
-        a.currentTime = 0;
-        a.muted = false;        // priming may have left it muted
-        const p = a.play();
-        if (p && p.catch) p.catch(() => synthBell());
-      } catch (e) {
-        synthBell();
-      }
+        bellAudio.pause();
+        bellAudio.currentTime = 0;
+        bellAudio.muted = false;   // priming may have left it muted
+        const p = bellAudio.play();
+        if (p && p.catch) p.catch(synthBell);
+      } catch (e) { synthBell(); }
     }
 
     /* ══ Keep the screen awake while timing (iOS 16.4+, Chrome, Edge) ══ */
@@ -1030,92 +875,278 @@
       try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
     }
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && interval) acquireWakeLock();
+      if (document.visibilityState === 'visible' && running()) acquireWakeLock();
     });
 
-    function updatePhase() {
-      const body = document.body;
-      const t = getThresholds();
-      const running = body.classList.contains('running');
-      body.classList.remove('phase-green', 'phase-amber', 'phase-red', 'phase-white');
-      let word = '';
-      if (seconds >= t.red) {
-        body.classList.add('phase-red');
-        const bd = parseInt(document.getElementById('bellDelay').textContent, 10);
-        const bellAfter = isNaN(bd) ? 30 : Math.max(0, bd);
-        const bellDue = document.getElementById('bellToggle').checked && seconds >= t.red + bellAfter;
-        word = bellDue ? 'BELL' : 'RED';
-        if (!bellPlayed && bellDue) {
-          bellPlayed = true; playBell();
-        }
-      } else if (seconds >= t.amber) {
-        body.classList.add('phase-amber');
-        word = 'AMBER';
-      } else if (seconds >= t.green) {
-        body.classList.add('phase-green');
-        word = 'GREEN';
-      } else if (running) {
-        body.classList.add('phase-white');
+    /* ══════════════════════════════════════════════════════════════
+       Rendering — one function drives clock, lights, word and highlight
+       ══════════════════════════════════════════════════════════════ */
+    function render() {
+      const t = state.limits;
+      let phase = '', word = '';
+
+      /* Colours need a live or stopped-mid-speech clock. Without this,
+         a 0:00 threshold lights the room green while the app sits idle. */
+      const active = running() || state.seconds > 0;
+
+      if (active && state.seconds >= t.redAt) {
+        phase = 'red';
+        const due = ui.bellToggle.checked && state.seconds >= t.redAt + state.bellAfter;
+        word = due ? 'BELL' : 'RED';
+        if (due && !state.bellRung) { state.bellRung = true; playBell(); }
+      } else if (active && state.seconds >= t.amberAt) {
+        phase = 'amber'; word = 'AMBER';
+      } else if (active && state.seconds >= t.greenAt) {
+        phase = 'green'; word = 'GREEN';
+      } else if (running()) {
+        phase = 'white';
       }
-      pwFull.textContent = word;
-      pwShort.textContent = word ? word[0] : '';
+
+      ui.body.classList.remove('phase-green', 'phase-amber', 'phase-red', 'phase-white');
+      if (phase) ui.body.classList.add('phase-' + phase);
+      ui.pwFull.textContent = word;
+      ui.pwShort.textContent = word ? word[0] : '';
+      ui.timer.textContent = clock(state.seconds);
+      syncPresetHighlight();
     }
 
+    /* Any change to the thresholds or the delay re-arms a bell that has not
+       been reached yet, so moving the goalposts mid-speech still rings. */
+    function settingsChanged() {
+      readLimits();
+      if (state.seconds < state.limits.redAt + state.bellAfter) state.bellRung = false;
+      render();
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       Segment presets
+       ══════════════════════════════════════════════════════════════ */
+    function segCode() {
+      const t = state.limits;
+      for (const b of PRESET_BTNS) {
+        if (parseTime(b.dataset.g) === t.greenAt &&
+            parseTime(b.dataset.a) === t.amberAt &&
+            parseTime(b.dataset.r) === t.redAt) return b.dataset.seg;
+      }
+      return 'Other';
+    }
+
+    /* The highlight follows the thresholds however they were set — preset
+       click, ±, or typing. One source of truth, so it can never lie. */
+    function syncPresetHighlight() {
+      const seg = segCode();
+      PRESET_BTNS.forEach(b => b.classList.toggle('active', b.dataset.seg === seg));
+    }
+
+    function setBellDelay(secs) {
+      state.bellAfter = Math.min(300, Math.max(0, secs));
+      ui.bellDelay.textContent = '+' + state.bellAfter + 's';
+    }
+
+    function applyThresholds(g, a, r, delay) {
+      ui.greenAt.value = g;
+      ui.amberAt.value = a;
+      ui.redAt.value = r;
+      setBellDelay(delay);
+      settingsChanged();
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       The log
+       ══════════════════════════════════════════════════════════════ */
+    function logSpeaker() {
+      const typed = ui.name.value.trim();
+      if (state.seconds === 0 && !typed) return;
+      const seg = segCode();
+      const name = typed || `${seg} ${state.records.filter(r => r.seg === seg).length + 1}`;
+      state.records.push({ name, seg, time: clock(state.seconds) });
+      ui.name.value = '';
+      renderLog();
+    }
+
+    function renderLog() {
+      const frag = document.createDocumentFragment();
+      state.records.forEach((r, i) => {
+        const row = document.createElement('div');
+        row.className = 'log-entry';
+        row.dataset.i = i;
+
+        const name = document.createElement('span');
+        name.className = 'lg-name';
+        name.textContent = r.name;
+        name.contentEditable = 'true';
+        name.spellcheck = false;
+        name.title = 'Click to edit name';
+
+        const seg = document.createElement('select');
+        seg.className = 'lg-seg';
+        seg.title = 'Change segment';
+        SEGMENTS.forEach(code => {
+          const o = document.createElement('option');
+          o.value = o.textContent = code;
+          seg.appendChild(o);
+        });
+        seg.value = SEGMENTS.includes(r.seg) ? r.seg : 'Other';
+
+        const time = document.createElement('span');
+        time.className = 'lg-time';
+        time.textContent = r.time;
+        time.contentEditable = 'true';
+        time.spellcheck = false;
+        time.title = 'Click to edit time (m:ss)';
+
+        const del = document.createElement('span');
+        del.className = 'lg-del';
+        del.textContent = '✕';
+        del.title = 'Remove';
+
+        row.append(name, seg, time, del);
+        frag.appendChild(row);
+      });
+      ui.entries.replaceChildren(frag);
+      ui.empty.style.display = state.records.length ? 'none' : '';
+    }
+
+    const rowIndex = node => {
+      const row = node.closest ? node.closest('.log-entry') : null;
+      return row ? +row.dataset.i : -1;
+    };
+
+    /* One listener per event type for the whole log, instead of four per row.
+       Survives re-renders, so no stale closures over a spliced index. */
+    ui.entries.addEventListener('focusout', e => {
+      const i = rowIndex(e.target);
+      if (i < 0) return;
+      const rec = state.records[i];
+      if (e.target.classList.contains('lg-name')) {
+        const v = e.target.textContent.trim();
+        if (v) rec.name = v; else e.target.textContent = rec.name;
+      } else if (e.target.classList.contains('lg-time')) {
+        const parsed = parseTime(e.target.textContent);
+        if (parsed !== null) rec.time = clock(parsed);
+        e.target.textContent = rec.time;
+      }
+    });
+
+    ui.entries.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); }
+    });
+
+    ui.entries.addEventListener('change', e => {
+      const i = rowIndex(e.target);
+      if (i >= 0 && e.target.classList.contains('lg-seg')) state.records[i].seg = e.target.value;
+    });
+
+    ui.entries.addEventListener('click', e => {
+      if (!e.target.classList.contains('lg-del')) return;
+      const i = rowIndex(e.target);
+      if (i < 0) return;
+      const rec = state.records[i];
+      if (confirm(`Delete "${rec.name}" (${rec.time})?`)) {
+        state.records.splice(i, 1);
+        renderLog();
+      }
+    });
+
+    $('copyLog').addEventListener('click', () => {
+      if (!state.records.length) return;
+      const text = state.records.map(r => `${r.name}\t${r.seg || 'Other'}\t${r.time}`).join('\n');
+      navigator.clipboard.writeText(text).catch(() => {});
+    });
+
+    $('clearLog').addEventListener('click', () => {
+      const n = state.records.length;
+      if (!n) return;
+      if (confirm(`Clear all ${n} recorded time${n > 1 ? 's' : ''}?`)) {
+        state.records = [];
+        renderLog();
+      }
+    });
+
+    /* ══════════════════════════════════════════════════════════════
+       Transport
+       ══════════════════════════════════════════════════════════════ */
     function tick() {
-      seconds++;
-      timerEl.textContent = formatClock(seconds);
-      updatePhase();
+      state.seconds++;
+      render();
     }
 
-    function startTimer() {
-      if (interval) return;
-      unlockAudio();
+    function startTicking() {
+      if (state.ticker) return;
+      state.ticker = setInterval(tick, 1000);
+      ui.startBtn.classList.add('hidden');
+      ui.stopBtn.classList.remove('hidden');
+      ui.body.classList.add('running');
       acquireWakeLock();
-      interval = setInterval(tick, 1000);
-      startBtn.classList.add('hidden');
-      stopBtn.classList.remove('hidden');
-      document.body.classList.add('running');
-      updatePhase();
     }
 
-    function stopTimer() {
-      clearInterval(interval);
-      interval = null;
+    function stopTicking() {
+      clearInterval(state.ticker);
+      state.ticker = null;
+      ui.stopBtn.classList.add('hidden');
+      ui.startBtn.classList.remove('hidden');
+      ui.body.classList.remove('running');
       releaseWakeLock();
-      stopBtn.classList.add('hidden');
-      startBtn.classList.remove('hidden');
-      document.body.classList.remove('running');
-      updatePhase();
     }
 
-    function resetTimer() {
-      const wasRunning = interval !== null;
+    ui.startBtn.addEventListener('click', () => { unlockAudio(); startTicking(); render(); });
+    ui.stopBtn.addEventListener('click', () => { stopTicking(); render(); });
+
+    /* Reset logs the speaker and zeroes the clock. If it was running it keeps
+       running, so the Timer can roll straight into the next speaker. */
+    ui.resetBtn.addEventListener('click', () => {
+      const wasRunning = running();
       logSpeaker();
-      clearInterval(interval);
-      interval = null;
-      seconds = 0;
-      bellPlayed = false;
-      timerEl.textContent = '00:00';
-      if (wasRunning) {
-        interval = setInterval(tick, 1000);
-        document.body.classList.add('running');
-        acquireWakeLock();
-      } else {
-        releaseWakeLock();
-        document.body.classList.remove('running');
-        stopBtn.classList.add('hidden');
-        startBtn.classList.remove('hidden');
+      state.seconds = 0;
+      state.bellRung = false;
+      if (!wasRunning) stopTicking();
+      render();
+    });
+
+    /* ══════════════════════════════════════════════════════════════
+       Settings — every one of these stays live while the clock runs
+       ══════════════════════════════════════════════════════════════ */
+    ui.settings.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      if (btn.dataset.step) {
+        /* If the field holds a half-typed value, step from the last valid
+           limit — never from 0, which would yank the lights mid-speech. */
+        const id = btn.dataset.step;
+        const input = ui[id];
+        input.value = field(Math.max(0, (parseTime(input.value) ?? state.limits[id]) + (+btn.dataset.by)));
+        settingsChanged();
+      } else if (btn.dataset.bell) {
+        setBellDelay(state.bellAfter + (+btn.dataset.bell));
+        settingsChanged();
+      } else if (btn.id === 'testBell') {
+        playBell();
       }
-      updatePhase();
+    });
+
+    ui.settings.addEventListener('input', e => {
+      if (e.target.classList.contains('thr')) settingsChanged();
+    });
+
+    ui.bellToggle.addEventListener('change', settingsChanged);
+
+    ui.presets.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      if (btn.id === 'segTest') applyThresholds('0:02', '0:04', '0:06', 2);
+      else if (btn.dataset.seg) applyThresholds(btn.dataset.g, btn.dataset.a, btn.dataset.r, 30);
+    });
+
+    /* ══════════════════════════════════════════════════════════════
+       Boot
+       ══════════════════════════════════════════════════════════════ */
+    if (window.matchMedia('(max-width: 980px), (max-height: 660px)').matches) {
+      $('howto').open = false;
     }
 
+    readLimits();   // some browsers restore field values across a reload
     renderLog();
-
-    /* Instructions collapse on small or short screens */
-    if (window.matchMedia('(max-width: 980px)').matches ||
-        window.matchMedia('(max-height: 660px)').matches) {
-      document.getElementById('howto').open = false;
-    }
+    render();
   </script>
 </body>
 </html>
