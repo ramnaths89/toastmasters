@@ -3956,6 +3956,23 @@ async function renderSheetParts(opts){
   }
 }
 
+/* CPU raster, deliberately (V37).
+   Rama's exports carry a 2px translucent vertical line down the WHOLE page - over
+   the banner, the table head and the paper alike - at a constant x on every page,
+   in both the PDF and the JPG. It is not in the layout: every element that spans
+   the full height of the export was enumerated (html, body, .page-wrap, .page,
+   .body-grid, main, table, tbody, aside.ref-pane, .pane-body) and none has an edge
+   anywhere near it, and nothing in the DOM spans the banner AND the agenda. It
+   never reproduces here, under software rasterisation, across his exact content,
+   real webfonts, and device scale factors 1 to 2.
+   That combination is the signature of a GPU tile seam: the sheet is one canvas of
+   2154 x ~6300 px, and a high-quality downscale of a texture that large is done
+   per tile, so a sub-pixel disagreement at a tile boundary paints a hairline the
+   full height of the image.
+   willReadFrequently moves the canvas to Skia's CPU backing store, which has no
+   tiles. It costs nothing here: these contexts are written once and immediately
+   read back by toBlob, which is exactly the access pattern the flag describes. */
+const CTX2D = { willReadFrequently: true };
 /* Stepwise halving beats one big jump — a single drawImage down to 45% aliases
    the 9.5px pane type into mush, three gentle steps do not. */
 function downscaleCanvas(src, targetW){
@@ -3964,7 +3981,7 @@ function downscaleCanvas(src, targetW){
     const c = document.createElement('canvas');
     c.width = Math.max(targetW, Math.round(cur.width / 2));
     c.height = Math.round(cur.height * (c.width / cur.width));
-    const x = c.getContext('2d');
+    const x = c.getContext('2d', CTX2D);
     x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
     x.drawImage(cur, 0, 0, c.width, c.height);
     cur = c;
@@ -3973,7 +3990,7 @@ function downscaleCanvas(src, targetW){
   const c = document.createElement('canvas');
   c.width = targetW;
   c.height = Math.round(cur.height * (targetW / cur.width));
-  const x = c.getContext('2d');
+  const x = c.getContext('2d', CTX2D);
   x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
   x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
   x.drawImage(cur, 0, 0, c.width, c.height);
@@ -4083,7 +4100,7 @@ async function downloadPdfImage(){
        and dividing that by the page count pushed the cut past the boundary the
        layout was paginated to, slicing the first line of page two in half. */
     const cut = document.createElement('canvas');
-    const ctx = cut.getContext('2d');
+    const ctx = cut.getContext('2d', CTX2D);
     const buildAt = async (src, strip, q)=>{
       const sliceH = src.width * (PRINT_H_MM / PRINT_W_MM);
       const pxPerPt = src.width / imgWpt;
