@@ -102,9 +102,20 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
 /* The V29 narrow rule stacked the panes and capped the form at 70vh, so a phone
    showed a squeezed form with the sheet somewhere off the bottom. Replaced by the
    one-pane-at-a-time layout at the end of this file (V30). */
+/* The LAYOUT half of this block is gone (V37).
+   It stacked the two panes into a column at 980px, while the tabbed one-pane
+   layout and the hidden splitter only arrive at 900px (NARROW_PX). Between 901
+   and 980 the builder was therefore in a state nobody designed: the panes were
+   stacked, the Edit/Preview tabs had not appeared, and the splitter was still in
+   the flow - now an 8px bar the full width of the window, still carrying
+   cursor:col-resize, and still driving applyPaneWidth(), whose flex-basis is a
+   HEIGHT in a column container. Dragging it in that band set the form pane's
+   height from a horizontal mouse position.
+   One breakpoint now, at 900: side by side above it, tabs below it. Reported by
+   Rama, who noticed the split surviving a moment too long on the way down.
+   The form-density rules below stay at 980 - they are about how much room the
+   FORM has, which is a different question from how the two panes sit. */
 @media (max-width: 980px){
-  .builder-body{flex-direction:column; height:auto;}
-  .form-pane{width:100%; border-right:none; border-bottom:1px solid var(--line);}
   .preview-pane iframe{height:1400px;}
 }
 
@@ -199,7 +210,8 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
 }
 .sc-alt:hover{ background:#eaf2f6; }
 @media (max-width: 980px){
-  .form-pane{ width:100%; flex:0 0 auto; }
+  /* .form-pane{width:100%; flex:0 0 auto} removed with the stacking above: it
+     forced the pane full-width and dropped the 50% flex-basis the splitter sets. */
   .sc-projrow{ grid-template-columns:1fr 1fr; }
   .sc-projrow .sc-proj{ grid-column:1 / -1; }
 }
@@ -547,6 +559,9 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
   }
   .view-tabs button.on{ background:var(--maroon); border-color:var(--maroon); color:#fff; }
 
+  /* display:block, so the panes stack whatever the flex rules above say. This
+     used to lean on the 980px block for the column direction; that block no
+     longer touches layout, so the one-pane view states it for itself. */
   .builder-body{ display:block; height:auto; }
   #splitter{ display:none; }
   /* applyPaneWidth() sets flex-basis for the desktop splitter; in one column that
