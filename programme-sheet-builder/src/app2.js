@@ -909,7 +909,6 @@ function flashSaved(){
    offscreen iframe so the builder's own stylesheet cannot leak into it.
    Scale 3 over the 900px sheet gives a 2700px-wide PNG — roughly 300dpi across
    an A4 width, which is what keeps the 9.5px pane type readable. */
-const IMAGE_WIDTH = 900;
 const IMAGE_SCALE = 3;
 /* Rama shares the sheet on WhatsApp; a 2.6 MB export was unusable. Render big,
    then step DOWN until the JPEG fits this budget. Resolution is dropped before
@@ -1838,7 +1837,6 @@ function suggestedFileStem(){
   const now = two(d.getHours()) + two(d.getMinutes());
   return clubInitials() + '-ProgSheet-' + meetingDateStamp() + '-' + now;
 }
-function suggestedFileName(){ return suggestedFileStem() + FILE_EXT; }
 
 /* ONE name drives the .json, the HTML, the PDF and the images (V30). Before this
    the meeting file was named from the club initials and date while every download
@@ -2161,10 +2159,6 @@ function lockKey(name){
 function readLock(name){
   try{ return JSON.parse(localStorage.getItem(lockKey(name)) || 'null'); }
   catch(e){ return null; }
-}
-function otherTabHolds(name){
-  const l = readLock(name);
-  return !!(l && l.tab && l.tab !== TAB_ID && (Date.now() - (Number(l.at) || 0)) < LOCK_TTL_MS);
 }
 function beatLock(){
   if(!lockedKey) return;
@@ -2748,16 +2742,18 @@ function closeDownloadMenu(){
 function pickDownload(kind){
   closeDownloadMenu();
   if(kind === 'html') return downloadSheet();
-  /* Desktop goes through the print dialog, which keeps real selectable text.
-     Phones cannot, so they get the canvas-built PDF instead. */
   /* Always the in-page PDF, desktop included (V29). Routing desktop through the
      print dialog meant the file's size depended on which destination the user
      picked there - and "Microsoft Print to PDF" rasterises every page at 300dpi
      for a 1.4 MB result. The browser dialog is browser chrome; a web page cannot
      preselect a destination or even see which one is chosen. So Download > PDF
-     no longer opens a dialog at all and always lands ~450 KB. Chrome's own
-     "Save as PDF" is still the better file - smaller AND with selectable text -
-     and the printer button below is how you reach it. */
+     no longer opens a dialog at all and lands under 500 KB, which is the figure
+     the menu promises. Chrome's own "Save as PDF" is still the better file -
+     smaller AND with selectable text - and Ctrl+P is how you reach it.
+     (The two lines that used to sit above this block described a desktop/phone
+     split that V29 replaced, and a printer button that no longer exists - the
+     help text says so in as many words. Removed rather than left contradicting
+     the paragraph under them.) */
   if(kind === 'pdf')  return downloadPdfImage();
   return downloadImage();
 }

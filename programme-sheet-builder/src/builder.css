@@ -49,7 +49,6 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
   position:relative;
 }
 .seg-card.is-flex{ border-color:var(--blue); background:#f3f8fa; }
-.seg-card .seg-top{display:flex; align-items:center; gap:6px; margin-bottom:6px;}
 .seg-badge{font-size:9.5px; font-weight:700; color:#fff; background:var(--maroon); padding:2px 7px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px;}
 .seg-card.is-flex .seg-badge{background:var(--blue);}
 .seg-time{font-size:11px; color:var(--ink-soft); margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700;}
@@ -154,7 +153,6 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
   flex:1 1 auto; min-width:0; font-size:11px; color:var(--ink-soft); font-style:italic;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right;
 }
-.sc-name{ flex:0 0 auto; }
 
 /* Speaker-count stepper, sitting in the section header (V31). Clicks inside it
    must not toggle the <details> it lives in — the wrapper cancels the default. */

@@ -11,8 +11,9 @@
 /* Voting runs on Slido, one room code per vote, numbered in the order they
    happen on the night: prepared speeches, then table topics, then evaluations. */
 /* Voting link and the three room codes are CLUB settings, not constants: another
-   club runs its own Slido account and its own codes, and the club-setup .md file
-   carries them. Held in module-level variables rather than read from state,
+   club runs its own Slido account and its own codes, entered in Club Setup.
+   (This used to say a "club-setup .md file" carries them; that importer was
+   removed in V35 and the fields have been ordinary form inputs ever since.) Held in module-level variables rather than read from state,
    because newSegment() runs inside defaultState() while `state` is still in its
    temporal dead zone - touching it there throws. syncVotingFromState() pushes
    state back into these whenever a meeting is loaded or the setup is imported. */
