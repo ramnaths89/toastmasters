@@ -87,7 +87,9 @@ async def main():
           return {w:o.w, h:o.h, q:o.q, size:o.blob.size, baseW:c.width};
         }""")
         ck("renders at high res before downscaling", out["baseW"]>=2600, out["baseW"])
-        ck("JPG fits the 450 KB budget", out["size"]<=450*1024, f'{out["size"]//1024} KB @ {out["w"]}px q{out["q"]}')
+        # 500 KB is the figure the Download menu promises the user. Keep the two in step:
+        # if this number moves, the menu text and customise-for-your-club.md move with it.
+        ck("JPG fits the 500 KB budget", out["size"]<=500*1024, f'{out["size"]//1024} KB @ {out["w"]}px q{out["q"]}')
         # Capped at MAX_EXPORT_WIDTH (1500) on purpose since V26 -- past this,
         # extra pixels cost quality instead of buying legibility.
         ck("hits the capped export width", out["w"]==1500, out["w"])
