@@ -58,7 +58,6 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
   position:relative;
 }
 .seg-card.is-flex{ border-color:var(--blue); background:#f3f8fa; }
-.seg-card .seg-top{display:flex; align-items:center; gap:6px; margin-bottom:6px;}
 .seg-badge{font-size:9.5px; font-weight:700; color:#fff; background:var(--maroon); padding:2px 7px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px;}
 .seg-card.is-flex .seg-badge{background:var(--blue);}
 .seg-time{font-size:11px; color:var(--ink-soft); margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700;}
@@ -163,7 +162,6 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
   flex:1 1 auto; min-width:0; font-size:11px; color:var(--ink-soft); font-style:italic;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right;
 }
-.sc-name{ flex:0 0 auto; }
 
 /* Speaker-count stepper, sitting in the section header (V31). Clicks inside it
    must not toggle the <details> it lives in — the wrapper cancels the default. */
@@ -1823,8 +1821,9 @@ const PATHWAYS_DATA = {"paths": [{"abbr": "DL", "name": "Dynamic Leadership", "r
 /* Voting runs on Slido, one room code per vote, numbered in the order they
    happen on the night: prepared speeches, then table topics, then evaluations. */
 /* Voting link and the three room codes are CLUB settings, not constants: another
-   club runs its own Slido account and its own codes, and the club-setup .md file
-   carries them. Held in module-level variables rather than read from state,
+   club runs its own Slido account and its own codes, entered in Club Setup.
+   (This used to say a "club-setup .md file" carries them; that importer was
+   removed in V35 and the fields have been ordinary form inputs ever since.) Held in module-level variables rather than read from state,
    because newSegment() runs inside defaultState() while `state` is still in its
    temporal dead zone - touching it there throws. syncVotingFromState() pushes
    state back into these whenever a meeting is loaded or the setup is imported. */
@@ -3620,7 +3619,6 @@ function flashSaved(){
    offscreen iframe so the builder's own stylesheet cannot leak into it.
    Scale 3 over the 900px sheet gives a 2700px-wide PNG — roughly 300dpi across
    an A4 width, which is what keeps the 9.5px pane type readable. */
-const IMAGE_WIDTH = 900;
 const IMAGE_SCALE = 3;
 /* Rama shares the sheet on WhatsApp; a 2.6 MB export was unusable. Render big,
    then step DOWN until the JPEG fits this budget. Resolution is dropped before
@@ -4549,7 +4547,6 @@ function suggestedFileStem(){
   const now = two(d.getHours()) + two(d.getMinutes());
   return clubInitials() + '-ProgSheet-' + meetingDateStamp() + '-' + now;
 }
-function suggestedFileName(){ return suggestedFileStem() + FILE_EXT; }
 
 /* ONE name drives the .json, the HTML, the PDF and the images (V30). Before this
    the meeting file was named from the club initials and date while every download
@@ -4872,10 +4869,6 @@ function lockKey(name){
 function readLock(name){
   try{ return JSON.parse(localStorage.getItem(lockKey(name)) || 'null'); }
   catch(e){ return null; }
-}
-function otherTabHolds(name){
-  const l = readLock(name);
-  return !!(l && l.tab && l.tab !== TAB_ID && (Date.now() - (Number(l.at) || 0)) < LOCK_TTL_MS);
 }
 function beatLock(){
   if(!lockedKey) return;
@@ -5459,16 +5452,18 @@ function closeDownloadMenu(){
 function pickDownload(kind){
   closeDownloadMenu();
   if(kind === 'html') return downloadSheet();
-  /* Desktop goes through the print dialog, which keeps real selectable text.
-     Phones cannot, so they get the canvas-built PDF instead. */
   /* Always the in-page PDF, desktop included (V29). Routing desktop through the
      print dialog meant the file's size depended on which destination the user
      picked there - and "Microsoft Print to PDF" rasterises every page at 300dpi
      for a 1.4 MB result. The browser dialog is browser chrome; a web page cannot
      preselect a destination or even see which one is chosen. So Download > PDF
-     no longer opens a dialog at all and always lands ~450 KB. Chrome's own
-     "Save as PDF" is still the better file - smaller AND with selectable text -
-     and the printer button below is how you reach it. */
+     no longer opens a dialog at all and lands under 500 KB, which is the figure
+     the menu promises. Chrome's own "Save as PDF" is still the better file -
+     smaller AND with selectable text - and Ctrl+P is how you reach it.
+     (The two lines that used to sit above this block described a desktop/phone
+     split that V29 replaced, and a printer button that no longer exists - the
+     help text says so in as many words. Removed rather than left contradicting
+     the paragraph under them.) */
   if(kind === 'pdf')  return downloadPdfImage();
   return downloadImage();
 }
