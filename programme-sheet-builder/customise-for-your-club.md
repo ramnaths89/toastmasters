@@ -23,13 +23,27 @@ Open the tool. **Club Setup** is the first panel in the form on the left. Open i
 | Meeting cadence | One line at the foot of the banner | We meet every 2nd and 4th Thursday of the month from 7:00PM to 9:30PM |
 | Location | Venue, address, postal code | Nee Soon East Community Club, 1 Yishun Ave 9, #04-01 (Culinary Studio), Singapore 768893 |
 | Footer note | Short district summary for the page footer | District 80, Division Y, Area 01 |
-| Executive Committee | One line per role, `Role\|Name` | Placeholders — `President\|<President Name>` and so on |
+| Executive Committee | One line per role, `Role\|Name\|Sub-note` — the sub-note is optional | Placeholders — `President\|<President Name>` and so on |
 | District Officers | One line per person, `Role\|Name\|Their Club` | Placeholders — `<Division Director Name>`, `<Their Club>` |
 | Links | One line per link, `Label\|URL\|Display text` | TI plus Nee Soon East's Facebook group |
+| Voting link | Where members vote. Prints under every voting row on the sheet | `https://slido.com` |
+| Speeches code | Room code for the prepared-speech vote | `NSE_1` |
+| Table topics | Room code for the Table Topics vote | `NSE_2` |
+| Evaluations | Room code for the evaluation vote | `NSE_3` |
+
+> **Change the three voting codes or delete them.** They are the one field that carries somebody
+> else's club into your meeting silently. Left alone, your printed sheet tells your members to
+> vote in Nee Soon East's Slido rooms, and nothing on the page looks wrong. They are also the one
+> field the usual check misses: searching the file for "Nee Soon" will not find `NSE_1`. If your
+> club doesn't run live voting at all, clear the link and all three codes and the voting lines
+> stop printing.
 
 Start and end time live in **Meeting Info**, not Club Setup, because they occasionally change. The
 defaults are 19:00 and 21:30, and the standard timings are tuned so a meeting lands exactly on the
 end time.
+
+The browser tab still reads **NSE Programme Sheet Builder**. That is cosmetic and nothing on the
+printed sheet depends on it, but Route 2 below changes it if it bothers you.
 
 Your entries are saved in your own browser as you type, so the tool opens with your club's details
 next time. Two things worth knowing before you rely on that:
@@ -84,8 +98,8 @@ they open it with the dropdown.
 
 Use **⭳ Download**:
 
-- **PDF** — a print-ready A4 file of about 450 KB, saved straight away with no print dialog.
-- **JPG** — an image of the whole sheet, kept under 450 KB, for WhatsApp, email and posting.
+- **PDF** — a print-ready A4 file under 500 KB, saved straight away with no print dialog.
+- **JPG** — an image of the whole sheet, under 500 KB, for WhatsApp, email and posting.
 - **HTML** — the sheet as a standalone page that reopens and stays editable in any browser.
 
 There is deliberately no print button. The browser's own print dialog has a **destination**
@@ -149,10 +163,16 @@ default into my file.
     International line as-is and add my club's own. Format example only, do not copy:
     Toastmasters Intl.|https://www.toastmasters.org|www.toastmasters.org
     Our Club|https://www.facebook.com/groups/example|facebook.com/groups/example
+12. Live voting. The sheet prints a voting link and a room code under each of the three votes
+    (prepared speeches, table topics, evaluations). These currently hold ANOTHER CLUB's
+    account — link https://slido.com with codes NSE_1, NSE_2 and NSE_3 — so they must be
+    replaced or removed; they are the one setting that goes wrong silently. Ask me for my
+    club's voting link and my three room codes. If I say we do not run live voting, set the
+    link and all three codes to empty strings, which stops the voting lines printing.
 
 Then ask this, and skip it if I do not answer:
 
-12. Does my club run a Language Evaluator every meeting? If yes, set that role to default ON.
+13. Does my club run a Language Evaluator every meeting? If yes, set that role to default ON.
     It is currently OFF. Note that turning it on adds a Word of the Day row, which adds about
     three minutes — I may want to re-tune the flexible segments (Break and Table Topics) so the
     meeting still lands on my end time.
@@ -163,15 +183,25 @@ in code.
 
 HOW TO EDIT THE FILE
 
-1. Find the JavaScript function `defaultState()`.
-2. Inside it, replace ONLY the string values for: clubName, clubNumber, clubInitials, orgLine,
-   cadence, location, startTime, endTime, footerNote, execText, districtText, linksText — and,
-   only if I answered the Language Evaluator question with yes, change `langeval: false` to
+1. Find the JavaScript function `defaultState()`. It returns an object whose keys are
+   meeting, roles, roleActive, customRoles, execText, districtText, linksText,
+   announcementsText, paneWidth, theme and segments. Read it before you edit it — do not
+   assume the shape from this prompt.
+2. Inside the nested `meeting` object, replace ONLY the string values for: clubName,
+   clubNumber, clubInitials, orgLine, cadence, location, startTime, endTime, footerNote, and
+   the voting link and three codes (in `meeting.voting`, or wherever the file holds
+   votingLink / voteSpeech / voteTT / voteEval — find them, they exist).
+3. At the top level of the same object, replace the string values for execText, districtText
+   and linksText.
+4. Only if I answered the Language Evaluator question with yes, change `langeval: false` to
    `langeval: true` in the `roleActive` object.
-3. Leave the `roles` object alone. Those are per-meeting names and are deliberately blank.
-4. Do not touch anything else — no CSS, no other JavaScript, no reformatting or re-indenting
+5. Leave `roles`, `customRoles`, `announcementsText`, `paneWidth`, `theme` and `segments`
+   alone. Those are per-meeting data, layout preferences and the timing template.
+6. Change the `<title>` in the document head from "NSE Programme Sheet Builder" to my club's
+   equivalent. Leave the localStorage key alone — renaming it discards anything already saved.
+7. Do not touch anything else — no CSS, no other JavaScript, no reformatting or re-indenting
    of code you did not change. Keep the same quote style and structure.
-5. Everything else (the Pathways catalogue, timing logic, print layout, themes, help panel) is
+8. Everything else (the Pathways catalogue, timing logic, print layout, themes, help panel) is
    shared Toastmasters International content and mechanics. It is not club-specific.
 
 WHAT TO HAND BACK
@@ -180,7 +210,8 @@ WHAT TO HAND BACK
    and open in a browser.
 2. A short summary of exactly which fields you changed, so I can check it before I trust it.
 3. A reminder to open the file, click ↺ Reset, and confirm Club Setup shows my club — then
-   search the file for "Nee Soon", "2548", "Yishun" and "<" and confirm zero matches remain.
+   search the file for "Nee Soon", "2548", "Yishun", "NSE_", "slido" and "<" and confirm the
+   only matches left are ones I put there myself.
 ````
 
 ### Check the result before you use it in front of a room
@@ -188,8 +219,12 @@ WHAT TO HAND BACK
 1. Open the file and click **↺ Reset**. Club Setup should show *your* club, not Nee Soon East's.
 2. Search the file (Ctrl+F) for `Nee Soon`, `2548`, `Yishun` and `<President Name>`. All four
    should return nothing.
-3. Build one real agenda and download the PDF. Confirm the banner, the footer and the side panel
-   all read correctly, and that the meeting still ends at your end time.
+3. Search it again for `NSE_` and `slido`. This is a separate step because the first search
+   cannot catch it: the voting codes carry no club name, so a file that passes step 2 perfectly
+   can still send your members to somebody else's poll.
+4. Build one real agenda and download the PDF. Confirm the banner, the footer and the side panel
+   all read correctly, that the voting rows show your codes, and that the meeting still ends at
+   your end time.
 
 ---
 
