@@ -116,10 +116,10 @@ function projectChoices(seg){
     here: true }));
   /* A `legacy` project still resolves a duration for meetings saved before it was
      superseded, but it is never offered as a choice. Evaluation and Feedback was split
-     into (1st Speech) and (2nd Speech) in V38 because the project IS two speeches and
-     the sheet has to say which one tonight is; the un-suffixed name would otherwise sit
-     in the catalog beside both halves and read like a third option. Filtered HERE rather
-     than dropped from PATHWAYS_DATA.projects, because projectInfo() is what gives an
+     into (1st Speech) and (2nd Speech) because the project IS two speeches and the sheet
+     has to say which one tonight is; the un-suffixed name would otherwise sit in the
+     catalog beside both halves and read like a third option. Filtered HERE rather than
+     dropped from PATHWAYS_DATA.projects, because projectInfo() is what gives an
      already-saved meeting its 5-7 min and its note. */
   const rest = ALL_PROJECTS.filter(n=>!seen.has(n) && !(PATHWAYS_DATA.projects[n]||{}).legacy).map(n=>{
     const series = seriesOf(n);
@@ -370,13 +370,11 @@ function buildSheetHTML(interactive){
           </tr>`;
   }).join('');
 
-  /* Working aid, not part of the sheet (V38). "Roles still open ... please fill
-     before the meeting" is addressed to whoever is BUILDING the agenda, so it belongs
-     in the live preview and nowhere else. Every non-interactive render is an artefact
-     that leaves this tab - the HTML download, the PDF, the JPG, and the hidden iframe
-     that measures the pane fit - and a reminder to fill roles reads as a defect on a
-     sheet handed to a room. Gated on `interactive` rather than removed, so it keeps
-     doing its job where it is useful. */
+  /* Working aid, not part of the sheet. "Roles still open ... please fill before the
+     meeting" is addressed to whoever is BUILDING the agenda. Rama: "it's unprofessional
+     if it makes it into production for guests and members." Gated on `interactive`, so it
+     survives in the live preview and appears in NOTHING that leaves the tab - the HTML
+     download, the PDF, the JPG, and the hidden iframe that measures the pane fit. */
   const openRolesHtml = (interactive && openRoles.length)
     ? `<div class="theme-strip">Roles still open: ${openRoles.map(r=>`<b>${esc(r)}</b>`).join(', ')} — please fill before the meeting.</div>`
     : '';
@@ -1089,8 +1087,16 @@ async function renderSheetParts(opts){
         + 'width:100%!important;position:relative!important;overflow:visible!important}'
       /* Un-fix the pane: absolute inside the page, natural height, no clipping,
          so it simply carries on down the sheet and across the page break. */
+      /* column-count/columns forced back to auto: an aside that is a multi-column
+         context fragments an over-tall .pane-body into an overflow column to the
+         RIGHT, and html2canvas paints element borders on the UNION of an element's
+         fragments - which is what drew a 1px line down the middle of every export.
+         The sheet CSS no longer sets column-count, but a sheet DOWNLOADED from an
+         older build carries its own copy of that stylesheet, so the export pins it
+         here too. */
       + 'aside.ref-pane{position:absolute!important;top:0!important;left:0!important;'
-        + 'right:auto!important;height:auto!important;overflow:visible!important}'
+        + 'right:auto!important;height:auto!important;overflow:visible!important;'
+        + 'column-count:auto!important;columns:auto!important}'
       /* Same for the footer, which print pins to the bottom of every page. */
       + 'footer{position:absolute!important;left:0!important;right:0!important;'
         + 'bottom:0!important;top:auto!important}'
@@ -1142,6 +1148,21 @@ async function renderSheetParts(opts){
       const hh = Math.ceil(hdr.getBoundingClientRect().height) + 1;   /* +1 for the flex rounding */
       hdr.style.height = hh + 'px';
       if(brand) brand.style.height = hh + 'px';
+      /* And size the pane body against the REAL banner height, not the constant.
+         .pane-body is 'calc(100% - var(--print-head))' and --print-head is a fixed
+         33mm = 124.7px, but the brand box above it has just been set to hh - 142px
+         with a meeting title, 118px without. With a title the pane body therefore
+         ran 17px past the bottom of the aside, which is what made it overflow, and
+         the overflow is what produced the line (see the column-count note in the
+         sheet CSS). Measured: bottom 2086.3 against the aside's 2069.4 with a
+         title, 2062.3 without - which is exactly why typing one character in the
+         Meeting Title field turned the line on. */
+      /* setProperty with 'important', not style.minHeight: the fix stylesheet a
+         few lines up declares .pane-body{min-height:...!important}, and a plain
+         inline style LOSES to an !important declaration. The first version of this
+         set it the easy way and the pane body still ran 17px past the aside. */
+      const paneBody = idoc.querySelector('.pane-body');
+      if(paneBody) paneBody.style.setProperty('min-height', 'calc(100% - ' + hh + 'px)', 'important');
       await new Promise(r=>setTimeout(r, 30));
     }
 
@@ -1358,7 +1379,12 @@ function downscaleCanvas(src, targetW){
    if nothing does — never silently ships something enormous. */
 async function encodeJpegUnder(canvas, target){
   /* Capped, and quality-first within each width: the first fit at the widest
-     allowed size is the HIGHEST quality that fits there, not the lowest. */
+     allowed size is the HIGHEST quality that fits there, not the lowest.
+     Aim 1% under the budget rather than at it (V37). "The first size that fits"
+     can fit by 320 bytes, and then any later change that adds a line to the sheet
+     ships an over-cap file. Stepping one quality notch down when the top notch
+     only just squeaks in costs nothing visible and keeps real headroom. */
+  target = Math.floor(target * 0.99);
   const widths = [MAX_EXPORT_WIDTH, 1400, 1300, 1200, 1050].filter(w => w <= canvas.width);
   const qualities = [0.88, 0.84, 0.80, 0.76, 0.70, 0.62, 0.55];
   let last = null;
@@ -1500,7 +1526,14 @@ async function downloadPdfImage(){
         : parts.footStrip;
       for(const q of [0.78, 0.72, 0.66, 0.58, 0.50, 0.44]){
         out = await buildAt(src, strip, q);
-        if(out.blob.size <= IMAGE_TARGET_BYTES) break outer;
+        /* 1% under the cap, not at it (V37). The PDF ladder has its own loop and
+           was left behind when encodeJpegUnder gained the same margin. "The first
+           rung that fits" fitted by 320 bytes on a long sheet, so the very next
+           change that adds a line to the agenda would have shipped an over-cap
+           file - and the banner would then have told Rama his meeting was
+           "unusually long this week" when all that happened was a tighter
+           typeface. One quality notch buys the margin back and is invisible. */
+        if(out.blob.size <= IMAGE_TARGET_BYTES * 0.99) break outer;
       }
     }
     saveBlob(out.blob, sheetFileStem() + '.pdf');

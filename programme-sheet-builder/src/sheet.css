@@ -679,7 +679,24 @@
          pushed 2px below the banner), and it was invisible to headless
          testing for six versions. Zero it explicitly. */
       border-top: none;
-      column-count: 1;
+      /* column-count: 1 REMOVED (V37). It was here as belt and braces against a
+         stray multi-column rule that does not exist - nothing else in this file
+         sets column-count, columns, column-gap (outside grid) or column-rule - and
+         it was the cause of the vertical line down every exported PDF and JPG.
+         Setting column-count makes the aside a MULTI-COLUMN formatting context. As
+         soon as .pane-body is taller than the aside, Chrome fragments it into an
+         OVERFLOW COLUMN laid out to the RIGHT, one column-width across plus a
+         column-gap of 1em (the aside is 10.5px, so 10.5px). getBoundingClientRect()
+         returns the UNION of an element's fragments, and html2canvas positions
+         element boxes from getBoundingClientRect while positioning TEXT from
+         per-text-node rects. So the pane's copy stayed where it belonged and its
+         border-right was painted at the union's right edge:
+             172.34 + 10.5 + 172.34 = 355.1 CSS px = 49.3% of the sheet,
+         top 0 to the aside's bottom - a 1px line of var(--line) down the whole
+         page, over the banner and the table head alike. The real pane rule at
+         171.8 vanished at the same time, because it is the same border, displaced.
+         Reproduced end to end and confirmed by hooking ctx.fill(): a clean export
+         logs exactly one tall-thin fill, at x 171.34. */
       font-size: 10.5px;
       background: #fff;
     }
@@ -845,51 +862,42 @@
     .holder-pair .hp-line{ line-height: 1.3; font-size: 10px; }
     .announcements .announce-gap{ height: 2.5px; }
 
-    /* Zine's uppercase + tracking and Terminal's monospace item titles run the
-       agenda two rows past page 2. Tightened here only, so the themes keep their
-       character on screen. Measured: both land in 2 pages with this. */
-    body.th-zine .item-title, body.th-brutalist .item-title,
- body.th-handmade .item-title{
-      font-size: 11px; letter-spacing: 0;
-    }
-    /* Confessional sets a monospace body face, ~15% wider than the sans - the
-       same trap Terminal hit. Body copy reverts to the sans on paper; the mono
-       is kept where the theme actually reads. */
-      font-family: "Source Sans 3", "Myriad Pro", Arial, sans-serif;
-    }
-    /* Retro-Futurism's wide tracking is the whole point on screen and pure cost
-       on paper, where the column is 45mm narrower. Measured: tracking alone left
-       it on three pages, so the item titles come back to the base size too. */
-    body.th-retrofuture .head-text .club{ letter-spacing: 1.4px; }
-    body.th-retrofuture thead th{ letter-spacing: 0.8px; }
-    body.th-retrofuture aside h3{ letter-spacing: 0.8px; }
-    body.th-retrofuture .item-title{ font-size: 11px; letter-spacing: 0; }
-    body.th-retrofuture td.time{ letter-spacing: 0; }
-    /* Confessional's underlined mono titles and Handmade's serif both sit wider
-       than the sans; trim the sub-line as well as the title. */
- body.th-handmade td.item .item-sub,
-    body.th-retrofuture td.item .item-sub{ font-size: 11px; }
-    /* Brutalist rules every row at 2px and Zine sets its titles in tracked-out
-       uppercase; with 25 rows those two were the last pair still spilling onto a
-       third page. Trimmed here only, so both keep their look on screen. */
-    body.th-brutalist tbody tr{ border-bottom-width: 1px; }
-    body.th-zine td.item .item-sub, body.th-brutalist td.item .item-sub{ font-size: 11px; }
-    /* Terminal sets monospace on the whole body, which is ~15% wider than the
-       body face and spills a third page (verified: forcing the sans back drops it
-       to 2). On paper, fitting beats the typeface joke — so body copy reverts to
-       the sans in print and the mono is kept where the theme actually reads: the
-       banner, the column heads and the pane headings. */
-      font-family: "Source Sans 3", "Myriad Pro", Arial, sans-serif;
-    }
-      font-family: ui-monospace, 'Cascadia Mono', 'Courier New', monospace;
-    }
 
-    /* Zine's uppercase+tracking and Terminal's monospace item titles run the
-       agenda two rows past page 2. Tightened in print only, so both themes keep
-       their character on screen. */
-    body.th-zine .item-title{
-      font-size: 11px; letter-spacing: 0;
-    }
+
+    /* ---- One density for every theme (V37) ----
+       This used to be five separate patches, one per theme, each measured against
+       the two-page boundary on its own and each leaving the others alone. Two
+       things were wrong with that. The obvious one: the printed sheet came out a
+       different size in different themes, which is what Rama saw and asked to be
+       made uniform. The buried one: three of those patches sat immediately after
+       an ORPHANED declaration left behind when a retired theme's selector was
+       deleted and its body was not -
+
+           /@ Confessional sets a monospace body face ... @/
+             font-family: "Source Sans 3", ...;
+           }
+
+       A stray declaration at rule level makes the CSS parser discard tokens until
+       it can resynchronise, and it took the following rules with it. Measured in
+       the built file: 52 selectors written in the print block, 46 actually built,
+       with body.th-retrofuture .item-title among the casualties. So the theme
+       whose compaction comment says "measured: tracking alone left it on three
+       pages" was, in the shipping build, not being compacted at all.
+       Everything below applies to every theme. A theme may still differ in COLOUR
+       and RULE WEIGHT on paper; it may not differ in how much paper it uses.
+       Written with a body[class] prefix, which is the trick already used on .page
+       further up this block: a bare 'tbody tr' loses to 'body.th-zine tbody tr'
+       on specificity, so the first version of these rules left Zine and Brutalist
+       on their own heavier settings and made the sheet LESS uniform, not more.
+       Measured: stress/zine went from 20.3 mm spare to 10.9 mm. body[class] ties
+       the specificity and wins on source order. */
+    body[class] .item-title{ font-size: 11px; letter-spacing: 0; }
+    body[class] td.item .item-sub{ font-size: 11px; }
+    body[class] thead th{ letter-spacing: 0.6px; }
+    body[class] aside h3{ letter-spacing: 0.6px; }
+    body[class] td.time{ letter-spacing: 0; }
+    body[class] .head-text .club{ letter-spacing: 1.4px; }
+    body[class] tbody tr{ border-bottom-width: 1px; border-bottom-style: solid; }
 
     table{ break-before: auto; }
     thead{ display: table-header-group; }
