@@ -10,8 +10,30 @@
 
 /* Voting runs on Slido, one room code per vote, numbered in the order they
    happen on the night: prepared speeches, then table topics, then evaluations. */
-const SLIDO_URL = 'https://slido.com';
-const slidoNote = code => SLIDO_URL + ' | Enter code: ' + code;
+/* Voting link and the three room codes are CLUB settings, not constants: another
+   club runs its own Slido account and its own codes, and the club-setup .md file
+   carries them. Held in module-level variables rather than read from state,
+   because newSegment() runs inside defaultState() while `state` is still in its
+   temporal dead zone - touching it there throws. syncVotingFromState() pushes
+   state back into these whenever a meeting is loaded or the setup is imported. */
+let VOTE_LINK = 'https://slido.com';
+let VOTE_CODES = {speechvote:'NSE_1', ttvote:'NSE_2', evalvote:'NSE_3'};
+/* "Voting Link: https://slido.com | Enter code: NSE_1" - the label was added in
+   V33 at Rama's request; the bare URL read as a footnote, not an instruction. */
+const votingNote = key =>
+  'Voting Link: ' + VOTE_LINK + ' | Enter code: ' + (VOTE_CODES[key] || '');
+function syncVotingFromState(){
+  const v = state && state.meeting && state.meeting.voting;
+  if(!v) return;
+  if(v.link) VOTE_LINK = v.link;
+  if(v.codes) VOTE_CODES = Object.assign({}, VOTE_CODES, v.codes);
+}
+/* Rewrite the notes on vote rows already in the running order. */
+function applyVotingToSegments(){
+  state.segments.forEach(sg=>{
+    if(VOTE_CODES[sg.presetKey] != null) sg.sub = votingNote(sg.presetKey);
+  });
+}
 
 const PRESETS = {
   custom:        {label:'Custom Item', durMin:5},
@@ -25,9 +47,9 @@ const PRESETS = {
   /* The three combined timer's-report-and-vote rows. Held by the Timer, who
      gives the report the vote follows — the old pevoting was noHolder and
      printed a bare em dash while its two siblings named the Timer. */
-  speechvote:    {label:"Call for Timer's Report | Voting for Best Speaker", sub:slidoNote('NSE_1'), durMin:3, roleKey:'timer'},
-  ttvote:        {label:"Call for Timer's Report | Voting for Best Table Topics Speaker", sub:slidoNote('NSE_2'), durMin:3, roleKey:'timer'},
-  evalvote:      {label:"Call for Timer's Report | Voting for Best Speech Evaluation", sub:slidoNote('NSE_3'), durMin:3, roleKey:'timer'},
+  speechvote:    {label:"Call for Timer's Report | Voting for Best Speaker", voteKey:'speechvote', durMin:3, roleKey:'timer'},
+  ttvote:        {label:"Call for Timer's Report | Voting for Best Table Topics Speaker", voteKey:'ttvote', durMin:3, roleKey:'timer'},
+  evalvote:      {label:"Call for Timer's Report | Voting for Best Speech Evaluation", voteKey:'evalvote', durMin:3, roleKey:'timer'},
   breaktime:     {label:'Break Time', durMin:15, flexible:true, flexMin:10, flexMax:18, noHolder:true},
   ttmasterintro: {label:'TME Introduces Table Topics Master', durMin:1, roleKey:'tmod'},
   tabletopics:   {label:'Conduct Table Topics Session', durMin:17, flexible:true, flexMin:12, flexMax:20,
@@ -58,7 +80,7 @@ function newSegment(presetKey){
     id: 'seg' + (segIdCounter++),
     presetKey,
     title: p.label,
-    sub: p.sub || '',
+    sub: p.voteKey ? votingNote(p.voteKey) : (p.sub || ''),
     speakerName: '',
     holderOverride: p.fixedHolder || '',
     roleKey: p.roleKey || '',
@@ -113,6 +135,10 @@ function defaultState(){
       startTime: '19:00',
       endTime: '21:30',
       footerNote: 'District 80, Division Y, Area 01',
+      /* Club's voting service and its three room codes, chronological: prepared
+         speeches, then table topics, then evaluations. */
+      voting: {link:'https://slido.com',
+               codes:{speechvote:'NSE_1', ttvote:'NSE_2', evalvote:'NSE_3'}},
       /* Base name for the saved .json AND for every download, without extension.
          Blank means "use the suggested name", which is what a fresh meeting wants;
          type anything here (or in the Save dialog) and that wins from then on. */
@@ -222,18 +248,32 @@ let state = defaultState();
    work that is now exported and done. */
 const STORE_KEY = 'nse-programme-builder-v6';
 let storageOK = true;
+/* When the copy in this browser was last written, read ONCE at load and never
+   again. The autosave debounce restamps localStorage within about 400ms of
+   startup, so anything that reads this stamp later sees page-load time and
+   concludes the browser copy is newer than every real file on disk. */
+const startupSavedAt = (function(){
+  try{ return Date.parse(JSON.parse(localStorage.getItem(STORE_KEY)).savedAt) || 0; }
+  catch(e){ return 0; }
+})();
 
 function saveState(){
-  if(!storageOK) return;
+  /* The FILE is the copy that matters, so it is queued whatever the browser
+     store does. Before this, one QuotaExceededError latched storageOK false and
+     saveState returned at the top forever - the file silently stopped updating
+     too, while the badge complained only about browser storage. Two independent
+     copies, two independent failures. */
   try{
-    localStorage.setItem(STORE_KEY, JSON.stringify({v:6, savedAt:new Date().toISOString(), state}));
-    flashSaved();
-    /* Once a meeting has a file on disk, every autosave goes there too. */
-    queueFileSave();
+    if(storageOK){
+      localStorage.setItem(STORE_KEY, JSON.stringify({v:6, savedAt:new Date().toISOString(), state}));
+    }
   }catch(e){
     storageOK = false;
-    setSaveStatus('Not saved — browser storage unavailable here', true, true);
+    setSaveStatus('Browser storage unavailable — this meeting is only as safe as its file', true, true);
   }
+  /* Never overwrite a live warning with a cheerful tick; see setSaveStatus. */
+  flashSaved();
+  queueFileSave();
 }
 let saveTimer = null;
 function queueSave(){
@@ -251,20 +291,88 @@ const RETIRED_THEMES = ['bauhaus','broadsheet','jetset','terminal','overprint','
    default. Returns false (leaving the current state untouched) if the payload
    is not a meeting, so a wrong file picked from the dropdown cannot wipe your
    work. Accepts either {state:{...}} or a bare state object. */
+/* What adoptState() had to repair on the way in, so the caller can say so rather
+   than pretend the file was clean. */
+let lastAdoptRepairs = [];
+
+const isPlainObject = o => !!o && typeof o === 'object' && !Array.isArray(o);
+/* A hand-edited or truncated file can put anything in a numeric field, and NaN
+   propagates all the way to the printed sheet before anyone notices. */
+function numOr(v, fallback){
+  const n = Number(v);
+  return (v === '' || v == null || !isFinite(n)) ? fallback : n;
+}
+const strOr = (v, fallback) => (typeof v === 'string') ? v : (v == null ? fallback : String(v));
+
 function adoptState(parsed){
   const raw = parsed && parsed.state ? parsed.state : parsed;
-  if(!raw || !Array.isArray(raw.segments) || !raw.meeting) return false;
+  if(!raw || !Array.isArray(raw.segments) || !isPlainObject(raw.meeting)) return false;
+  const repairs = [];
   const fresh = defaultState();
-  state = Object.assign(fresh, raw);
-  state.meeting = Object.assign(fresh.meeting, raw.meeting || {});
-  state.roles   = Object.assign(fresh.roles,   raw.roles   || {});
-  state.roleActive = Object.assign(fresh.roleActive, raw.roleActive || {});
-  state.segments = raw.segments.map(sg => Object.assign(newSegment('custom'), sg));
+  /* Assign into FRESH OBJECTS, not into fresh's own sub-objects. The old form
+     did state = Object.assign(fresh, raw), which aliased fresh.meeting to
+     raw.meeting - so the next line merged raw.meeting onto itself and the
+     defaults never arrived. A file carrying a partial meeting block loaded with
+     clubName, location, startTime and the rest undefined, the schedule computed
+     from NaN, and the next autosave wrote that back permanently. Dormant only
+     because V30-V35 files happen to carry every key; it would have fired on the
+     first field added in a later version. */
+  state = Object.assign({}, fresh, raw);
+  state.meeting = Object.assign({}, fresh.meeting, isPlainObject(raw.meeting) ? raw.meeting : {});
+  state.roles   = Object.assign({}, fresh.roles,   isPlainObject(raw.roles) ? raw.roles : {});
+  state.roleActive = Object.assign({}, fresh.roleActive, isPlainObject(raw.roleActive) ? raw.roleActive : {});
+  /* Object.assign(target, 'abc') spreads a STRING into {0:'a',1:'b',2:'c'}, so a
+     segments array holding junk used to produce junk segments rather than being
+     rejected. Only plain objects survive. */
+  const rawSegs = raw.segments.filter(isPlainObject);
+  if(rawSegs.length !== raw.segments.length){
+    repairs.push((raw.segments.length - rawSegs.length) + ' unreadable segments dropped');
+  }
+  state.segments = rawSegs.map(sg => {
+    const seg = Object.assign(newSegment('custom'), sg);
+    /* Presets are the source of truth for behaviour; a file only supplies values. */
+    if(!PRESETS[seg.presetKey]) seg.presetKey = 'custom';
+    seg.title = strOr(seg.title, '');
+    seg.sub = strOr(seg.sub, '');
+    seg.speakerName = strOr(seg.speakerName, '');
+    seg.holderOverride = strOr(seg.holderOverride, '');
+    seg.speechTitle = strOr(seg.speechTitle, '');
+    seg.project = strOr(seg.project, '');
+    seg.durMin   = Math.max(0, numOr(seg.durMin, 0));
+    seg.flexMin  = Math.max(0, numOr(seg.flexMin, 0));
+    seg.flexMax  = Math.max(0, numOr(seg.flexMax, 0));
+    seg.signalMin = Math.max(0, numOr(seg.signalMin, 0));
+    seg.signalMax = Math.max(0, numOr(seg.signalMax, 0));
+    seg.signalMid = numOr(seg.signalMid, (seg.signalMin + seg.signalMax) / 2);
+    seg.signalSpan = Math.max(0, numOr(seg.signalSpan, seg.signalMax - seg.signalMin));
+    return seg;
+  });
+  /* Two segments sharing an id means every edit, drag and delete hits whichever
+     the DOM query finds first. Re-key the duplicates rather than lose a row. */
+  const seenIds = new Set();
+  let dupes = 0;
+  state.segments.forEach(sg=>{
+    let id = strOr(sg.id, '');
+    if(!id || seenIds.has(id)){ id = 'seg' + (Date.now() % 100000) + '_' + (dupes++); }
+    sg.id = id;
+    seenIds.add(id);
+  });
+  if(dupes) repairs.push(dupes + ' duplicate segment ids re-keyed');
+  /* These four are split on newlines and pipes all over the renderer; a non-string
+     here threw before anything reached the screen. */
+  ['execText','districtText','linksText','announcementsText'].forEach(k=>{
+    if(typeof state[k] !== 'string'){ state[k] = strOr(state[k], ''); repairs.push(k + ' was not text'); }
+  });
+  if(typeof state.theme !== 'string') state.theme = 'classic';
+  state.paneWidth = Math.min(80, Math.max(20, numOr(state.paneWidth, 50)));
   /* A file written before V30 has no customRoles; one hand-edited could have
      anything. Keep only well-formed entries so the roster cannot render undefined. */
   state.customRoles = (Array.isArray(raw.customRoles) ? raw.customRoles : [])
     .filter(r => r && typeof r === 'object' && r.key)
     .map(r => ({key: String(r.key), label: String(r.label == null ? '' : r.label)}));
+  state.meeting.voting = Object.assign({link:VOTE_LINK, codes:{}},
+    (raw.meeting && raw.meeting.voting) || {});
+  syncVotingFromState();
   if(RETIRED_THEMES.includes(state.theme)) state.theme = 'classic';
   /* keep new IDs from colliding with restored ones */
   let maxId = 0;
@@ -273,6 +381,7 @@ function adoptState(parsed){
     if(!isNaN(n) && n > maxId) maxId = n;
   });
   segIdCounter = maxId + 1;
+  lastAdoptRepairs = repairs;
   return true;
 }
 
@@ -289,8 +398,15 @@ function loadState(){
   }
 }
 function resetToDefaults(){
-  if(!confirm('Reset every field back to the built-in defaults? Your saved version will be discarded.')) return;
+  const open = openFileName();
+  if(!confirm('Reset every field back to the built-in defaults? Your saved version will be discarded.'
+      + (open ? '\n\n' + open + ' stays on disk untouched, and this stops saving into it.' : ''))) return;
   try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+  /* DETACH THE FILE FIRST. Reset used to leave the open meeting attached, so the
+     very next keystroke autosaved the blank template straight over a saved
+     meeting - silently, with the green tick showing. The file is the user's work;
+     Reset is for starting a new sheet, never for destroying an old one. */
+  detachFile('Reset — no longer saving into a file.');
   state = defaultState();
   editingSegId = null;
   expandedSegs.clear();

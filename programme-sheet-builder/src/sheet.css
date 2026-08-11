@@ -696,8 +696,15 @@
     .pane-brand img{ width: auto; height: 100%; max-width: 100%; }
     /* Carries the pane's column rule so it starts BELOW the brand box - on the
        aside it ran the full height and drew a pale seam across the dark band. */
+    /* Left padding was ZERO: the pane's text sat hard against the paper's own
+       margin with nothing between it and the edge, while the agenda beside it had
+       6mm of air. Rama on the JPG: "the components on the left are too far to the
+       left". 3.5mm each side gives the column an inset on both flanks and lines
+       its left edge up with nothing in particular, which is the point - it should
+       read as a column of type, not as text that fell off the page. It costs
+       3.5mm of measure, and the V31 compaction left ~52mm of headroom to spend. */
     .pane-body{
-      padding: 3.5mm 4mm 0 0;
+      padding: 4mm 3.5mm 0 3.5mm;
       border-right: 1px solid var(--line);
       height: calc(100% - var(--print-head));
       box-sizing: border-box;
@@ -821,22 +828,22 @@
        links AND eight announcements still overruns by about 9mm, and no amount
        of leading fixes that - 281mm of material does not go into 234mm. That one
        wants a warning in the editor or a second column, not a smaller typeface. */
-    aside h3{ font-size: 9.5px; line-height: 1.2; margin-bottom: 4px; padding-bottom: 2px; }
-    .exco-block{ margin-bottom: 7px; break-inside: avoid; }
-    .exco-item{ margin-bottom: 2.5px; }
+    aside h3{ font-size: 9.5px; line-height: 1.25; margin-bottom: 6px; padding-bottom: 3px; }
+    .exco-block{ margin-bottom: 9px; break-inside: avoid; }
+    .exco-item{ margin-bottom: 3.5px; }
     /* Role over name is one unit, not two lines of a list: closing the leading
        between them groups the pair and buys back 8 lines across the two blocks. */
-    .exco-role{ font-size: 9.5px; line-height: 1.12; }
-    .exco-name{ font-size: 10px; line-height: 1.16; }
-    .exco-sub{ font-size: 8.5px; line-height: 1.12; }
+    .exco-role{ font-size: 9.5px; line-height: 1.22; }
+    .exco-name{ font-size: 10px; line-height: 1.28; }
+    .exco-sub{ font-size: 8.5px; line-height: 1.22; }
     /* The only thing left in the pane still set at the aside's inherited 10.5px,
        and the one thing nobody reads a character at a time: a URL that already
        breaks mid-word in a 41mm column. */
-    .links a{ font-size: 9px; line-height: 1.16; }
-    .path-legend div{ font-size: 9px; line-height: 1.2; margin-bottom: 1px; }
-    .announcements .announce-line{ font-size: 9px; line-height: 1.26; margin-bottom: 2px; }
+    .links a{ font-size: 9px; line-height: 1.3; }
+    .path-legend div{ font-size: 9px; line-height: 1.24; margin-bottom: 1.5px; }
+    .announcements .announce-line{ font-size: 9px; line-height: 1.3; margin-bottom: 2.5px; }
     .holder-pair .hp-line{ line-height: 1.3; font-size: 10px; }
-    .announcements .announce-gap{ height: 2px; }
+    .announcements .announce-gap{ height: 2.5px; }
 
     /* Zine's uppercase + tracking and Terminal's monospace item titles run the
        agenda two rows past page 2. Tightened here only, so the themes keep their
