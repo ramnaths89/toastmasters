@@ -99,6 +99,10 @@ function signalBoxes(green, amber, red, extra){
    handler is reached through `parent.` and works off the element's own
    document — in the top window `parent === window`, so one markup fits both. */
 
+/* Catalog size as the user experiences it: what the ▾ list can actually offer. */
+const PICKABLE_PROJECT_COUNT = ALL_PROJECTS.filter(
+  n => !(PATHWAYS_DATA.projects[n]||{}).legacy).length;
+
 /* Ordered choices: the chosen pathway+level first, then the rest of the catalog. */
 function projectChoices(seg){
   const inLevel = (seg.pathway && seg.pLevel) ? projectsFor(seg.pathway, seg.pLevel) : [];
@@ -110,7 +114,14 @@ function projectChoices(seg){
     n: p.n,
     meta: `${p.s || (p.e ? 'elective' : 'required')} · ${timingLabel(p.n)}`,
     here: true }));
-  const rest = ALL_PROJECTS.filter(n=>!seen.has(n)).map(n=>{
+  /* A `legacy` project still resolves a duration for meetings saved before it was
+     superseded, but it is never offered as a choice. Evaluation and Feedback was split
+     into (1st Speech) and (2nd Speech) in V38 because the project IS two speeches and
+     the sheet has to say which one tonight is; the un-suffixed name would otherwise sit
+     in the catalog beside both halves and read like a third option. Filtered HERE rather
+     than dropped from PATHWAYS_DATA.projects, because projectInfo() is what gives an
+     already-saved meeting its 5-7 min and its note. */
+  const rest = ALL_PROJECTS.filter(n=>!seen.has(n) && !(PATHWAYS_DATA.projects[n]||{}).legacy).map(n=>{
     const series = seriesOf(n);
     const where = series ? null : (seg.pathway ? levelOfProjectIn(seg.pathway, n) : null);
     const tag = series ? series : (where ? `${seg.pathway} L${where.level}` : 'other path');
@@ -127,7 +138,7 @@ function projectComboHTML(seg, handler){
       ><span class="cbx-n">${esc(r.n)}</span><span class="cbx-m">${esc(r.meta)}</span></div>`).join('');
   return `<div class="cbx" data-cbx="${seg.id}" data-handler="${handler}">
     <input type="text" class="cbx-input" role="combobox" aria-expanded="false" autocomplete="off"
-      value="${esc(seg.project)}" placeholder="Click ▾ or type to search all ${ALL_PROJECTS.length} projects…"
+      value="${esc(seg.project)}" placeholder="Click ▾ or type to search all ${PICKABLE_PROJECT_COUNT} projects…"
       onfocus="parent.cbxOpen(this)" onclick="parent.cbxOpen(this)"
       oninput="parent.cbxFilter(this)" onkeydown="parent.cbxKey(event,this)"
       onblur="parent.cbxBlur(this)">
@@ -359,7 +370,14 @@ function buildSheetHTML(interactive){
           </tr>`;
   }).join('');
 
-  const openRolesHtml = openRoles.length
+  /* Working aid, not part of the sheet (V38). "Roles still open ... please fill
+     before the meeting" is addressed to whoever is BUILDING the agenda, so it belongs
+     in the live preview and nowhere else. Every non-interactive render is an artefact
+     that leaves this tab - the HTML download, the PDF, the JPG, and the hidden iframe
+     that measures the pane fit - and a reminder to fill roles reads as a defect on a
+     sheet handed to a room. Gated on `interactive` rather than removed, so it keeps
+     doing its job where it is useful. */
+  const openRolesHtml = (interactive && openRoles.length)
     ? `<div class="theme-strip">Roles still open: ${openRoles.map(r=>`<b>${esc(r)}</b>`).join(', ')} — please fill before the meeting.</div>`
     : '';
 
