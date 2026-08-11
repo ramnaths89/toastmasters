@@ -1235,7 +1235,29 @@ async function renderSheetParts(opts){
     if(h * scale > MAX_CANVAS_PX){
       throw new Error('sheet is too long to render (' + Math.round(h / PRINT_H_PX) + ' pages)');
     }
+    /* Hand html2canvas a canvas whose 2D context we have already claimed with
+       willReadFrequently, so every draw call it makes lands in Skia's CPU backing
+       store instead of a GPU texture (V37).
+       Why this and not just the downscale: V37's first attempt moved only the
+       downscale and page-slicing contexts, and Rama's line survived it. It would:
+       html2canvas creates its OWN canvas - `A.canvas = e.canvas || createElement`
+       in the bundle - and that is the surface every element rect and glyph is
+       drawn onto. It was still GPU-backed.
+       The mechanism this targets, measured from his export: a 2px line at a
+       constant x, running 100% of the page height through the banner, the notice
+       bar and the agenda alike, in a sheet whose DOM is byte-for-byte identical to
+       one that renders clean here (same MD5), and which Chrome's own print engine
+       renders clean on his machine. Nothing in the document draws it.
+       getContext is idempotent in its attributes: the first call fixes them, so
+       claiming it here means the library's later plain getContext('2d') returns
+       this same CPU-backed context. Sizing is ours too - the bundle only sets
+       width/height when it created the canvas itself. */
+    const target = document.createElement('canvas');
+    target.width = Math.floor(PRINT_W_PX * scale);
+    target.height = Math.floor(h * scale);
+    target.getContext('2d', CTX2D);
     const canvas = await h2c(page, {
+      canvas: target,
       scale: scale,
       backgroundColor: '#ffffff',
       useCORS: true,
@@ -1251,7 +1273,12 @@ async function renderSheetParts(opts){
     let footStrip = null;
     if(paginate && foot && pages > 1){
       const fb = foot.getBoundingClientRect();
+      const fstrip = document.createElement('canvas');
+      fstrip.width = Math.floor(Math.ceil(fb.width) * scale);
+      fstrip.height = Math.floor(Math.ceil(fb.height) * scale);
+      fstrip.getContext('2d', CTX2D);
       footStrip = await h2c(foot, {
+        canvas: fstrip,
         scale: scale,
         backgroundColor: '#ffffff',
         useCORS: true,
