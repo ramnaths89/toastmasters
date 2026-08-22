@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Toastmasters Tools · Ramanathan S</title>
-<meta name="description" content="Four small web tools for Toastmasters meetings in Singapore — a club finder, a programme sheet builder, a timer and an Ah-Counter's log. Unofficial, in development.">
-<meta name="theme-color" content="#F4F1E8">
+<meta name="description" content="One Toastmasters utility — club finder, programme sheet builder, timer and Ah-Counter's log. Unofficial, in development.">
+<meta name="theme-color" content="#004165">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TM Tools">
+<link rel="manifest" href="manifest.json">
 <style>
 :root{
   --stock:#F4F1E8; --stock-2:#EAE6DA; --stock-3:#E0DBCB;
@@ -18,28 +22,93 @@
   --disp:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
   --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
   --pad:clamp(18px,5vw,40px);
+  --bar:56px;
 }
 
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%; height:100%}
+html,body{margin:0; height:100%; overflow:hidden}
 body{
-  margin:0; background:var(--stock); color:var(--over);
+  background:var(--stock); color:var(--over);
   font:400 17px/1.55 var(--body);
-  /* riso stock: faint paper tooth */
+}
+
+/* ── app chrome ───────────────────────────────────────────── */
+.app{display:flex; flex-direction:column; height:100dvh;}
+.appbar{
+  flex:0 0 auto;
+  display:flex; align-items:center; gap:10px;
+  min-height:var(--bar);
+  padding:8px 12px 8px 14px;
+  padding-left:max(14px, env(safe-area-inset-left));
+  padding-right:max(12px, env(safe-area-inset-right));
+  background:var(--ink); color:var(--stock);
+  border-bottom:2px solid var(--over);
+  z-index:20;
+}
+.brand{
+  display:flex; flex-direction:column; gap:2px;
+  text-decoration:none; color:inherit; min-width:0; flex:0 1 auto;
+}
+.brand strong{
+  font:800 13px/1 var(--disp); letter-spacing:.08em; text-transform:uppercase;
+  white-space:nowrap;
+}
+.brand em{
+  font:400 10px/1 var(--body); letter-spacing:.06em; text-transform:uppercase;
+  color:#CFE0EA; font-style:normal; white-space:nowrap;
+}
+.tabs{
+  display:flex; align-items:stretch; gap:4px;
+  margin-left:auto; flex:1 1 auto; justify-content:flex-end;
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.tabs button{
+  appearance:none; border:0; background:transparent;
+  color:var(--stock); cursor:pointer;
+  font:700 11px/1 var(--disp); letter-spacing:.08em; text-transform:uppercase;
+  padding:8px 10px; border-radius:4px; white-space:nowrap;
+}
+.tabs button:hover{ background:rgba(244,241,232,.12); }
+.tabs button[aria-current="page"]{
+  background:var(--yellow); color:var(--over);
+}
+.tabs button:focus-visible{ outline:2px solid var(--yellow); outline-offset:2px; }
+.pop{
+  flex:0 0 auto;
+  font:700 10px/1 var(--disp); letter-spacing:.08em; text-transform:uppercase;
+  color:var(--ink); background:var(--stock);
+  border:1.5px solid var(--over); text-decoration:none;
+  padding:7px 9px; white-space:nowrap;
+}
+.pop[hidden]{ display:none !important; }
+.pop:hover{ background:var(--yellow); }
+.pop:focus-visible{ outline:2px solid var(--yellow); outline-offset:2px; }
+
+.stage{flex:1 1 auto; min-height:0; position:relative; background:var(--stock);}
+.pane{
+  position:absolute; inset:0;
+  visibility:hidden; pointer-events:none; z-index:0;
+}
+.pane.is-on{ visibility:visible; pointer-events:auto; z-index:1; }
+#view-home{
+  overflow:auto;
+  background:var(--stock);
   background-image:radial-gradient(var(--stock-3) .6px,transparent .6px);
   background-size:7px 7px;
 }
+iframe.pane{ width:100%; height:100%; border:0; background:#fff; }
+
+/* ── home (existing landing) ──────────────────────────────── */
 .wrap{max-width:840px;margin:0 auto;padding:var(--pad) var(--pad) 0}
 
-/* ── masthead ─────────────────────────────────────────────── */
-header{padding-top:clamp(24px,7vw,56px)}
+header.hero{padding-top:clamp(24px,7vw,56px)}
 .eyebrow{
   font:700 11px/1 var(--disp); letter-spacing:.22em; text-transform:uppercase;
   color:var(--red); margin:0 0 18px;
 }
 .eyebrow span{color:var(--soft)}
 
-/* signature: two-colour riso, deliberately out of register */
 .mast{position:relative;margin:0 0 14px;line-height:.92}
 .mast .lay{
   display:block; font:800 clamp(38px,10.5vw,74px)/.92 var(--disp);
@@ -70,7 +139,6 @@ header{padding-top:clamp(24px,7vw,56px)}
   border-radius:50%; flex:none;
 }
 
-/* ── phase spine ──────────────────────────────────────────── */
 .phase{margin:0 0 clamp(30px,6vw,48px)}
 .phase-h{
   display:flex; align-items:baseline; gap:14px;
@@ -85,12 +153,12 @@ header{padding-top:clamp(24px,7vw,56px)}
   text-align:right;
 }
 
-/* ── tool cards ───────────────────────────────────────────── */
 .card{
   display:block; text-decoration:none; color:inherit;
   background:var(--stock-2); border:1.5px solid var(--over);
   padding:20px clamp(16px,3.5vw,26px) 22px; margin-bottom:14px;
   position:relative; transition:transform .16s ease, box-shadow .16s ease;
+  cursor:pointer;
 }
 .card:hover,.card:focus-visible{
   transform:translate(-2px,-2px);
@@ -132,12 +200,11 @@ header{padding-top:clamp(24px,7vw,56px)}
 }
 .card:hover .go{border-bottom-color:var(--red)}
 
-/* ── colophon / disclaimer ────────────────────────────────── */
-footer{
+footer.colophon{
   border-top:2px solid var(--ink); margin-top:clamp(34px,7vw,60px);
   padding:22px 0 clamp(40px,9vw,72px);
 }
-footer h2{
+footer.colophon h2{
   margin:0 0 14px; font:700 12px/1 var(--disp); letter-spacing:.18em;
   text-transform:uppercase; color:var(--red);
 }
@@ -155,7 +222,6 @@ footer h2{
 a.lnk{color:var(--ink);text-decoration:underline;text-decoration-color:var(--yellow);text-underline-offset:2px}
 a.lnk:hover{text-decoration-color:var(--red)}
 
-/* line beneath a card — sits outside it, so the link is its own target */
 .card-note{
   margin:-4px 0 18px; padding-left:2px;
   font:400 14.5px/1.5 var(--body); color:#4a5a63;
@@ -170,16 +236,42 @@ a.lnk:hover{text-decoration-color:var(--red)}
   *{transition:none!important}
   .card:hover,.card:focus-visible{transform:none;box-shadow:3px 3px 0 var(--ink)}
 }
-@media (max-width:480px){
+@media (max-width:720px){
+  .app{flex-direction:column}
+  .appbar{order:2; border-bottom:0; border-top:2px solid var(--over);
+    padding-bottom:max(8px, env(safe-area-inset-bottom));}
+  .brand em{display:none}
+  .tabs{margin-left:0; justify-content:space-between; width:100%;}
+  .tabs button{flex:1; text-align:center; padding:10px 4px; font-size:10px;}
+  .pop{display:none;}
   .phase-h{flex-wrap:wrap;gap:4px}
   .phase-h .when{margin-left:0;width:100%;text-align:left}
 }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="app">
 
-<header>
+  <nav class="appbar" aria-label="Toastmasters Tools">
+    <a class="brand" href="#home" data-nav="home">
+      <strong>Toastmasters Tools</strong>
+      <em>Unofficial · District 80</em>
+    </a>
+    <div class="tabs" role="tablist" aria-label="Tools">
+      <button type="button" role="tab" data-nav="home" aria-controls="view-home">Home</button>
+      <button type="button" role="tab" data-nav="finder" aria-controls="frame-finder">Finder</button>
+      <button type="button" role="tab" data-nav="builder" aria-controls="frame-builder">Sheet</button>
+      <button type="button" role="tab" data-nav="timer" aria-controls="frame-timer">Timer</button>
+      <button type="button" role="tab" data-nav="ah-counter" aria-controls="frame-ah">Ah-Counter</button>
+    </div>
+    <a class="pop" id="popOut" hidden href="#" target="_blank" rel="noopener">Pop out</a>
+  </nav>
+
+  <div class="stage">
+    <div id="view-home" class="pane home is-on" role="tabpanel">
+      <div class="wrap">
+
+<header class="hero">
   <p class="eyebrow">District 80 · Singapore <span>— unofficial</span></p>
 
   <h1 class="mast">
@@ -188,10 +280,10 @@ a.lnk:hover{text-decoration-color:var(--red)}
   </h1>
 
   <p class="standfirst">
-    Four small web tools for running and visiting Toastmasters meetings in Singapore.
-    Each one opens in a browser, needs no account, and <b>keeps your work on your
-    own device</b> — nothing is uploaded anywhere. The timer also remembers its
-    session log if you reload the tab.
+    One utility for running and visiting Toastmasters meetings in Singapore —
+    a club finder, a programme sheet, timing lights and an Ah-Counter's log.
+    Tools open <b>inside this app</b> and keep running when you switch, so a
+    live timer is not lost when you tap Ah-Counter. Nothing is uploaded.
   </p>
 
   <p class="flag">Work in progress — expect rough edges</p>
@@ -205,7 +297,7 @@ a.lnk:hover{text-decoration-color:var(--red)}
       <p class="when">Planning and visiting</p>
     </div>
 
-    <a class="card" href="d80-club-finder/">
+    <a class="card" href="#finder" data-nav="finder">
       <div class="chips" aria-hidden="true">
         <i style="background:#004165"></i><i style="background:#CD202C"></i><i style="background:#F2DF74"></i>
       </div>
@@ -222,7 +314,7 @@ a.lnk:hover{text-decoration-color:var(--red)}
       <span class="go">Open the club finder →</span>
     </a>
 
-    <a class="card" href="programme-sheet-builder/">
+    <a class="card" href="#builder" data-nav="builder">
       <div class="chips" aria-hidden="true">
         <i style="background:#772432"></i><i style="background:#004165"></i><i style="background:#F2DF74"></i>
       </div>
@@ -255,7 +347,7 @@ a.lnk:hover{text-decoration-color:var(--red)}
       <p class="when">Meeting roles, live</p>
     </div>
 
-    <a class="card" href="timer/">
+    <a class="card" href="#timer" data-nav="timer">
       <div class="chips" aria-hidden="true">
         <i style="background:#00c853"></i><i style="background:#ff9100"></i><i style="background:#d50000"></i>
       </div>
@@ -272,7 +364,7 @@ a.lnk:hover{text-decoration-color:var(--red)}
       <span class="go">Open the timer →</span>
     </a>
 
-    <a class="card" href="ah-counter/">
+    <a class="card" href="#ah-counter" data-nav="ah-counter">
       <div class="chips" aria-hidden="true">
         <i style="background:#06301B"></i><i style="background:#C6A44E"></i><i style="background:#F5F0E4"></i>
       </div>
@@ -292,7 +384,7 @@ a.lnk:hover{text-decoration-color:var(--red)}
 
 </main>
 
-<footer>
+<footer class="colophon">
   <h2>Please read</h2>
 
   <p class="note">
@@ -319,9 +411,9 @@ a.lnk:hover{text-decoration-color:var(--red)}
   </p>
 
   <p class="note">
-    <b>Your data stays with you.</b> Starred clubs, saved programme sheets and counts are
-    stored in your own browser. Nothing is sent to a server, and there is no account and
-    no tracking. Clearing your browser data clears them too.
+    <b>Your data stays with you.</b> Starred clubs, saved programme sheets, the timer log
+    and counts are stored in your own browser. Nothing is sent to a server, and there
+    is no account and no tracking. Clearing your browser data clears them too.
   </p>
 
   <p class="sig">
@@ -331,6 +423,126 @@ a.lnk:hover{text-decoration-color:var(--red)}
   </p>
 </footer>
 
+      </div>
+    </div>
+
+    <iframe class="pane" id="frame-finder" title="D80 Club Finder"></iframe>
+    <iframe class="pane" id="frame-builder" title="Programme Sheet Builder"></iframe>
+    <iframe class="pane" id="frame-timer" title="TMtimer"></iframe>
+    <iframe class="pane" id="frame-ah" title="The Ah-Counter's Log"></iframe>
+  </div>
 </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORE = 'tm.shell.v1';
+  var TOOLS = {
+    home:        { title: 'Toastmasters Tools', src: null, frame: 'view-home' },
+    finder:      { title: 'D80 Club Finder · Toastmasters Tools', src: 'd80-club-finder/', frame: 'frame-finder' },
+    builder:     { title: 'Programme Sheet Builder · Toastmasters Tools', src: 'programme-sheet-builder/', frame: 'frame-builder' },
+    timer:       { title: 'TMtimer · Toastmasters Tools', src: 'timer/', frame: 'frame-timer' },
+    'ah-counter':{ title: "The Ah-Counter's Log · Toastmasters Tools", src: 'ah-counter/', frame: 'frame-ah' }
+  };
+  var ALIAS = { sheet: 'builder', club: 'finder', ah: 'ah-counter', log: 'ah-counter' };
+  var loaded = {};
+  var current = 'home';
+
+  function $(id) { return document.getElementById(id); }
+
+  function resolve(id) {
+    if (!id) return 'home';
+    id = String(id).replace(/^#/, '').toLowerCase();
+    return TOOLS[id] ? id : (TOOLS[ALIAS[id]] ? ALIAS[id] : 'home');
+  }
+
+  function persist(id) {
+    try { localStorage.setItem(STORE, JSON.stringify({ v: 1, tool: id })); } catch (e) {}
+  }
+
+  function lastTool() {
+    try {
+      var d = JSON.parse(localStorage.getItem(STORE) || 'null');
+      if (d && TOOLS[d.tool]) return d.tool;
+    } catch (e) {}
+    return 'home';
+  }
+
+  function show(id) {
+    id = resolve(id);
+    var tool = TOOLS[id];
+    current = id;
+
+    Object.keys(TOOLS).forEach(function (key) {
+      var el = $(TOOLS[key].frame);
+      if (el) el.classList.toggle('is-on', key === id);
+    });
+
+    document.querySelectorAll('[data-nav]').forEach(function (el) {
+      if (el.tagName === 'BUTTON') {
+        el.setAttribute('aria-current', el.getAttribute('data-nav') === id ? 'page' : 'false');
+      }
+    });
+
+    document.title = tool.title;
+
+    var pop = $('popOut');
+    if (tool.src) {
+      pop.hidden = false;
+      pop.href = tool.src;
+    } else {
+      pop.hidden = true;
+      pop.removeAttribute('href');
+    }
+
+    if (tool.src) {
+      var frame = $(tool.frame);
+      if (frame && !loaded[id]) {
+        frame.src = tool.src;
+        loaded[id] = true;
+      }
+    }
+
+    if (location.hash.replace(/^#/, '') !== id) {
+      history.replaceState(null, '', '#' + id);
+    }
+    persist(id);
+  }
+
+  function fromHash() {
+    return resolve(location.hash);
+  }
+
+  document.addEventListener('click', function (e) {
+    var nav = e.target.closest('[data-nav]');
+    if (!nav || e.target.closest('.card-note a')) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    show(nav.getAttribute('data-nav'));
+  });
+
+  $('popOut').addEventListener('click', function (e) {
+    var tool = TOOLS[current];
+    if (!tool || !tool.src) return;
+    e.preventDefault();
+    var win = window.open(tool.src, 'tm-' + current);
+    if (!win) return;
+    var frame = $(tool.frame);
+    if (frame) {
+      frame.src = 'about:blank';
+      loaded[current] = false;
+    }
+    show('home');
+  });
+
+  window.addEventListener('hashchange', function () {
+    show(fromHash());
+  });
+
+  var start = location.hash ? fromHash() : lastTool();
+  show(start);
+})();
+</script>
 </body>
 </html>

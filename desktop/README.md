@@ -1,8 +1,13 @@
 # Wrapping these tools as a desktop app
 
-The product is already four self-contained web pages. A standalone desktop app should
-**open those pages in a native window**, not rewrite them. That keeps GitHub Pages, the
-print layout, and every existing save file working.
+The product is already four self-contained web pages behind **one hub** (`index.html`).
+A standalone desktop app should **open that hub in a native window**, not rewrite the
+tools. That keeps GitHub Pages, the print layout, and every existing save file working.
+
+The hub is the mega-app: Home plus Finder, Sheet, Timer and Ah-Counter in the same
+window. Tools load on first use and stay mounted, so a live timer keeps ticking while
+you log crutches. **Pop out** opens a tool in its own window (and unloads that iframe)
+when you need a projector plus a second laptop.
 
 ## What “standalone” needs to mean here
 
@@ -35,13 +40,15 @@ and CSS on purpose.
 
 ### 1. Use what is already here
 
-- Timer and Ah-Counter: open in Chrome or Edge → ⋮ → **Install TMtimer** / **Install Ah-Counter**.
+- The hub: open in Chrome or Edge → ⋮ → **Install Toastmasters Tools**. That is the
+  mega-app. Timer and Ah-Counter can still be installed on their own for a projector.
 - Club finder: already embeds fonts and data; it is the strongest offline page.
 - Local preview of the whole hub:
 
       python3 desktop/serve.py
 
   Then open http://127.0.0.1:8765/ — this is the origin a packaged app should use too.
+  Hash routes: `#home` `#finder` `#builder` `#timer` `#ah-counter`.
 
 ### 2. Package with Tauri 2 (the real desktop app)
 
@@ -54,11 +61,10 @@ npm run tauri build
 ```
 
 The starter in `desktop/tauri/` points Tauri at the repo root (`frontendDist` =
-`../../..` from `src-tauri/`) and opens `index.html` as the first window. Generate
-icons with `npx tauri icon path/to/icon.png` before the first `tauri build`. Each tool card still navigates to its folder.
-Later, a native menu can open Timer / Ah-Counter / Builder / Finder in their own windows
-(`WebviewWindow` per tool) so the Timer can sit fullscreen on the projector while the
-Ah-Counter stays on the secretary’s laptop.
+`../../..` from `src-tauri/`) and opens `index.html` — the mega-app hub. Generate
+icons with `npx tauri icon path/to/icon.png` before the first `tauri build`.
+**Pop out** in the hub already covers the projector case. A later native menu can
+do the same with `WebviewWindow` per tool if you want that from the OS menu bar.
 
 Do **not** set the window URL to a `file://` path. Serve from the bundled dist (Tauri
 does this) or from the local server. `file://` shares one `localStorage` origin across

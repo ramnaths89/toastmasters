@@ -10,8 +10,8 @@
     "windows": [
       {
         "title": "Toastmasters Tools",
-        "width": 1280,
-        "height": 860,
+        "width": 1440,
+        "height": 900,
         "resizable": true
       }
     ],

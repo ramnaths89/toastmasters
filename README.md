@@ -10,7 +10,10 @@ in the page. The club finder also embeds its fonts; the others use the system fo
 open correctly with no network. Nothing is uploaded anywhere. Each tool keeps working offline
 once the page itself is on the device.
 
-A path to a double-clickable desktop app — wrap these pages, do not rewrite them — is in
+The root page is **one app** with all four tools. Switching tabs keeps a running timer
+alive. Each tool still has its own URL for a second screen or a bookmark.
+
+A path to a double-clickable desktop app — wrap this hub, do not rewrite the tools — is in
 [desktop/](desktop/).
 
 Three of the four are written and edited as that single file. The programme sheet builder outgrew
@@ -26,8 +29,12 @@ that guard it — see [Programme sheet builder: source and tests](#programme-she
 | TMtimer | [`timer/`](timer/) | Timer | Full-screen timing lights — white, green, amber, red, then a bell after a delay you set (30 s by default) — with presets for Prepared Speech, Table Topics and Evaluation, custom times, and a session log you can edit and copy for the Timer's report. Segments and times can be changed mid-speech and the lights follow. The log is saved in this browser (`timer.log.v1`). |
 | The Ah-Counter's Log | [`ah-counter/`](ah-counter/) | Ah-Counter | One tap per crutch word, one row per speaker. Undo, remarks, keyboard shortcuts, and an end-of-meeting report you can copy or download as CSV. |
 
-The landing page (`index.html`) groups the tools by when they're used: **before the
-meeting** (planning and visiting) and **in the room** (meeting roles, live).
+The hub (`index.html`) is the mega-app: a Home screen that groups the tools by
+**before the meeting** and **in the room**, plus a tab bar that opens each tool
+inside the same page (`#finder`, `#builder`, `#timer`, `#ah-counter`). Individual
+folder URLs still work on their own — use those when the Timer needs a projector
+and the Ah-Counter needs a second laptop. Chrome / Edge can **Install** the hub
+as a standalone window (`manifest.json`).
 
 ## Using these in another club
 
@@ -48,10 +55,12 @@ vote in Nee Soon East's polls. The guide's checklist covers them; searching the 
 
 1. Make a folder, e.g. `general-evaluator/`.
 2. Put the tool in it as `index.html`.
-3. Add a card to the root `index.html` — copy an existing `<a class="card">` block into
-   the right phase section (`Before the meeting` or `In the room`).
-4. Add a row to the table above.
-5. Commit (or upload via the GitHub web UI) — GitHub Pages redeploys in about a minute.
+3. Add a card on the Home screen in the root `index.html` — copy an existing
+   `<a class="card" href="#…" data-nav="…">` block into the right phase section.
+4. Register it in the hub script: a `TOOLS` entry, a tab `<button data-nav="…">`,
+   and an `<iframe class="pane" id="frame-…">`.
+5. Add a row to the table above.
+6. Commit (or upload via the GitHub web UI) — GitHub Pages redeploys in about a minute.
 
 ## Updating a tool
 
