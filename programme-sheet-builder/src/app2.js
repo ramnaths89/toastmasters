@@ -388,7 +388,7 @@ function buildSheetHTML(interactive){
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>${SHEET_CSS}</style>
 </head><body class="th-${esc(state.theme||'classic')}${interactive?' interactive':''}">
-<div class="print-fab"><button class="print-btn" onclick="window.print()">🖨 <span class="label">Print / Save PDF</span></button></div>
+${interactive ? `<div class="print-fab"><button class="print-btn" onclick="window.print()">🖨 <span class="label">Print / Save PDF</span></button></div>` : ''}
 <div class="page-wrap"><div class="page">
   <header>
     <div class="head-text">

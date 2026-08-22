@@ -7,3 +7,9 @@ programme-sheet-builder/tests/pp_*
 programme-sheet-builder/tests/probe_*
 __pycache__/
 *.pyc
+
+# desktop wrap (Tauri / local server)
+desktop/tauri/node_modules/
+desktop/tauri/src-tauri/target/
+desktop/tauri/src-tauri/gen/
+desktop/tauri/dist/

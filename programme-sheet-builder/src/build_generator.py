@@ -8,7 +8,7 @@ Every part is a real file — this script only substitutes placeholders. It must
 WRITE any of the parts back (an earlier version regenerated builder.css from an inline
 string and silently reverted weeks of edits).
 """
-import json, os, sys
+import json, os, shutil, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 def part(name):
@@ -55,3 +55,9 @@ dest = os.path.join(HERE, 'NSE_Programme_Generator.html')
 with open(dest, 'w', encoding='utf-8') as f:
     f.write(out)
 print('built %s  (%.0f KB)' % (dest, len(out)/1024))
+
+# Tests and GitHub Pages read index.html, not the gitignored build output.
+# Copying here is the step that used to be easy to forget.
+ship = os.path.join(os.path.dirname(HERE), 'index.html')
+shutil.copyfile(dest, ship)
+print('copied to %s' % ship)

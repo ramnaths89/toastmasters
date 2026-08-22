@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Toastmasters Tools",
+  "version": "0.1.0",
+  "identifier": "org.ramnaths89.toastmasters-tools",
+  "build": {
+    "frontendDist": "../../.."
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Toastmasters Tools",
+        "width": 1280,
+        "height": 860,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": []
+  }
+}

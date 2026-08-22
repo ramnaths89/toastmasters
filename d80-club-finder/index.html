@@ -512,6 +512,8 @@ td.st{padding:6px 2px 6px 8px;overflow:visible}
 #howto[aria-expanded="true"]{background:var(--yellow);border-color:var(--yellow);color:var(--over)}
 
 /* ---------- disclaimer (always visible — a notice behind a button is no notice) ---------- */
+.year-note{margin:0 0 14px;padding:10px 14px;background:var(--yellow);border:1.5px solid var(--over);
+  font:600 14px/1.45 var(--body)}
 .disclaimer{border:2px solid var(--ink);border-top:none;background:var(--stock-2);
   padding:15px 18px 17px}
 .disclaimer h4{margin:0 0 8px;font:900 11px var(--disp);letter-spacing:.13em;text-transform:uppercase;
@@ -706,6 +708,7 @@ td.st{padding:6px 2px 6px 8px;overflow:visible}
     <button id="howto" aria-expanded="false" aria-controls="howtopanel">Guide</button>
   </div>
 </div>
+<div id="yearNote" class="year-note" hidden></div>
 <div class="rule-thick"></div>
 
 <div class="howto" id="howtopanel" hidden>
@@ -895,7 +898,13 @@ const META  = {"colophon": "<h4>Colophon</h4><b>Sources.</b> Three bulk feeds, m
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const DAYS3=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const WD=[6,0,1,2,3,4,5];
-const TODAY=(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());})();
+let TODAY=(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());})();
+function refreshToday(){
+  const d=new Date();
+  const next=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  if(next.getTime()!==TODAY.getTime()){ TODAY=next; _pyCache.clear(); return true; }
+  return false;
+}
 /* Toastmasters program year: 1 Jul 2026 - 30 Jun 2027 */
 const PY_START=new Date(2026,6,1), PY_END=new Date(2027,5,30), PY_LABEL='2026-27';
 /* Singapore public holidays inside the program year, from the Ministry of Manpower.
@@ -932,7 +941,7 @@ const DCP_ORDER=['Smedley Distinguished',"President's Distinguished",
                  'Select Distinguished','Distinguished'];
 const TIMES=[{v:'morning',l:'Morning',h:'before 12pm'},{v:'lunch',l:'Lunchtime',h:'12\u20132pm'},
              {v:'afternoon',l:'Afternoon',h:'2\u20136pm'},{v:'evening',l:'Evening',h:'6pm onwards'}];
-const FMT_SHORT={'In-person':'In person','Hybrid / online option':'Hybrid','Online':'Online','Physical':'In person'};
+const FMT_SHORT={'In-person':'In person','Hybrid / online option':'Hybrid','Online':'Online'};
 const QUICK=[{v:'today',l:'Today'},{v:'week',l:'This week'},{v:'fav',l:'Starred'}];
 const S={q:'',div:new Set(),day:new Set(),ord:new Set(),fmt:new Set(),time:new Set(),lang:new Set(),
          quick:new Set(),
@@ -943,15 +952,16 @@ const S={q:'',div:new Set(),day:new Set(),ord:new Set(),fmt:new Set(),time:new S
    Starred clubs are kept in the browser's own storage so they survive a reload, and
    mirrored into the URL hash so a set can be bookmarked or sent to somebody. Storage
    is wrapped in try/catch: inside a sandboxed frame it throws, and the tool then just
-   keeps the stars for the session. A #fav= hash in the address wins over stored ones,
-   which is what makes a shared link work on a device that already has its own. */
+   keeps the stars for the session. A #fav= hash is merged into the stored set, so a
+   shared link adds those clubs without wiping stars already on this device. */
 const FAV_KEY='d80.favourites.v1';
 const FAV=new Set();
 function favLoad(){
-  let ids=[];
+  let stored=[];
+  try{ const v=JSON.parse(localStorage.getItem(FAV_KEY)||'[]'); if(Array.isArray(v)) stored=v; }catch(e){}
   const h=(location.hash||'').match(/fav=([\d,]+)/);
-  if(h) ids=h[1].split(',').filter(Boolean);
-  else { try{ const v=JSON.parse(localStorage.getItem(FAV_KEY)||'[]'); if(Array.isArray(v)) ids=v; }catch(e){} }
+  const shared=h?h[1].split(',').filter(Boolean):[];
+  const ids=[...new Set(stored.concat(shared))];
   ids.forEach(n=>{ if(CLUBS.some(c=>c.club_number===n)) FAV.add(n); });
   if(h) favSave();
 }
@@ -1161,7 +1171,7 @@ function renderTable(rows){
     const on=o=>o===0?'Every':o===-1?'Last':{1:'1st',2:'2nd',3:'3rd',4:'4th',5:'5th'}[o];
     return [...byDay].map(([wd,os])=>os.map(on).join(' + ')+' '+DAYS3[wd]).join(' · ');
   };
-  const body=rows.map(c=>`<tr data-club="${esc(c.club_number)}" data-lang="${esc(c.language)}" title="Click for full details and every remaining date">
+  const body=rows.map(c=>`<tr data-club="${esc(c.club_number)}" data-lang="${esc(c.language)}" tabindex="0" role="button" title="Click for full details and every remaining date">
     <td class="st">${favBtn(c)}</td>
     <td class="nm">${esc(c.name)}${statusTag(c)}</td>
     <td class="nx${nextLabel(c)==='Today'?' istoday':''}" data-l="Next">${esc(nextLabel(c))}${
@@ -1499,7 +1509,7 @@ function renderMine(){
 }
 
 /* The Venues tab was removed at Rama's request (V8). Venue data is still on every
-   club card, in the table's Venue column, and in the CSV / xlsx exports. */
+   club card, in the table's Venue column, and in the CSV export. */
 
 function statBand(rows){
   const s=[['Clubs',rows.length,'clubs matching the current filter'],
@@ -1608,7 +1618,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key!=='Enter'&&e.key!==' ') return;
   if(e.target.closest('button,a')) return;   /* the star and the calendar link handle their own keys */
-  const el=e.target.closest('.aitem[data-club],.ditem[data-club],.myclub [data-club]');
+  const el=e.target.closest('.aitem[data-club],.ditem[data-club],.myclub [data-club],tr[data-club]');
   if(el){ e.preventDefault(); clubModal(el.dataset.club); }
 });
 $('#calgrid').addEventListener('keydown',e=>{
@@ -1683,10 +1693,18 @@ chipHost($('#ftime'),null,S.time,String);
 chipHost($('#flang'),null,S.lang,String);
 
 $('#colophon').innerHTML=META.colophon;
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden && refreshToday()) render();
+});
 (function init(){
   const n=new Date(); S.month=new Date(n.getFullYear(),n.getMonth(),1);
   favLoad();
   if(FAV.size && /fav=/.test(location.hash||'')) S.view='mine';   /* a shared link lands on the stars it carries */
+  if(TODAY>PY_END){
+    const note=$('#yearNote');
+    note.hidden=false;
+    note.textContent='This copy of the finder ends on 30 June 2027. Dates after that will not appear until the club list is compiled again.';
+  }
   buildSelects(); render();
 })();
 </script>

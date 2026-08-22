@@ -1,0 +1,10 @@
+{
+  "name": "The Ah-Counter's Log",
+  "short_name": "Ah-Counter",
+  "description": "Count crutch words and write the Ah-Counter's report.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#EFEEE8",
+  "theme_color": "#004165",
+  "lang": "en"
+}
