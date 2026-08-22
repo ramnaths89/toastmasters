@@ -62,9 +62,9 @@ next time. Two things worth knowing before you rely on that:
   Tick the role and the Word of the Day row appears with it. (This is per meeting — see Route 2 to
   make it your permanent default.)
 - **Number of prepared speeches.** The template has four speech slots with four paired evaluations.
-  Use **+ Add speech (with paired evaluation)** to add one, or the ✕ on a speech card to remove
-  one — the evaluation always moves with its speech. After changing the count, re-apply your
-  standard timings so the meeting still lands on the end time.
+  Use the **− / +** stepper in the Speeches section header to add or remove a slot — the paired
+  evaluation always moves with its speech. After changing the count, re-apply your standard
+  timings so the meeting still lands on the end time.
 
 ---
 
@@ -177,9 +177,8 @@ Then ask this, and skip it if I do not answer:
     three minutes — I may want to re-tune the flexible segments (Break and Table Topics) so the
     meeting still lands on my end time.
 
-Do NOT ask me how many prepared speeches we run. The tool has an "+ Add speech (with paired
-evaluation)" button and a ✕ to remove one, so the slot count is changed in the interface, not
-in code.
+Do NOT ask me how many prepared speeches we run. The tool has a − / + stepper in the Speeches
+header and a ✕ to remove one, so the slot count is changed in the interface, not in code.
 
 HOW TO EDIT THE FILE
 

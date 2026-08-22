@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
   <title>TMtimer</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -25,7 +24,7 @@
     }
 
     body {
-      font-family: 'Chakra Petch', sans-serif;
+      font-family: 'Chakra Petch', 'Segoe UI', 'Helvetica Neue', system-ui, sans-serif;
       font-variant-numeric: tabular-nums;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
@@ -390,9 +389,32 @@
       font-size: 14px;
       line-height: 1;
       padding: 0 0.15em;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
       transition: opacity 0.15s ease;
     }
     .lg-del:hover { opacity: 1; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 1.4rem;
+      transform: translate(-50%, 120%);
+      background: rgba(0,0,0,0.78);
+      color: #fff;
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      z-index: 200;
+      pointer-events: none;
+      transition: transform 0.2s ease;
+    }
+    .toast.on { transform: translate(-50%, 0); }
 
     /* ══ Left stack: instructions (above) + combined box ══ */
     .left-stack {
@@ -471,6 +493,10 @@
       pointer-events: none;
     }
     @keyframes pulse-bg { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      body.phase-red::before { animation: none; }
+      * { transition: none !important; }
+    }
 
     /* ══ Big centred phase word (accessibility) ══ */
     .phase-word {
@@ -671,9 +697,9 @@
           <button class="mini-btn" id="segTest" title="Quick test run: 2 / 4 / 6s, bell +2s">Test</button>
         </div>
         <div class="preset-btns">
-          <button class="preset-btn" data-seg="PS" data-g="5:00" data-a="6:00" data-r="7:00">Prepared Speech</button>
-          <button class="preset-btn" data-seg="TT" data-g="1:00" data-a="1:30" data-r="2:00">Table Topics</button>
-          <button class="preset-btn" data-seg="EV" data-g="2:00" data-a="2:30" data-r="3:00">Evaluation</button>
+          <button class="preset-btn" data-seg="PS" data-g="5:00" data-a="6:00" data-r="7:00" aria-pressed="false">Prepared Speech</button>
+          <button class="preset-btn" data-seg="TT" data-g="1:00" data-a="1:30" data-r="2:00" aria-pressed="false">Table Topics</button>
+          <button class="preset-btn" data-seg="EV" data-g="2:00" data-a="2:30" data-r="3:00" aria-pressed="false">Evaluation</button>
         </div>
       </div>
     </div>
@@ -691,6 +717,7 @@
     <div class="log-entries" id="logEntries"></div>
     <div class="log-empty" id="logEmpty">No times recorded yet.</div>
   </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
     'use strict';
@@ -733,6 +760,8 @@
     /* ══════════════════════════════════════════════════════════════
        State — one object, so nothing goes stale in two places
        ══════════════════════════════════════════════════════════════ */
+    const STORE_KEY = 'timer.log.v1';
+
     const state = {
       seconds: 0,
       ticker: null,
@@ -743,6 +772,53 @@
          lights back to the defaults in the middle of a speech. */
       limits: { greenAt: 300, amberAt: 360, redAt: 420 }
     };
+
+    let toastTimer = null;
+    function toast(msg) {
+      const el = $('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('on'), 1600);
+    }
+
+    function persistSession() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({
+          v: 1,
+          records: state.records,
+          bellAfter: state.bellAfter,
+          bellOn: ui.bellToggle.checked,
+          limits: state.limits,
+          fields: {
+            greenAt: ui.greenAt.value,
+            amberAt: ui.amberAt.value,
+            redAt: ui.redAt.value
+          }
+        }));
+      } catch (e) {}
+    }
+
+    function restoreSession() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return false;
+        const d = JSON.parse(raw);
+        if (!d || d.v !== 1) return false;
+        if (Array.isArray(d.records)) {
+          state.records = d.records.filter(r => r && typeof r.name === 'string');
+        }
+        if (typeof d.bellAfter === 'number') setBellDelay(d.bellAfter);
+        if (typeof d.bellOn === 'boolean') ui.bellToggle.checked = d.bellOn;
+        if (d.fields) {
+          if (d.fields.greenAt) ui.greenAt.value = d.fields.greenAt;
+          if (d.fields.amberAt) ui.amberAt.value = d.fields.amberAt;
+          if (d.fields.redAt) ui.redAt.value = d.fields.redAt;
+        }
+        return state.records.length > 0;
+      } catch (e) { return false; }
+    }
 
     const running = () => state.ticker !== null;
 
@@ -914,7 +990,12 @@
        been reached yet, so moving the goalposts mid-speech still rings. */
     function settingsChanged() {
       readLimits();
-      if (state.seconds < state.limits.redAt + state.bellAfter) state.bellRung = false;
+      /* Re-arm whenever the bell point is still ahead — including after Stop,
+         when the user lengthens the delay past the current time. */
+      if (!ui.bellToggle.checked || state.seconds < state.limits.redAt + state.bellAfter) {
+        state.bellRung = false;
+      }
+      persistSession();
       render();
     }
 
@@ -935,7 +1016,11 @@
        click, ±, or typing. One source of truth, so it can never lie. */
     function syncPresetHighlight() {
       const seg = segCode();
-      PRESET_BTNS.forEach(b => b.classList.toggle('active', b.dataset.seg === seg));
+      PRESET_BTNS.forEach(b => {
+        const on = b.dataset.seg === seg;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on);
+      });
     }
 
     function setBellDelay(secs) {
@@ -954,11 +1039,22 @@
     /* ══════════════════════════════════════════════════════════════
        The log
        ══════════════════════════════════════════════════════════════ */
+    function nextAutoName(seg) {
+      const re = new RegExp('^' + seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' (\\d+)$');
+      let max = 0;
+      state.records.forEach(r => {
+        if (r.seg !== seg) return;
+        const m = re.exec(r.name);
+        if (m) max = Math.max(max, +m[1]);
+      });
+      return `${seg} ${max + 1}`;
+    }
+
     function logSpeaker() {
       const typed = ui.name.value.trim();
       if (state.seconds === 0 && !typed) return;
       const seg = segCode();
-      const name = typed || `${seg} ${state.records.filter(r => r.seg === seg).length + 1}`;
+      const name = typed || nextAutoName(seg);
       state.records.push({ name, seg, time: clock(state.seconds) });
       ui.name.value = '';
       renderLog();
@@ -995,16 +1091,19 @@
         time.spellcheck = false;
         time.title = 'Click to edit time (m:ss)';
 
-        const del = document.createElement('span');
+        const del = document.createElement('button');
+        del.type = 'button';
         del.className = 'lg-del';
         del.textContent = '✕';
         del.title = 'Remove';
+        del.setAttribute('aria-label', 'Remove ' + r.name);
 
         row.append(name, seg, time, del);
         frag.appendChild(row);
       });
       ui.entries.replaceChildren(frag);
       ui.empty.style.display = state.records.length ? 'none' : '';
+      persistSession();
     }
 
     const rowIndex = node => {
@@ -1048,10 +1147,28 @@
       }
     });
 
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise((resolve, reject) => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy') ? resolve() : reject(new Error('copy failed')); }
+        catch (err) { reject(err); }
+        finally { document.body.removeChild(ta); }
+      });
+    }
+
     $('copyLog').addEventListener('click', () => {
-      if (!state.records.length) return;
+      if (!state.records.length) { toast('Nothing to copy'); return; }
       const text = state.records.map(r => `${r.name}\t${r.seg || 'Other'}\t${r.time}`).join('\n');
-      navigator.clipboard.writeText(text).catch(() => {});
+      copyText(text).then(() => toast('Log copied')).catch(() => toast('Copy blocked'));
     });
 
     $('clearLog').addEventListener('click', () => {
@@ -1134,7 +1251,7 @@
       const btn = e.target.closest('button');
       if (!btn) return;
       if (btn.id === 'segTest') applyThresholds('0:02', '0:04', '0:06', 2);
-      else if (btn.dataset.seg) applyThresholds(btn.dataset.g, btn.dataset.a, btn.dataset.r, 30);
+      else if (btn.dataset.seg) applyThresholds(btn.dataset.g, btn.dataset.a, btn.dataset.r, state.bellAfter);
     });
 
     /* ══════════════════════════════════════════════════════════════
@@ -1144,9 +1261,12 @@
       $('howto').open = false;
     }
 
-    readLimits();   // some browsers restore field values across a reload
+    const restored = restoreSession();
+    readLimits();   // last valid parse of the (possibly restored) fields
     renderLog();
     render();
+    if (restored) toast('Restored last session log');
+    window.addEventListener('pagehide', persistSession);
   </script>
 </body>
 </html>

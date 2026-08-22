@@ -4,9 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Ah&#8209;Counter&rsquo;s Log</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#004165">
+<link rel="manifest" href="manifest.json">
 <style>
 /* ================================================================
    THE AH-COUNTER'S LOG — V7
@@ -565,7 +564,7 @@ tr.zero td.tt{background:var(--gray-lt)}
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 (function(){
@@ -695,7 +694,7 @@ tr.zero td.tt{background:var(--gray-lt)}
     if (!storeOK) return;
     try{
       window.localStorage.setItem(STORE_KEY, JSON.stringify({
-        v:3, uid:uid, cid:cid, custom:custom, at:new Date().toISOString(),
+        v:4, uid:uid, cid:cid, custom:custom, at:new Date().toISOString(),
         speakers:state.speakers, active:state.active
       }));
     }catch(e){ storeOK = false; markSaveState(); }
@@ -1143,8 +1142,11 @@ tr.zero td.tt{background:var(--gray-lt)}
     });
   }
   function buildReport(){
-    var cols = usedCols(), hasOther = state.speakers.some(function(sp){ return (sp.otherText||'').trim(); }), html;
-    if (!cols.length && !hasOther){
+    var cols = usedCols();
+    var hasOther = state.speakers.some(function(sp){ return (sp.otherText||'').trim(); });
+    var hasNotes = state.speakers.some(function(sp){ return (sp.note||'').trim(); });
+    var html;
+    if (!cols.length && !hasOther && !hasNotes){
       html = '<p class="sub" style="margin:0">Nothing counted yet.</p>';
     } else {
       html = '<table><thead><tr><th>Speaker</th><th>Appointment</th><th>Segment</th>';
@@ -1345,14 +1347,22 @@ tr.zero td.tt{background:var(--gray-lt)}
 
   var saved = load();
   if (saved){
+    adopt(saved);
     var savedTotal = 0;
     saved.speakers.forEach(function(sp){ for (var k in (sp.counts||{})) savedTotal += sp.counts[k]||0; });
-    if (savedTotal > 0){
-      adopt(saved);
-      var when = '';
-      try{ when = new Date(saved.at).toLocaleString(undefined,{hour:'numeric',minute:'2-digit',day:'numeric',month:'short'}); }catch(e){}
-      $('bannerTxt').textContent = 'Restored an unfinished log — ' + savedTotal + ' crutches across ' +
-        saved.speakers.length + ' speakers' + (when ? ', last saved ' + when : '') + '.';
+    var when = '';
+    try{ when = new Date(saved.at).toLocaleString(undefined,{hour:'numeric',minute:'2-digit',day:'numeric',month:'short'}); }catch(e){}
+    var rosterWork = savedTotal > 0
+      || custom.length > 0
+      || saved.speakers.some(function(sp){
+           return (sp.note||'').trim() || (sp.otherText||'').trim() || !unnamed(sp);
+         });
+    if (rosterWork){
+      $('bannerTxt').textContent = savedTotal > 0
+        ? ('Restored an unfinished log — ' + savedTotal + ' crutches across ' +
+           saved.speakers.length + ' speakers' + (when ? ', last saved ' + when : '') + '.')
+        : ('Restored the roster you set up last time — ' + saved.speakers.length +
+           ' speakers' + (when ? ', last saved ' + when : '') + '.');
       $('banner').classList.add('on');
     }
   }

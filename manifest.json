@@ -1,0 +1,11 @@
+{
+  "name": "Toastmasters Tools",
+  "short_name": "TM Tools",
+  "description": "Club finder, programme sheet, timer and Ah-Counter — one unofficial Toastmasters utility.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#F4F1E8",
+  "theme_color": "#004165",
+  "lang": "en",
+  "scope": "./"
+}

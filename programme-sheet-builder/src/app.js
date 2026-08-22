@@ -21,8 +21,12 @@ let VOTE_LINK = 'https://slido.com';
 let VOTE_CODES = {speechvote:'NSE_1', ttvote:'NSE_2', evalvote:'NSE_3'};
 /* "Voting Link: https://slido.com | Enter code: NSE_1" - the label was added in
    V33 at Rama's request; the bare URL read as a footnote, not an instruction. */
-const votingNote = key =>
-  'Voting Link: ' + VOTE_LINK + ' | Enter code: ' + (VOTE_CODES[key] || '');
+const votingNote = key => {
+  const link = (VOTE_LINK || '').trim();
+  const code = String((VOTE_CODES[key] || '')).trim();
+  if (!link && !code) return '';
+  return 'Voting Link: ' + VOTE_LINK + ' | Enter code: ' + (VOTE_CODES[key] || '');
+};
 function syncVotingFromState(){
   const v = state && state.meeting && state.meeting.voting;
   if(!v) return;
@@ -32,7 +36,8 @@ function syncVotingFromState(){
 /* Rewrite the notes on vote rows already in the running order. */
 function applyVotingToSegments(){
   state.segments.forEach(sg=>{
-    if(VOTE_CODES[sg.presetKey] != null) sg.sub = votingNote(sg.presetKey);
+    const voteKey = (PRESETS[sg.presetKey] || {}).voteKey;
+    if(voteKey) sg.sub = votingNote(voteKey);
   });
 }
 
@@ -359,6 +364,11 @@ function adoptState(parsed){
     seenIds.add(id);
   });
   if(dupes) repairs.push(dupes + ' duplicate segment ids re-keyed');
+  const nSp = state.segments.filter(s=>s.isSpeech).length;
+  const nEv = state.segments.filter(s=>s.isEvaluation).length;
+  if(nSp !== nEv){
+    repairs.push('speech/eval count mismatch (' + nSp + ' vs ' + nEv + ')');
+  }
   /* These four are split on newlines and pipes all over the renderer; a non-string
      here threw before anything reached the screen. */
   ['execText','districtText','linksText','announcementsText'].forEach(k=>{
@@ -712,6 +722,8 @@ const ROLE_OWNED_SEGMENTS = {
   saa:          ['calltoorder'],
   langeval:     ['langeval'],
   ttmaster:     ['ttmasterintro','tabletopics','ttreturn','ttvoting','ttvote'],
+  /* ttvoting is the pre-V21 preset name; ttvote is the live combined row. Both
+     stay listed so a meeting saved before V21 still hides with the TT Master. */
   /* Deliberately NOT the three vote rows: the club still votes when nobody is
      timing, so unticking Timer must leave those rows standing (holder → TBD). */
   timer:        ['timerreport'],

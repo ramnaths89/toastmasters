@@ -7,12 +7,12 @@ let editingSegId = null;
 function fldTextML(seg, field, label, ph){
   return `<label class="re-f"><span>${label}</span>
     <textarea rows="2" placeholder="${esc(ph||'')}"
-      oninput="parent.liveEdit('${seg.id}','${field}',this.value)">${esc(seg[field]||'')}</textarea></label>`;
+      oninput="(window.liveEdit||parent.liveEdit)('${seg.id}','${field}',this.value)">${esc(seg[field]||'')}</textarea></label>`;
 }
 function fldText(seg, field, label, ph){
   return `<label class="re-f"><span>${label}</span>
     <input type="text" value="${esc(seg[field]||'')}" placeholder="${esc(ph||'')}"
-      oninput="parent.liveEdit('${seg.id}','${field}',this.value)"></label>`;
+      oninput="(window.liveEdit||parent.liveEdit)('${seg.id}','${field}',this.value)"></label>`;
 }
 function fldNum(seg, field, label){
   const v = field === 'signalMid' ? midOf(seg) : seg[field];
@@ -20,7 +20,7 @@ function fldNum(seg, field, label){
      values (slot -> lights) back into the OPEN row without rebuilding it. */
   return `<label class="re-f re-n"><span>${label}</span>
     <input type="number" min="0" step="0.5" inputmode="decimal" value="${v}" data-f="${field}"
-      oninput="parent.liveEdit('${seg.id}','${field}',this.value)"></label>`;
+      oninput="(window.liveEdit||parent.liveEdit)('${seg.id}','${field}',this.value)"></label>`;
 }
 const lightsGrid = seg => `<div class="re-grid re-g4">`
   + fldNum(seg,'durMin','Slot (min)') + fldNum(seg,'signalMin','Green')
@@ -38,13 +38,13 @@ function editRowHTML(seg, evPartner){
         ${fldText(seg,'speakerName','Speaker','Speaker name')}
         <label class="re-f"><span>Evaluator</span>
           <input type="text" value="${esc(evPartner?evPartner.holderOverride:'')}" placeholder="TBD"
-            ${evPartner?`oninput="parent.liveEdit('${evPartner.id}','holderOverride',this.value)"`:'disabled'}></label>
+            ${evPartner?`oninput="(window.liveEdit||parent.liveEdit)('${evPartner.id}','holderOverride',this.value)"`:'disabled'}></label>
       </div>
       <div class="re-grid re-g3">
         <label class="re-f"><span>Pathway</span>
-          <select onchange="parent.catalogEdit('${seg.id}','pathway',this.value)">${pathOpts}</select></label>
+          <select onchange="(window.catalogEdit||parent.catalogEdit)('${seg.id}','pathway',this.value)">${pathOpts}</select></label>
         <label class="re-f"><span>Level</span>
-          <select onchange="parent.catalogEdit('${seg.id}','pLevel',this.value)">${lvlOpts}</select></label>
+          <select onchange="(window.catalogEdit||parent.catalogEdit)('${seg.id}','pLevel',this.value)">${lvlOpts}</select></label>
         <label class="re-f"><span>Project</span>
           ${projectComboHTML(seg, 'sheet')}</label>
       </div>
@@ -96,8 +96,9 @@ function signalBoxes(green, amber, red, extra){
    This is a real combobox: ▾ opens the whole catalog, typing narrows it on
    name AND meta (so "L3", "elective", "humor" all work), ↑↓ + Enter pick.
    It renders in the builder pane AND inside the preview iframe, so every
-   handler is reached through `parent.` and works off the element's own
-   document — in the top window `parent === window`, so one markup fits both. */
+   handler is `(window.fn||parent.fn)` — the form pane has the function on
+   window (including when the builder itself sits in the app-shell iframe);
+   the preview iframe does not, and falls through to parent. */
 
 /* Catalog size as the user experiences it: what the ▾ list can actually offer. */
 const PICKABLE_PROJECT_COUNT = ALL_PROJECTS.filter(
@@ -134,16 +135,16 @@ function projectComboHTML(seg, handler){
   const opts = projectChoices(seg).map(r=>
     `<div class="cbx-opt${r.n===seg.project?' sel':''}${r.here?' here':''}" role="option"
        data-val="${esc(r.n)}" data-search="${esc((r.n + ' ' + r.meta).toLowerCase())}"
-       onmousedown="parent.cbxPick(event,this)"
+       onmousedown="(window.cbxPick||parent.cbxPick)(event,this)"
       ><span class="cbx-n">${esc(r.n)}</span><span class="cbx-m">${esc(r.meta)}</span></div>`).join('');
   return `<div class="cbx" data-cbx="${seg.id}" data-handler="${handler}">
     <input type="text" class="cbx-input" role="combobox" aria-expanded="false" autocomplete="off"
       value="${esc(seg.project)}" placeholder="Click ▾ or type to search all ${PICKABLE_PROJECT_COUNT} projects…"
-      onfocus="parent.cbxOpen(this)" onclick="parent.cbxOpen(this)"
-      oninput="parent.cbxFilter(this)" onkeydown="parent.cbxKey(event,this)"
-      onblur="parent.cbxBlur(this)">
+      onfocus="(window.cbxOpen||parent.cbxOpen)(this)" onclick="(window.cbxOpen||parent.cbxOpen)(this)"
+      oninput="(window.cbxFilter||parent.cbxFilter)(this)" onkeydown="(window.cbxKey||parent.cbxKey)(event,this)"
+      onblur="(window.cbxBlur||parent.cbxBlur)(this)">
     <button type="button" class="cbx-btn" tabindex="-1" aria-label="Show all projects"
-      onmousedown="parent.cbxToggle(event,this)">▾</button>
+      onmousedown="(window.cbxToggle||parent.cbxToggle)(event,this)">▾</button>
     <div class="cbx-list" role="listbox">${opts}
       <div class="cbx-empty">No project matches — press Enter to keep what you typed.</div>
     </div>
@@ -296,8 +297,8 @@ function buildSheetHTML(interactive){
             <td class="item" colspan="2">
               ${editRowHTML(seg, partner)}
               <div class="re-actions">
-                <button class="re-done" onclick="parent.setEditingSeg(null)">✓ Done</button>
-                <button class="re-del" onclick="parent.removeSeg('${seg.id}')">✕ Remove segment</button>
+                <button class="re-done" onclick="(window.setEditingSeg||parent.setEditingSeg)(null)">✓ Done</button>
+                <button class="re-del" onclick="(window.removeSeg||parent.removeSeg)('${seg.id}')">✕ Remove segment</button>
               </div>
             </td>
           </tr>`;
@@ -349,10 +350,10 @@ function buildSheetHTML(interactive){
       : (h.text === '—' || seg.noHolder) ? '&mdash;' : esc(h.text);
 
     const tools = interactive ? `<span class="row-tools">
-        <button onclick="parent.moveSeg('${seg.id}',-1)" title="Move up">▲</button>
-        <button onclick="parent.moveSeg('${seg.id}',1)" title="Move down">▼</button>
-        <button class="rt-edit" onclick="parent.setEditingSeg('${seg.id}')" title="Edit this row here">✎ Edit</button>
-        <button onclick="parent.removeSeg('${seg.id}')" title="Remove">✕</button>
+        <button onclick="(window.moveSeg||parent.moveSeg)('${seg.id}',-1)" title="Move up">▲</button>
+        <button onclick="(window.moveSeg||parent.moveSeg)('${seg.id}',1)" title="Move down">▼</button>
+        <button class="rt-edit" onclick="(window.setEditingSeg||parent.setEditingSeg)('${seg.id}')" title="Edit this row here">✎ Edit</button>
+        <button onclick="(window.removeSeg||parent.removeSeg)('${seg.id}')" title="Remove">✕</button>
       </span>` : '';
     const grip = interactive ? `<span class="drag-grip" title="Drag to reorder">⠿</span>` : '';
 
@@ -388,7 +389,7 @@ function buildSheetHTML(interactive){
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>${SHEET_CSS}</style>
 </head><body class="th-${esc(state.theme||'classic')}${interactive?' interactive':''}">
-<div class="print-fab"><button class="print-btn" onclick="window.print()">🖨 <span class="label">Print / Save PDF</span></button></div>
+${interactive ? `<div class="print-fab"><button class="print-btn" onclick="window.print()">🖨 <span class="label">Print / Save PDF</span></button></div>` : ''}
 <div class="page-wrap"><div class="page">
   <header>
     <div class="head-text">
