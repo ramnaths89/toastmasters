@@ -17,3 +17,7 @@ desktop/tauri/node_modules/
 desktop/tauri/src-tauri/target/
 desktop/tauri/src-tauri/gen/
 desktop/tauri/dist/
+desktop/app/web/
+desktop/app/rsrc_windows_amd64.syso
+desktop/app/icon.ico
+desktop/dist/toastmasters-tools-linux-amd64

@@ -13,9 +13,9 @@ once the page itself is on the device.
 The root page is **one app** with all four tools. Switching tabs keeps a running timer
 alive. Each tool still has its own URL for a second screen or a bookmark.
 
-A double-clickable desktop wrap — same HTML, a real `http://127.0.0.1` origin, no
-`file://` — is in [desktop/](desktop/). `python3 desktop/launch.py` opens a frameless
-Chrome/Edge window. Tauri 2 is there when you want a signed `.exe` / `.app`.
+A double-clickable Windows app — same HTML, a real `http://127.0.0.1` origin —
+is `desktop/dist/ToastmastersTools.exe`. Rebuild with `python3 desktop/app/build.py`.
+Tauri 2 remains in `desktop/tauri/` if you later want a signed store bundle.
 
 Three of the four are written and edited as that single file. The programme sheet builder
 is assembled from numbered parts in `programme-sheet-builder/src/` — see
@@ -113,11 +113,11 @@ page-count probe. Full working notes: [programme-sheet-builder/HANDOVER.md](prog
 
 These tools are already the app. A desktop build wraps the existing HTML. Short version:
 
-1. **Install from Chrome / Edge** — hub `manifest.json`, `display: standalone`.
-2. **`python3 desktop/launch.py`** — starts a local origin and opens a frameless
-   `--app` window. This is the working desktop app on a club laptop with Python and Chrome.
-3. **Tauri 2** — real `.exe` / `.app` / `.deb`. Starter in `desktop/tauri/`. Needs icons
-   (`npx tauri icon icon.svg`) before a signed bundle. Empty of secrets; not a store build.
+1. **`desktop/dist/ToastmastersTools.exe`** — Windows 64-bit, all four tools embedded.
+   Double-click. SmartScreen will warn (unsigned). Rebuild: `python3 desktop/app/build.py`.
+2. **Install from Chrome / Edge** — hub `manifest.json`, `display: standalone`.
+3. **`python3 desktop/launch.py`** — local origin + frameless Chrome/Edge `--app`.
+4. **Tauri 2** — starter in `desktop/tauri/` for a later signed bundle.
 
 Do not load the pages as `file://`. Details: [desktop/](desktop/).
 

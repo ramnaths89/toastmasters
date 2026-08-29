@@ -29,10 +29,10 @@ sits about 4 mm from a third A4 page and is guarded by `pgprobe.py`. Do not do t
 
 | Path | What you get | Size | Fit |
 |------|----------------|------|-----|
-| **PWA (Install app)** | Chrome / Edge / Android “Add to…”, no browser chrome | 0 extra | Hub `manifest.json`. Fastest try. |
-| **`launch.py` (this folder)** | Frameless Chrome `--app` window on `http://127.0.0.1:8765` | 0 extra | **The working desktop app today.** Needs Python 3 and Chrome/Edge/Chromium. |
-| **Tauri 2** | Real `.exe` / `.dmg` / `.deb` that embeds a system webview | ~8–15 MB | Next step for a signed double-clickable. Icons via `npx tauri icon ../../icon.svg`. |
-| **Electron** | Same wrap, Chromium bundled | ~150 MB | Only if you need Chrome File System Access on every OS and cannot wait for a Tauri sidecar. |
+| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~10 MB | **This is the .exe.** `desktop/dist/ToastmastersTools.exe`. Unsigned — SmartScreen will warn. |
+| **PWA (Install app)** | Chrome / Edge / Android “Add to…”, no browser chrome | 0 extra | Hub `manifest.json`. Fastest try in a browser. |
+| **`launch.py` (this folder)** | Frameless Chrome `--app` window on `http://127.0.0.1:8765` | 0 extra | Needs Python 3 and Chrome/Edge. |
+| **Tauri 2** | Signed `.exe` / `.dmg` / `.deb` when you have certs | ~8–15 MB | Starter in `desktop/tauri/`. Not required for the Go wrap. |
 
 There is no good fifth option of “compile the HTML to native widgets.” The sheet is HTML
 and CSS on purpose.
@@ -48,16 +48,23 @@ and CSS on purpose.
 
   Then open http://127.0.0.1:8765/ — hash routes `#home` `#finder` `#builder` `#timer` `#ah-counter`.
 
-### 2. Frameless desktop window
+### 2. Windows `.exe` (the complete set)
+
+Copy `desktop/dist/ToastmastersTools.exe` onto a Windows laptop and double-click.
+All four tools are inside that file (~8 MB, unsigned). Rebuild with:
+
+      python3 desktop/app/build.py
+
+Unsigned: SmartScreen will ask you to run anyway. Details: [app/README.md](app/README.md).
+
+### 3. Frameless browser window (Python)
 
       python3 desktop/launch.py
 
 On Windows, double-click `launch.bat`. On macOS/Linux, `./launch.sh`. This starts the
 local server if needed and opens Chrome/Edge with `--app=`. Close the window to quit.
-**This is not a signed installer.** It is the wrap that actually runs without icon
-generation or code-signing certificates.
 
-### 3. Package with Tauri 2 (when you want a `.exe`)
+### 4. Package with Tauri 2 (optional, signed store builds later)
 
 From a machine with Rust and Node:
 
@@ -71,7 +78,7 @@ npm run tauri build
 The starter points Tauri at the repo root (`frontendDist` = `../../..` from `src-tauri/`)
 and opens `index.html`. Do **not** set the window URL to a `file://` path.
 
-### 4. Native file dialogs (only if the builder needs them)
+### 5. Native file dialogs (only if the builder needs them)
 
 Today the builder uses:
 
