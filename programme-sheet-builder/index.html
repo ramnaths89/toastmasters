@@ -16,9 +16,19 @@
 html,body{margin:0;padding:0;}
 body{font-family:"Source Sans 3","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;}
 .builder-header{
-  background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  background:var(--maroon);
   color:#fff; padding:14px 22px; display:flex; align-items:center; gap:14px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.25); position:relative; z-index:5;
+  box-shadow:none; position:relative; z-index:5;
+  border-bottom:4px solid var(--yellow);
+  overflow:hidden;
+}
+.builder-header::before{
+  content:""; position:absolute; top:-18px; right:8%; width:72px; height:120px;
+  background:var(--blue); transform:skewX(-18deg); pointer-events:none; opacity:.85;
+}
+.builder-header::after{
+  content:""; position:absolute; top:-8px; right:4%; width:28px; height:90px;
+  background:var(--yellow); transform:skewX(-18deg); pointer-events:none;
 }
 .builder-header img{width:36px;height:36px;border-radius:50%;background:#fff;padding:2px;}
 .builder-header h1{font-family:"Montserrat","Segoe UI",Arial,sans-serif;font-size:17px;margin:0;font-weight:700;}
@@ -586,6 +596,54 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
   .file-select{ max-width:none; flex:1 1 auto; }
 }
 
+
+/* ================= Contest mode (V43) =================
+   Sections that belong to one meeting type only. The body class is set by
+   syncModeControls(); both rules are needed because the default markup carries
+   neither class until the first sync, and a section that flickers into view on
+   load reads as a bug. */
+.mode-contest-only{ display:none; }
+body.mode-contest .mode-contest-only{ display:block; }
+body.mode-contest .mode-chapter-only{ display:none; }
+/* Inline spans in a <summary> must not become blocks or the caret drops below
+   the text; the summary rules above target the hint <div>s. */
+body.mode-contest summary .mode-contest-only{ display:inline; }
+body.mode-contest summary .mode-chapter-only{ display:none; }
+summary .mode-contest-only{ display:none; }
+
+/* Speeches & Evaluators is chapter-only; Contestants is contest-only. Hidden
+   with display:none on the <details> itself, so a section that is not part of
+   this meeting type cannot be opened, tabbed into, or found by Ctrl+F. */
+#contestSection{ display:none; }
+body.mode-contest #contestSection{ display:block; }
+body.mode-contest #speechSection{ display:none; }
+
+.ct-block{
+  border:1px solid var(--line); border-left:4px solid var(--maroon); border-radius:6px;
+  padding:10px; margin-bottom:10px; background:#fdfcfa;
+}
+.ct-block .ct-title{ font-weight:600; }
+.ct-rows{ margin-top:8px; }
+.ct-row{
+  display:grid; grid-template-columns:22px 1fr auto; gap:6px;
+  align-items:center; margin-bottom:5px;
+}
+/* Tabular numerals so a ten-contestant list does not step sideways at 10. */
+.ct-num{
+  font-size:11px; font-weight:700; color:var(--ink-soft); text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.ct-del{
+  border:1px solid var(--line); background:#fff; border-radius:4px; width:26px; height:28px;
+  cursor:pointer; font-size:11px; line-height:1; color:var(--ink-soft);
+}
+.ct-del:hover{ background:#fdeeec; color:#9c3b33; border-color:#e3b3ac; }
+.ct-add{
+  margin-top:4px; border:1px dashed var(--maroon); background:#fff; color:var(--maroon);
+  border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;
+  font-family:inherit;
+}
+.ct-add:hover{ background:var(--cream); }
 </style>
 </head>
 <body>
@@ -597,13 +655,13 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
   <img id="hdrLogo" alt="TI">
   <div>
     <h1>NSE Programme Sheet Builder</h1>
-    <p>Fill in the fields on the left — the sheet updates live and your work is saved in this browser. Drag ⠿ to reorder; hover a sheet row and hit <b>✎ Edit</b> to change it in place.</p>
+    <p>Fill in the left — the sheet redraws on the right. Chapter meeting or speech contest. Drag ⠿ to reorder; hover a row and hit <b>✎ Edit</b>. Work stays in this browser.</p>
   </div>
 </div>
 
 <div class="toolbar">
   <span id="endCheck" class="end-check ok">—</span>
-  <button class="btn secondary balance" data-tip="Stretches or squeezes the FLEXIBLE segments — Break and Table Topics — so the meeting lands exactly on its target end time." onclick="balanceToEndTime()">Balance Segments</button>
+  <button class="btn secondary balance" data-tip="Stretches or squeezes the FLEXIBLE segments so the meeting lands exactly on its target end time." onclick="balanceToEndTime()">Balance Segments</button>
   <div class="spacer"></div>
 
   <select id="fileSelect" class="file-select" onchange="pickMeetingFile(this.value)" aria-label="Saved meetings" title="Open a saved meeting, or connect the folder they live in">
@@ -680,6 +738,12 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
     <details class="section">
       <summary>Meeting Info</summary>
       <div class="content">
+        <label>Meeting type</label>
+        <select id="f-mode" onchange="setMeetingMode(this.value)">
+          <option value="chapter">Chapter Meeting</option>
+          <option value="contest">Speech Contest</option>
+        </select>
+        <div class="hint">Switching replaces the running order with that type's template. Club setup, officers, announcements and both sets of role names are kept.</div>
         <label>Meeting Title / Theme</label>
         <input type="text" id="f-title" placeholder="e.g. Chapter Meeting: Voices of a Nation" oninput="bindMeeting('title', this.value)">
         <div class="row2">
@@ -698,20 +762,14 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
     </details>
 
     <details class="section">
-      <summary>Meeting Roles</summary>
+      <summary><span class="mode-chapter-only">Meeting Roles</span><span class="mode-contest-only">Contest Appointments</span></summary>
       <div class="content">
-        <div class="roles-grid">
-          <div id="rw-tmod"><label class="role-lbl"><input type="checkbox" id="rc-tmod" checked onchange="toggleRoleActive('tmod', this.checked)"> Toastmaster of the Day</label><input type="text" id="r-tmod" placeholder="TBD" oninput="bindRole('tmod', this.value)"></div>
-          <div id="rw-president"><label class="role-lbl"><input type="checkbox" id="rc-president" checked onchange="toggleRoleActive('president', this.checked)"> (Acting) President</label><input type="text" id="r-president" placeholder="TBD" oninput="bindRole('president', this.value)"></div>
-          <div id="rw-ttmaster"><label class="role-lbl"><input type="checkbox" id="rc-ttmaster" checked onchange="toggleRoleActive('ttmaster', this.checked)"> Table Topics Master</label><input type="text" id="r-ttmaster" placeholder="TBD" oninput="bindRole('ttmaster', this.value)"></div>
-          <div id="rw-ttevaluator"><label class="role-lbl"><input type="checkbox" id="rc-ttevaluator" checked onchange="toggleRoleActive('ttevaluator', this.checked)"> Table Topics Evaluator</label><input type="text" id="r-ttevaluator" placeholder="TBD" oninput="bindRole('ttevaluator', this.value)"></div>
-          <div id="rw-langeval"><label class="role-lbl"><input type="checkbox" id="rc-langeval" checked onchange="toggleRoleActive('langeval', this.checked)"> Language Evaluator</label><input type="text" id="r-langeval" placeholder="TBD" oninput="bindRole('langeval', this.value)"></div>
-          <div id="rw-timer"><label class="role-lbl"><input type="checkbox" id="rc-timer" checked onchange="toggleRoleActive('timer', this.checked)"> Timer</label><input type="text" id="r-timer" placeholder="TBD" oninput="bindRole('timer', this.value)"></div>
-          <div id="rw-ahcounter"><label class="role-lbl"><input type="checkbox" id="rc-ahcounter" checked onchange="toggleRoleActive('ahcounter', this.checked)"> Ah-Counter</label><input type="text" id="r-ahcounter" placeholder="TBD" oninput="bindRole('ahcounter', this.value)"></div>
-          <div id="rw-photographer"><label class="role-lbl"><input type="checkbox" id="rc-photographer" checked onchange="toggleRoleActive('photographer', this.checked)"> Photographer</label><input type="text" id="r-photographer" placeholder="TBD" oninput="bindRole('photographer', this.value)"></div>
-          <div id="rw-saa"><label class="role-lbl"><input type="checkbox" id="rc-saa" checked onchange="toggleRoleActive('saa', this.checked)"> Sergeant-at-Arms</label><input type="text" id="r-saa" placeholder="TBD" oninput="bindRole('saa', this.value)"></div>
-        </div>
-        <div class="hint">Untick a role that isn't running today — it disappears from the roster under TME Welcome Remarks and its own agenda items switch off. Leave a role blank and the sheet prints a red TBD; it is also listed as still open.</div>
+        <!-- Rendered by renderRolesGrid(): the built-in nine for a chapter
+             meeting, the contest appointments for a contest. One grid, so the
+             two sets cannot drift apart in markup. -->
+        <div class="roles-grid" id="rolesGrid"></div>
+        <div class="hint mode-chapter-only">Untick a role that isn't running today — it disappears from the roster under TME Welcome Remarks and its own agenda items switch off. Leave a role blank and the sheet prints a red TBD; it is also listed as still open.</div>
+        <div class="hint mode-contest-only">These are the contest appointments. They print as the <b>Contest Committee</b> in the sheet's side column and fill the Appointment Holder column in the running order. Untick one the contest isn't using — a single timer, or no test speaker for a Table Topics contest. Leave one blank and it prints a red TBD.</div>
 
         <label style="margin-top:14px;">Your club's own roles <span class="lbl-hint">(title, then who is doing it)</span></label>
         <div id="customRoles"></div>
@@ -728,63 +786,36 @@ body.resizing .preview-pane iframe{ pointer-events:none; }
       </div>
     </details>
 
+    <!-- Contest only. Sits where Speeches & Evaluators sits for a chapter
+         meeting, because it plays the same part: the people the night is
+         actually about. -->
+    <details class="section" id="contestSection">
+      <summary>Contestants</summary>
+      <div class="content">
+        <div id="contestList"></div>
+        <div class="hint">Contestants print in the order listed, which is the order they drew. Leave a slot blank and it prints a numbered red TBD — that is the right way to show a confirmed place with an unconfirmed name. Rename a contest here to run a different pair, e.g. Humorous Speech and International Speech.</div>
+      </div>
+    </details>
+
     <details class="section" id="segSection">
       <summary>Programme Segments (order &amp; timing)</summary>
       <div class="content">
         <div class="addbar addbar-top">
           <select id="addSegTypeTop" aria-label="Agenda item to add at the top">
-            <option value="custom">Custom item</option>
-            <option value="registration">Registration & Fellowship</option>
-            <option value="calltoorder">SAA Calls Meeting to Order</option>
-            <option value="welcome">TME Welcome Remarks</option>
-            <option value="langeval">Language Evaluator Introduces Word of the Day</option>
-            <option value="president">President Opening Address</option>
-            <option value="returncontrol">President Returns Control to TME</option>
-            <option value="speechvote">Timer's Report | Voting for Best Speaker</option>
-            <option value="breaktime">Break Time (flexible)</option>
-            <option value="ttmasterintro">TME Introduces Table Topics Master</option>
-            <option value="tabletopics">Conduct Table Topics Session (flexible)</option>
-            <option value="ttreturn">TT Master Returns Control to TME</option>
-            <option value="ttvote">Timer's Report | Voting for Best Table Topics Speaker</option>
-            <option value="peintro">TME Introduces Project Evaluation Segment</option>
-            <option value="evalvote">Timer's Report | Voting for Best Speech Evaluation</option>
-            <option value="timerreport">Call for Timer's Report (on its own)</option>
-            <option value="reports">TME Calls for Reports</option>
-            <option value="awards">Award Presentation</option>
-            <option value="closing">President's Closing Address</option>
-            <option value="photo">Photo Taking Session</option>
-            <option value="adjourn">President Adjourns Meeting</option>
+            <!-- filled by renderAddOptions(): the list depends on the meeting type -->
           </select>
           <button onclick="addSeg(true)" title="Insert this item at the very start of the running order">+ Add at top</button>
         </div>
         <div id="segList"></div>
         <div class="addbar">
           <select id="addSegType">
-            <option value="custom">Custom item</option>
-            <option value="registration">Registration & Fellowship</option>
-            <option value="calltoorder">SAA Calls Meeting to Order</option>
-            <option value="welcome">TME Welcome Remarks</option>
-            <option value="langeval">Language Evaluator Introduces Word of the Day</option>
-            <option value="president">President Opening Address</option>
-            <option value="returncontrol">President Returns Control to TME</option>
-            <option value="speechvote">Timer's Report | Voting for Best Speaker</option>
-            <option value="breaktime">Break Time (flexible)</option>
-            <option value="ttmasterintro">TME Introduces Table Topics Master</option>
-            <option value="tabletopics">Conduct Table Topics Session (flexible)</option>
-            <option value="ttreturn">TT Master Returns Control to TME</option>
-            <option value="ttvote">Timer's Report | Voting for Best Table Topics Speaker</option>
-            <option value="peintro">TME Introduces Project Evaluation Segment</option>
-            <option value="evalvote">Timer's Report | Voting for Best Speech Evaluation</option>
-            <option value="timerreport">Call for Timer's Report (on its own)</option>
-            <option value="reports">TME Calls for Reports</option>
-            <option value="awards">Award Presentation</option>
-            <option value="closing">President's Closing Address</option>
-            <option value="photo">Photo Taking Session</option>
-            <option value="adjourn">President Adjourns Meeting</option>
+            <!-- filled by renderAddOptions(): the list depends on the meeting type -->
           </select>
           <button onclick="addSeg(false)" title="Add this item at the end of the running order">+ Add at end</button>
         </div>
-        <div class="addbar">
+        <!-- Chapter only: STANDARD_KEYS is the chapter running order, so this
+             button has nothing to retime in a contest. -->
+        <div class="addbar mode-chapter-only">
           <button onclick="applyStandardTimings()" style="flex:1 1 auto;" title="Reset durations and the combined timer's-report/voting rows to the club standard. Names, speakers, evaluators and the running order are left alone.">⏱ Apply club standard timings</button>
         </div>
         <div class="hint">Use <b>+ Add at top</b> for anything that happens before the meeting opens, and <b>+ Add at end</b> for anything after it closes; drag ⠿ to move a row anywhere else. Speeches and evaluations are added from the section above so each speech keeps its paired evaluation. <b>⏱ Apply club standard</b> retimes an existing meeting without touching any names.</div>
@@ -900,6 +931,7 @@ const SHEET_CSS = `
     --sig-yellow: #d8b400;
     --sig-red: #a4342b;
     --print-pane: 45.6mm;   /* 24% of the 190mm A4 content width, in mm so calc() can use it */
+    --brand-bleed: 1.2mm;   /* see .pane-brand in the print block */
     --print-foot: 6.5mm;
     --print-head: 33mm;
   }
@@ -1338,6 +1370,35 @@ const SHEET_CSS = `
   .role-roster .rr-label::after{ content: ':'; }
   .role-roster .rr-name{ text-align: left; color: var(--ink-soft); }
 
+  /* Contestants on a contest row (V43), numbered in draw order. Same two-column
+     grid as the roster above it so the two blocks sit on the same rhythm, with
+     the number in the label gutter instead of an appointment.
+     Deliberately ONE column and no column-count: html2canvas fragments a
+     multi-column box and the export is the deliverable, which is exactly the
+     seam that cost V37-V39 - see the export-seam note. If a contest list ever
+     needs to be shorter on paper, tighten the print block below, do not flow it.
+     A number is not followed by a colon: "1: Sam Ong" reads as a score. */
+  .contestant-list{
+    display:grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 8px;
+    row-gap: 1px;
+    margin-top: 4px;
+    padding-left: 9px;
+    border-left: 2px solid var(--maroon);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .contestant-list .cl-num{
+    text-align: right;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .contestant-list .cl-name{ text-align: left; color: var(--ink); }
+  .contestant-empty{ font-style: italic; }
+
   /* POETTS block on a prepared-speech row: Project (heading), then
      Evaluator · Timing · Title · Speaker — the order the TME introduces in. */
   .poetts{
@@ -1438,42 +1499,52 @@ const SHEET_CSS = `
   body.th-brutalist .sig-boxes{ border:2px solid #111; border-radius:0; }
   body.th-brutalist .flex-badge{ border:2px solid #111; border-radius:0; color:#111; }
 
-  /* ---- Retro-Futurism: 1970s space-age optimism, NASA-worm confidence ----
-     Loyal Blue is the ground, Happy Yellow is the light source. Everything is a
-     capsule: pill chips, rounded lights, wide-tracked caps. Brand palette only. */
-  body.th-retrofuture{ --row-alt:#eef3f7; --line:#c2d6e4; --cream:#f2f7fa; }
-  body.th-retrofuture .page{ background:#fbfdfe; }
-  body.th-retrofuture header, body.th-retrofuture .pane-brand{
-    background: linear-gradient(to bottom, #005a8c 0%, var(--blue) 55%, #00243a 100%);
+  /* ---- Neo Memphis Pop: Sottsass, the Memphis Group, an MTV bumper ----
+     Flat colour, hard edges, offset blocks, nothing shaded. Happy Yellow is the
+     brand anchor; coral and turquoise are the Memphis half. Deliberately built
+     WITHOUT the things that have bitten this sheet before: no transform, no
+     clip-path, no conic-gradient, no filter, no column-count - html2canvas
+     supports none of them reliably and the export IS the deliverable here.
+     The banner's pink band is a colour stop inside the same linear-gradient
+     rather than an inset shadow, so header and .pane-brand paint it at exactly
+     the same y and the top band stays one piece. */
+  body.th-neomemphis{ --row-alt:#fdf2f6; --line:#d9cfd3; --cream:#fffcf3; }
+  body.th-neomemphis .page{ background:#fffcf3; }
+  body.th-neomemphis header, body.th-neomemphis .pane-brand{
+    background: linear-gradient(to bottom, #17130f 0%, #17130f 94%, #ea5a8b 94%, #ea5a8b 100%);
     border-bottom: 5px solid var(--yellow);
   }
-  body.th-retrofuture .head-text .club{
-    text-transform:uppercase; letter-spacing:3px; font-weight:800;
-    text-shadow: 0 0 14px rgba(242,223,116,0.5);
+  body.th-neomemphis .head-text .club{
+    color:#fff; font-weight:800; text-transform:uppercase;
+    text-shadow: 2px 2px 0 #ea5a8b;
   }
-  body.th-retrofuture .head-text .clubnum{ letter-spacing:2.2px; text-transform:uppercase; color:#bcdcf0; }
-  body.th-retrofuture .head-text .meeting-title{ color:var(--yellow); font-style:normal; letter-spacing:1px; }
-  body.th-retrofuture .meta-row b{ color:var(--yellow); }
-  body.th-retrofuture thead th{ background:var(--blue); letter-spacing:2px; }
-  body.th-retrofuture td.time{ color:var(--blue); letter-spacing:0.4px; }
-  body.th-retrofuture .item-title{ color:#00243a; }
-  body.th-retrofuture tbody tr{ border-bottom:1px solid #c2d6e4; }
-  body.th-retrofuture aside{ background:#f2f7fa; }
-  body.th-retrofuture aside h3{
-    color:var(--blue); border-bottom:2px solid var(--yellow-deep);
-    letter-spacing:2px;
+  body.th-neomemphis .head-text .clubnum{ color:#5ecdc4; letter-spacing:1.4px; }
+  body.th-neomemphis .head-text .meeting-title{
+    color:#17130f; background:var(--yellow); display:inline-block;
+    padding:1px 8px; font-style:normal; font-weight:700;
+    box-shadow: 3px 3px 0 #1fa8a0;
   }
-  body.th-retrofuture .exco-role{ color:var(--blue); }
-  body.th-retrofuture .theme-strip{
-    background:#eef3f7; border-left:6px solid var(--yellow); border-radius:0 999px 999px 0;
+  body.th-neomemphis .meta-row b{ color:var(--yellow); }
+  body.th-neomemphis thead th{ background:#1fa8a0; color:#17130f; font-weight:800; }
+  body.th-neomemphis td.time{ color:#ea5a8b; font-weight:700; }
+  body.th-neomemphis .item-title{ color:#17130f; }
+  body.th-neomemphis tbody tr{ border-bottom-color:#e4dbdf; }
+  body.th-neomemphis aside{ background:#fdf2f6; }
+  body.th-neomemphis aside h3{
+    color:#1fa8a0; border-bottom:3px solid #ea5a8b;
   }
-  body.th-retrofuture .poetts{ border-left-color:var(--blue); }
-  body.th-retrofuture .rr-label{ color:var(--blue); }
-  body.th-retrofuture .tbd{ border-radius:999px; }
-  body.th-retrofuture .flex-badge{ border-radius:999px; border-style:solid; }
-  body.th-retrofuture .sig-boxes{ border-radius:999px; }
-  body.th-retrofuture .sig-boxes .b{ padding:1px 9px; }
-  body.th-retrofuture footer{ border-top:2px solid var(--blue); }
+  body.th-neomemphis .exco-role{ color:#17130f; font-weight:700; }
+  body.th-neomemphis .theme-strip{
+    background:#fff8dc; border-left:6px solid #1fa8a0;
+  }
+  body.th-neomemphis .poetts{ border-left-color:#ea5a8b; }
+  body.th-neomemphis .rr-label{ color:#ea5a8b; }
+  body.th-neomemphis .tbd{ border-radius:0; border-style:dashed; }
+  body.th-neomemphis .flex-badge{
+    background:var(--yellow); color:#17130f; border:2px solid #17130f; border-radius:0;
+  }
+  body.th-neomemphis .sig-boxes{ border:2px solid #17130f; border-radius:0; }
+  body.th-neomemphis footer{ border-top:3px solid #17130f; }
 
   /* ---- Handmade & Village: kraft paper, warm ink, nothing machine-perfect ----
      Softened maroon on warm stock, humanist serif headings, dashed rules that
@@ -1588,7 +1659,21 @@ const SHEET_CSS = `
        border width. */
     .pane-brand{
       height: var(--print-head);
-      padding: 2mm;
+      /* Bleeds --brand-bleed past the pane's right edge, and takes that back as
+         padding so the logo stays centred on the pane, not on the bleed (V41).
+         The two halves of the top band overlap by 0.4mm on the header's side and
+         that is enough for the browser - but html2canvas does not honour it. It
+         lays the banner out at the pane boundary regardless of the negative
+         margin, so brand and banner ABUT there, and a sub-pixel gap let the white
+         page through as a pale 1px line between the logo and the club name in
+         every PDF and JPG. Measured with each half force-coloured: red stopped at
+         device x=358, green began at 360, and 359 was neither. Widening the
+         overlap does nothing - the library ignores it - so the brand carries its
+         own gradient across the join instead. It only ever paints there in the
+         export: on screen and on paper aside.ref-pane is overflow:hidden and
+         clips the bleed away, so this is invisible everywhere else. */
+      width: calc(var(--print-pane) + var(--brand-bleed));
+      padding: 2mm calc(2mm + var(--brand-bleed)) 2mm 2mm;
       box-sizing: border-box;
     }
     .pane-brand img{ width: auto; height: 100%; max-width: 100%; }
@@ -1690,7 +1775,7 @@ const SHEET_CSS = `
        1px gutter and 1.45 leading meant for the screen. They are read one line at
        a time off a table, so the gutter is doing no work on paper - it is about
        45 lines of the agenda and the single biggest block win after the rows. */
-    .poetts, .role-roster{ margin-top: 2px; row-gap: 0; line-height: 1.34; }
+    .poetts, .role-roster, .contestant-list{ margin-top: 2px; row-gap: 0; line-height: 1.34; }
     /* The timing lights sit inside those blocks; their own leading and the gap
        above them were sized against the looser screen block. */
     .signal-line{ margin-top: 2px; }
@@ -1761,9 +1846,11 @@ const SHEET_CSS = `
        A stray declaration at rule level makes the CSS parser discard tokens until
        it can resynchronise, and it took the following rules with it. Measured in
        the built file: 52 selectors written in the print block, 46 actually built,
-       with body.th-retrofuture .item-title among the casualties. So the theme
-       whose compaction comment says "measured: tracking alone left it on three
-       pages" was, in the shipping build, not being compacted at all.
+       with one theme's item-title compaction among the casualties - so a theme
+       whose own comment read "measured: tracking alone left it on three pages"
+       was, in the shipping build, not being compacted at all. (That theme was
+       Retro-Futurism, retired in V42; named here in prose rather than as a live
+       selector so a grep for a dead theme stays clean.)
        Everything below applies to every theme. A theme may still differ in COLOUR
        and RULE WEIGHT on paper; it may not differ in how much paper it uses.
        Written with a body[class] prefix, which is the trick already used on .page
@@ -1866,7 +1953,11 @@ const PRESETS = {
   speechvote:    {label:"Call for Timer's Report | Voting for Best Speaker", voteKey:'speechvote', durMin:3, roleKey:'timer'},
   ttvote:        {label:"Call for Timer's Report | Voting for Best Table Topics Speaker", voteKey:'ttvote', durMin:3, roleKey:'timer'},
   evalvote:      {label:"Call for Timer's Report | Voting for Best Speech Evaluation", voteKey:'evalvote', durMin:3, roleKey:'timer'},
-  breaktime:     {label:'Break Time', durMin:15, flexible:true, flexMin:10, flexMax:18, noHolder:true},
+  /* Break range widened 10-18 -> 10-20 (V44, Rama's call). Only the FLEX RANGE
+     moves; durMin stays 15, so the blank template still totals exactly 150 min.
+     The extra two minutes give Balance somewhere to put the overrun on a night
+     with a Language Evaluator, which is when the sheet runs long. */
+  breaktime:     {label:'Break Time', durMin:15, flexible:true, flexMin:10, flexMax:20, noHolder:true},
   ttmasterintro: {label:'TME Introduces Table Topics Master', durMin:1, roleKey:'tmod'},
   tabletopics:   {label:'Conduct Table Topics Session', durMin:17, flexible:true, flexMin:12, flexMax:20,
                   hasSignal:true, signalMin:1, signalMid:1.5, signalMax:2, roleKey:'ttmaster', signalGroup:'Table Topics', signalSuffix:'per speaker'},
@@ -1881,6 +1972,36 @@ const PRESETS = {
      stays editable. The photographer role still owns the row's on/off tick. */
   photo:         {label:'Photo Taking Session', durMin:5, roleKey:'photographer', fixedHolder:'All'},
   adjourn:       {label:'Club President Adjourns Meeting', durMin:0, roleKey:'president'},
+  /* ===== Contest running order (V43) =====
+     Every one of these is an ordinary row whose roleKey points at a CONTEST
+     appointment (see CONTEST_ROLE_LABELS), so holderFor, the still-open list,
+     the .json round trip and the inline editor all pick them up with no special
+     case. Only `contest` is new in kind: it carries a list of contestants
+     instead of a single holder.
+     Durations are laid out so the shipped template runs 18:45 -> 21:30; the two
+     contest blocks are FLEXIBLE because the real length depends on how many
+     contestants turn up on the night. A 0-minute row deliberately repeats the
+     clock of the row above it - that is the sample sheets' "same time slot,
+     second item" and it is accurate rather than blank. */
+  csetup:        {label:'Set up of Room by SAA', durMin:15, roleKey:'csaa1'},
+  cbriefchair:   {label:'Briefing for Contest Chair & Photographer', durMin:0, roleKey:'cchair'},
+  cbriefjudges:  {label:'Briefing for Judges, Tally Counters & Timers', durMin:15, roleKey:'cjudge'},
+  cdraw:         {label:'Contestants to Draw Ballots', durMin:5, roleKey:'ctm'},
+  ccalltoorder:  {label:'Sergeant-at-Arms Calls Contest to Order', durMin:0, roleKey:'csaa1'},
+  copening:      {label:'Opening Address', durMin:5, roleKey:'cchair'},
+  crules:        {label:'Briefing of Contest Rules', durMin:5, roleKey:'ctm'},
+  contest:       {label:'Contest', durMin:30, flexible:true, flexMin:15, flexMax:50,
+                  isContestants:true, roleKey:'ctm'},
+  ccollect:      {label:"Collection of Judges' Ballots & Timers' Record", durMin:5, roleKey:'ctally1'},
+  cbreak:        {label:'Refreshment Break', durMin:15, flexible:true, flexMin:10, flexMax:20, noHolder:true},
+  ctestspeech:   {label:'Test Speaker Speech', durMin:7, hasSignal:true,
+                  signalMin:5, signalMid:6, signalMax:7, roleKey:'ctestspk', signalGroup:'Test Speech'},
+  cholding:      {label:'Contestants Proceed to Holding Room', durMin:3, roleKey:'csaa2'},
+  ccerts:        {label:'Presentation of Certificates of Participation', durMin:5, roleKey:'cchair'},
+  cappreciation: {label:'Certificates of Appreciation', durMin:0, roleKey:'cchair'},
+  cresults:      {label:'Announcement of Results', durMin:5, roleKey:'cjudge'},
+  cclosing:      {label:'Closing Address', durMin:5, roleKey:'cadirector'},
+  cphoto:        {label:'Photography Session', durMin:5, roleKey:'cphoto', fixedHolder:'All'},
   /* Superseded by the three combined rows above, kept only so a meeting saved
      before V21 still resolves its presetKey on load. Not offered in Add. */
   timerreport:   {label:"Call for Timer's Report", durMin:2, roleKey:'timer'},
@@ -1920,6 +2041,12 @@ function newSegment(presetKey){
     signalSuffix: p.signalSuffix || '',
     isSpeech: !!p.isSpeech,
     isEvaluation: !!p.isEvaluation,
+    /* Contest block (V43): the row prints a numbered list of contestants under
+       its title instead of naming one holder. Always an array - every consumer
+       maps over it, and a file carrying a string here is repaired in
+       adoptState rather than being allowed to spread into {0:'a',1:'b'}. */
+    isContestants: !!p.isContestants,
+    contestants: [],
     /* Pathways linkage (speech segments) */
     pathway: '',
     pLevel: '',
@@ -1927,6 +2054,16 @@ function newSegment(presetKey){
     speechTitle: '',
   };
 }
+
+/* ================= Meeting mode (V43) ================= */
+function isContest(){ return (state.meeting && state.meeting.mode) === 'contest'; }
+/* The template for each mode is built to land on its own end time, so the mode
+   carries the clock with it - a contest starts earlier because the briefings and
+   the room set-up happen before anyone is called to order. */
+const MODE_TIMES = {
+  chapter: {startTime:'19:00', endTime:'21:30'},
+  contest: {startTime:'18:45', endTime:'21:30'},
+};
 
 /* ================= Default state ================= */
 function defaultState(){
@@ -1959,21 +2096,42 @@ function defaultState(){
          Blank means "use the suggested name", which is what a fresh meeting wants;
          type anything here (or in the Save dialog) and that wins from then on. */
       fileName: '',
+      /* 'chapter' | 'contest' (V43). A speech contest is not a chapter meeting
+         with different words in it - it has no TME, no Pathways project, no
+         evaluation paired to a speech, and its rows are held by contest
+         appointments the club does not otherwise fill. The mode picks which
+         role set is live, which running-order template Rebuild lays down, and
+         whether the printed pane shows the Executive or the Contest Committee.
+         Files written before V43 carry no mode and default to 'chapter', which
+         is exactly what they are. */
+      mode: 'chapter',
     },
     /* Blank by default — the sheet is a template, not last month's meeting.
        Every empty role renders as a TBD chip and is listed as still open. */
+    /* Both role sets live in the one object. The MODE decides which are shown
+       and which are chased as "still open"; keeping the other set's names means
+       switching to a contest and back does not lose the chapter roster. */
     roles: {
       tmod: '', president: '', ttmaster: '', ttevaluator: '',
       langeval: '', timer: '', ahcounter: '', photographer: '', saa: '',
+      cchair: '', ctm: '', cjudge: '', ctimer1: '', ctimer2: '',
+      ctally1: '', ctally2: '', csaa1: '', csaa2: '', cjudges: '',
+      ctestspk: '', cphoto: '', cadirector: '',
     },
     /* Unticked = this role isn't running today: it drops off the roster and its
        own agenda items are switched off (kept in state, not deleted). */
     /* langeval starts UNTICKED: the club's standard meeting runs without one
        (Rama's live sheets), and since V24 ticking it adds the Word of the Day
        row - which would put the default template 3 min over its exact 150. */
+    /* Contest appointments start ticked: unlike the Language Evaluator there is
+       no contest that runs without a Chief Judge, and a club running only one
+       timer or one SAA unticks the second rather than the first. */
     roleActive: {
       tmod: true, president: true, ttmaster: true, ttevaluator: true,
       langeval: false, timer: true, ahcounter: true, photographer: true, saa: true,
+      cchair: true, ctm: true, cjudge: true, ctimer1: true, ctimer2: true,
+      ctally1: true, ctally2: true, csaa1: true, csaa2: true, cjudges: true,
+      ctestspk: true, cphoto: true, cadirector: true,
     },
     /* [{key:'cr1', label:'Zoom Master'}] — the club's own roles. Empty in the
        template: this is a per-club addition, not part of the standard meeting. */
@@ -2012,6 +2170,64 @@ function defaultState(){
     segments: [],
   };
 
+  s.segments = buildModeSegments('chapter');
+  return s;
+}
+
+/* Lay down the running order for a mode. Split out of defaultState() in V43 so
+   the mode switch can rebuild without going through a full reset - a reset would
+   also throw away the club setup, the officers and the roster, none of which
+   change because tonight is a contest. */
+function buildModeSegments(mode){
+  return mode === 'contest' ? buildContestSegments() : buildChapterSegments();
+}
+
+/* A titled clone: several contest rows appear twice with different wording
+   ("Table Topics Contestants to Draw Ballots" / "Evaluation Contestants ..."),
+   and the preset carries the generic label. */
+function segTitled(presetKey, title, extra){
+  const sg = newSegment(presetKey);
+  if(title) sg.title = title;
+  if(extra) Object.assign(sg, extra);
+  return sg;
+}
+
+/* The club's standard contest: two contests in one sitting, which is what
+   District 80 areas run (Table Topics + Evaluation in the first half of the
+   year, Humorous + International in the second). Retitle the two contest blocks
+   for any other pairing - nothing below is specific to Table Topics beyond the
+   words. Totals 165 min, so 18:45 lands on 21:30. */
+function buildContestSegments(){
+  const seg = [];
+  seg.push(newSegment('csetup'));
+  seg.push(newSegment('cbriefchair'));
+  seg.push(newSegment('cbriefjudges'));
+  seg.push(segTitled('cdraw', 'Table Topics Contestants to Draw Ballots'));
+  seg.push(newSegment('ccalltoorder'));
+  seg.push(newSegment('copening'));
+  seg.push(segTitled('crules', 'Briefing of Table Topics Contest Rules'));
+  seg.push(segTitled('contest', 'Table Topics Contest'));
+  /* 0 min, deliberately: the ballots go to the tally counters WHILE the next
+     contest's ballots are being drawn, which is what the reference sheets show
+     by printing both against the same clock. The second collection, at the end
+     of the night, is the one that really costs five minutes. */
+  seg.push(segTitled('ccollect', '', {durMin:0}));
+  seg.push(segTitled('cdraw', 'Evaluation Contestants to Draw Ballots'));
+  seg.push(newSegment('cbreak'));
+  seg.push(segTitled('crules', 'Briefing of Evaluation Contest Rules'));
+  seg.push(newSegment('ctestspeech'));
+  seg.push(segTitled('cholding', 'Evaluation Contestants Proceed to Holding Room'));
+  seg.push(segTitled('contest', 'Evaluation Contest'));
+  seg.push(newSegment('ccollect'));
+  seg.push(newSegment('ccerts'));
+  seg.push(newSegment('cappreciation'));
+  seg.push(newSegment('cresults'));
+  seg.push(newSegment('cclosing'));
+  seg.push(newSegment('cphoto'));
+  return seg;
+}
+
+function buildChapterSegments(){
   const seg = [];
   seg.push(newSegment('registration'));
   seg.push(newSegment('calltoorder'));
@@ -2048,8 +2264,7 @@ function defaultState(){
   seg.push(newSegment('closing'));
   seg.push(newSegment('photo'));
   seg.push(newSegment('adjourn'));
-  s.segments = seg;
-  return s;
+  return seg;
 }
 
 let state = defaultState();
@@ -2099,7 +2314,7 @@ function queueSave(){
 /* Themes retired in V25 (Bauhaus, Broadsheet, Jetset). A meeting saved under one
    of them would otherwise load with a body class no stylesheet answers to and
    render unstyled, so it falls back to Classic on load. */
-const RETIRED_THEMES = ['bauhaus','broadsheet','jetset','terminal','overprint','confessional','handmade'];
+const RETIRED_THEMES = ['bauhaus','broadsheet','jetset','terminal','overprint','confessional','handmade','retrofuture'];
 
 /* Take a saved payload - from localStorage OR from a .json file on disk - and
    make it the live state. Merging over defaultState() is what lets a meeting
@@ -2161,6 +2376,21 @@ function adoptState(parsed){
     seg.signalMax = Math.max(0, numOr(seg.signalMax, 0));
     seg.signalMid = numOr(seg.signalMid, (seg.signalMin + seg.signalMax) / 2);
     seg.signalSpan = Math.max(0, numOr(seg.signalSpan, seg.signalMax - seg.signalMin));
+    /* Same trap as the segments array itself: a string here would spread into
+       {0:'a',1:'b',...} and print one contestant per character. Anything that is
+       not an array becomes an empty list, and non-string entries are coerced
+       rather than dropped so a hand-edited number still names someone. */
+    seg.isContestants = !!seg.isContestants;
+    if(Array.isArray(seg.contestants)){
+      seg.contestants = seg.contestants.map(c => strOr(c, ''));
+    }else{
+      /* Say so. Silently emptying a contestant list is the one repair in this
+         function that the user cannot see in the result - every other one leaves
+         a visible hole where the data was, and a contest block with no names
+         looks exactly like a contest block nobody has filled in yet. */
+      if(seg.contestants != null) repairs.push('a contestant list was not a list and was cleared');
+      seg.contestants = [];
+    }
     return seg;
   });
   /* Two segments sharing an id means every edit, drag and delete hits whichever
@@ -2174,17 +2404,28 @@ function adoptState(parsed){
     seenIds.add(id);
   });
   if(dupes) repairs.push(dupes + ' duplicate segment ids re-keyed');
-  const nSp = state.segments.filter(s=>s.isSpeech).length;
-  const nEv = state.segments.filter(s=>s.isEvaluation).length;
-  if(nSp !== nEv){
-    repairs.push('speech/eval count mismatch (' + nSp + ' vs ' + nEv + ')');
-  }
   /* These four are split on newlines and pipes all over the renderer; a non-string
      here threw before anything reached the screen. */
   ['execText','districtText','linksText','announcementsText'].forEach(k=>{
     if(typeof state[k] !== 'string'){ state[k] = strOr(state[k], ''); repairs.push(k + ' was not text'); }
   });
   if(typeof state.theme !== 'string') state.theme = 'classic';
+  /* An unknown mode would make isContest() false and quietly render a contest
+     with the chapter roster, which reads as "the app lost my committee" rather
+     than as a bad file. Say so instead. */
+  if(state.meeting.mode !== 'chapter' && state.meeting.mode !== 'contest'){
+    if(state.meeting.mode != null && state.meeting.mode !== undefined){
+      repairs.push('unknown meeting type "' + String(state.meeting.mode) + '" read as Chapter Meeting');
+    }
+    state.meeting.mode = 'chapter';
+  }
+  if(!isContest()){
+    const nSp = state.segments.filter(s=>s.isSpeech).length;
+    const nEv = state.segments.filter(s=>s.isEvaluation).length;
+    if(nSp !== nEv){
+      repairs.push('speech/eval count mismatch (' + nSp + ' vs ' + nEv + ')');
+    }
+  }
   state.paneWidth = Math.min(80, Math.max(20, numOr(state.paneWidth, 50)));
   /* A file written before V30 has no customRoles; one hand-edited could have
      anything. Keep only well-formed entries so the roster cannot render undefined. */
@@ -2491,6 +2732,44 @@ const ROLE_LABELS = {
   ahcounter:'Ah-Counter', photographer:'Photographer', saa:'Sergeant-at-Arms',
 };
 
+/* ================= Contest appointments (V43) =================
+   The contest equivalent of ROLE_LABELS. Order is the order they print in the
+   Contest Committee block and in the roles form, and it follows the running
+   order of the night rather than seniority: chair, toastmaster, judge, then the
+   pairs who work the room.
+   "Judges" and "Test Speaker" are single text fields on purpose even though
+   neither is one person - both are routinely filled with an instruction rather
+   than a name ("to be arranged by the Chief Judge"), which is what the sheet
+   should print when that is the honest answer. */
+const CONTEST_ROLE_LABELS = {
+  cchair:     'Contest Chair',
+  ctm:        'Contest Toastmaster',
+  cjudge:     'Chief Judge',
+  ctimer1:    'Contest Timer 1',
+  ctimer2:    'Contest Timer 2',
+  ctally1:    'Contest Tally Counter 1',
+  ctally2:    'Contest Tally Counter 2',
+  csaa1:      'Contest SAA 1',
+  csaa2:      'Contest SAA 2',
+  cjudges:    'Judges',
+  ctestspk:   'Test Speaker',
+  cphoto:     'Photographer',
+  cadirector: 'Area Director',
+};
+/* Appointments that are FILLED here but printed elsewhere in the pane. The Area
+   Director gives the closing address, so the row needs a holder - but they are a
+   district officer attending, not a member of the contest committee, and the
+   pane already has a District Officers block. Listing them in both printed
+   "Area Director / Pat Chen" twice in the same column, which reads as a
+   mistake in the sheet. Rama's reference contest sheets put the Area Director
+   under distinguished guests, never in the committee. */
+const COMMITTEE_EXCLUDES = new Set(['cadirector']);
+
+/* The role set the CURRENT mode cares about. Everything downstream - the roster,
+   the still-open list, the form grid - reads this rather than ROLE_LABELS, so a
+   chapter role left blank is not chased during a contest and vice versa. */
+function modeRoleLabels(){ return isContest() ? CONTEST_ROLE_LABELS : ROLE_LABELS; }
+
 /* ================= Custom roles (V30) =================
    Clubs run roles the built-in nine do not cover — Zoom Master, Joke Master,
    Grammarian where the club splits it off the Language Evaluator, a Contest
@@ -2520,7 +2799,7 @@ function customRoleLines(){
 }
 /* Built-in labels plus whatever the club has added. */
 function roleLabelMap(){
-  const m = Object.assign({}, ROLE_LABELS);
+  const m = Object.assign({}, modeRoleLabels());
   customRoles().forEach(r=>{ if(r.label) m[r.key] = r.label; });
   return m;
 }
@@ -2532,13 +2811,25 @@ const ROLE_OWNED_SEGMENTS = {
   saa:          ['calltoorder'],
   langeval:     ['langeval'],
   ttmaster:     ['ttmasterintro','tabletopics','ttreturn','ttvoting','ttvote'],
-  /* ttvoting is the pre-V21 preset name; ttvote is the live combined row. Both
-     stay listed so a meeting saved before V21 still hides with the TT Master. */
   /* Deliberately NOT the three vote rows: the club still votes when nobody is
      timing, so unticking Timer must leave those rows standing (holder → TBD). */
   timer:        ['timerreport'],
   photographer: ['photo'],
   tmod: [], president: [], ttevaluator: [], ahcounter: [],
+  /* Contest appointments (V43). Only two of them OWN a row. Unticking the Test
+     Speaker has to take the Test Speaker Speech with it - that is the documented
+     way to run a Table Topics contest, which has no test speech, and without
+     this the row stayed in the running order still naming someone the sheet had
+     just dropped from the committee.
+     The rest deliberately own nothing, for the same reason the Timer does not
+     own the vote rows: the room is still set up, the contest is still called to
+     order and the ballots are still collected when the club fields one SAA
+     instead of two or has not named a tally counter yet. Those rows stand with
+     the holder falling through to TBD. */
+  ctestspk:   ['ctestspeech'],
+  cphoto:     ['cphoto'],
+  cchair: [], ctm: [], cjudge: [], ctimer1: [], ctimer2: [],
+  ctally1: [], ctally2: [], csaa1: [], csaa2: [], cjudges: [], cadirector: [],
 };
 function roleIsActive(key){ return state.roleActive ? state.roleActive[key] !== false : true; }
 
@@ -2561,7 +2852,13 @@ function syncRoleSegments(){
 }
 
 function rolePlayerLines(){
-  const builtIn = ROLE_PLAYER_KEYS.filter(([k]) => roleIsActive(k)).map(([k,label])=>({
+  /* In a contest the whole committee is introduced, not a subset: there is no
+     TME standing apart from the people being introduced, and the Contest Chair
+     and Chief Judge both speak later in their own right. */
+  const keys = isContest()
+    ? Object.entries(CONTEST_ROLE_LABELS)
+    : ROLE_PLAYER_KEYS;
+  const builtIn = keys.filter(([k]) => roleIsActive(k)).map(([k,label])=>({
     label, name: state.roles[k] || '', tbd: !state.roles[k]
   }));
   /* Custom roles are introduced with the rest of the role players, after them. */
@@ -2583,6 +2880,10 @@ function syncLanguageEvaluatorSegment(){
      the row in the agenda immediately, TBD until named, so the printed running
      order and timings are final before the roster is. The 3 min it adds is
      flagged by the end-check and absorbed with Balance. */
+  /* A contest has no Word of the Day. Without this guard a club that leaves the
+     Language Evaluator ticked from last month's chapter meeting gets one spliced
+     into the contest running order, three minutes and all. */
+  if(isContest()) return false;
   const has = roleIsActive('langeval');
   const idx = state.segments.findIndex(s => s.presetKey === 'langeval');
   if(has && idx < 0){
@@ -2609,11 +2910,13 @@ const THEMES = [
   {key:'zine',       name:'Zine'},        /* riso screen-print, halftone, art-school poster */
   {key:'swiss',      name:'Swiss'},       /* Müller-Brockmann grid, International Typographic Style */
   {key:'brutalist',  name:'Brutalist'},   /* neo-brutalist landing page, hard borders + shadows */
-  {key:'retrofuture',name:'Retro-Futurism'},        /* 1970s space-age, NASA-worm capsules */
+  {key:'neomemphis', name:'Neo Memphis Pop'},       /* Sottsass, Memphis Group, MTV bumper */
 ];
-/* Handmade retired in V31 at Rama's request - five themes now. Its CSS block is
-   still in sheet.css so an old saved meeting is not left unstyled while the
-   RETIRED_THEMES fallback swaps it to Classic on load. */
+/* Handmade retired in V31 at Rama's request, Retro-Futurism in V42 when Neo
+   Memphis Pop replaced it - five themes throughout. Both are in RETIRED_THEMES,
+   so a meeting saved under either falls back to Classic on load. Retro-Futurism's
+   CSS was DELETED with it; Handmade's is still in sheet.css pending Rama's call
+   on it, which is the only reason the two are treated differently. */
 
 /* "4 Aug 2026" — stamped at render time, so the footer always carries the date
    the sheet was actually generated. */
@@ -2686,12 +2989,35 @@ function applyFlexBalance(){
   const needed = (targetMin - startMin) - fixedSum;
   const weights = flexSegs.map(s => Number(s.durMin) || 1);
   const weightSum = weights.reduce((a,b)=>a+b,0) || flexSegs.length;
+  /* A flexMax of 0 means "no ceiling", which is what the truthiness test below
+     has always meant; the same for flexMin and the floor. */
+  const hi = s => s.flexMax ? s.flexMax : Infinity;
+  const lo = s => s.flexMin ? s.flexMin : 0;
   flexSegs.forEach((s,i)=>{
     let share = Math.max(0, Math.round(needed * (weights[i]/weightSum)));
-    if(s.flexMax) share = Math.min(s.flexMax, share);
-    if(s.flexMin) share = Math.max(s.flexMin, share);
-    s.durMin = share;
+    /* Ceiling first, then floor, so the floor wins a contradictory pair - the
+       order the original two ifs produced, kept deliberately. */
+    s.durMin = Math.max(lo(s), Math.min(hi(s), share));
   });
+  /* Each share was rounded on its own, so the parts can miss the whole by up to
+     a minute PER flexible segment - two segments, up to two minutes out, and the
+     banner would still cheerfully say "exactly".
+     It went unnoticed for as long as it did because Break's old 18-minute ceiling
+     was clamping the very share whose rounding was wrong, absorbing the error by
+     accident. Widening Break to 20 removed the clamp and the default meeting
+     started landing on 9:31 PM.
+     Hand the remainder out a minute at a time to whichever segment still has room
+     in the direction we need, so the total is exact whenever the ranges can reach
+     it at all - and when they cannot, `exact` is false and the banner says so. */
+  let residual = needed - flexSegs.reduce((a,s)=>a+s.durMin,0);
+  let guard = 0;
+  while(residual !== 0 && guard++ < 600){
+    const dir = residual > 0 ? 1 : -1;
+    const seg = flexSegs.find(s => dir > 0 ? s.durMin < hi(s) : s.durMin > lo(s));
+    if(!seg) break;                 /* every range is at its limit - report short */
+    seg.durMin += dir;
+    residual -= dir;
+  }
   const achievedEnd = startMin + fixedSum + flexSegs.reduce((a,s)=>a+(Number(s.durMin)||0),0);
   return {achievedEnd, targetMin, exact: achievedEnd === targetMin};
 }
@@ -2998,8 +3324,41 @@ function buildSheetHTML(interactive){
     + (retired.length ? `<div class="path-sep">Retired paths</div>` : '')
     + retired.map(p=>`<div class="path-retired"><b>${esc(p.abbr)}</b> — ${esc(p.name)}</div>`).join('');
 
-  /* Emitted twice — once per printed page (see the .ref-pane note in sheet.css). */
-  const paneInner = `
+  /* The Contest Committee block (V43). Both of Rama's reference contest sheets
+     put the committee in the left column, not in an agenda row, and that is the
+     right place for it: it is who is running the night, referred to throughout,
+     not something that happens at 7:20. It replaces the Executive Committee for
+     the same reason - during a contest the Exco hold no contest appointment, and
+     printing both invites the reader to look for the wrong name.
+     An unfilled appointment prints TBD in the pane exactly as it does in the
+     Appointment Holder column, so the gap is visible on the paper the committee
+     is reading from.
+     Custom roles are appended after the built-in appointments, exactly as they
+     are appended to the chapter roster. Without that a club role added in
+     contest mode was collected, chased as "still open" and saved to the file
+     while printing NOWHERE on the sheet - the one place it was needed. The
+     chapter path reaches them through rolePlayerLines(), which a contest never
+     calls because it has no TME Welcome Remarks row to render them into. */
+  const committeeRows = Object.entries(CONTEST_ROLE_LABELS)
+    .filter(([k]) => roleIsActive(k) && !COMMITTEE_EXCLUDES.has(k))
+    .map(([k,label])=>[label, state.roles[k]])
+    .concat(customRoleLines().filter(r=>r.label).map(r=>[r.label, r.name]))
+    .map(([label,name])=>`
+    <div class="exco-item"><div class="exco-role">${esc(label)}</div>` +
+    (name
+      ? `<div class="exco-name">${esc(name)}</div>`
+      : `<div class="exco-name"><span class="tbd-inline">TBD</span></div>`) + `</div>`).join('');
+
+  /* Emitted twice — once per printed page (see the .ref-pane note in sheet.css).
+     The Pathways legend is chapter-only: a contest schedules no Pathways project,
+     so the legend would be eleven lines explaining abbreviations that appear
+     nowhere on the sheet. Dropping it is also what makes room for the committee. */
+  const paneInner = isContest() ? `
+      <div class="exco-block contest-committee"><h3>Contest Committee</h3>${committeeRows}</div>
+      ${excoBlock('District Officers', state.districtText)}
+      <div class="exco-block links"><h3>Links</h3>${linkRows}</div>
+      ${announceRows ? `<div class="exco-block announcements"><h3>Announcements</h3>${announceRows}</div>` : ''}`
+  : `
       ${excoBlock('Executive Committee', state.execText)}
       ${excoBlock('District Officers', state.districtText)}
       <div class="exco-block links"><h3>Links</h3>${linkRows}</div>
@@ -3049,6 +3408,24 @@ function buildSheetHTML(interactive){
     }
 
 
+    /* A contest block lists its contestants in draw order under the title (V43).
+       Numbered, because the draw order is the running order and the number is
+       what the Chief Judge and the tally counters call out. An empty list prints
+       the "no contestants yet" line rather than a bare heading, so a half-built
+       sheet cannot be mistaken for a contest nobody entered.
+       Blank entries are kept and numbered: a confirmed slot with an unconfirmed
+       name is a real state, and it is the one the club needs to see. */
+    const contestantsHtml = seg.isContestants
+      ? (seg.contestants.length
+          ? `<span class="contestant-list">` + seg.contestants.map((name, i)=>
+              `<span class="cl-num">${i+1}.</span>`
+              + `<span class="cl-name">${name && name.trim()
+                    ? esc(name.trim())
+                    : '<span class="tbd-inline">TBD</span>'}</span>`
+            ).join('') + `</span>`
+          : `<span class="item-sub contestant-empty">Contestants to be confirmed</span>`)
+      : '';
+
     /* The TME introduces the role players here — list every one of them. */
     const rolePlayersHtml = (seg.presetKey === 'welcome')
       ? `<span class="role-roster">` + rolePlayerLines().map(r =>
@@ -3086,6 +3463,7 @@ function buildSheetHTML(interactive){
               ${tools}
               ${titleHtml}
               ${subHtml}
+              ${contestantsHtml}
               ${rolePlayersHtml}
               ${signalHtml}
             </td>
@@ -3202,9 +3580,22 @@ function updatePreview(){
    Exco, the District officers, the Links, the (static) Pathways legend and the
    Announcements - no part of it moves when a speech or a segment does. Gating on
    this is what keeps a measurement that costs an iframe off the keystroke path. */
+/* V43: the CONTEST pane is a different object - the Contest Committee (built
+   from the contest appointments and their ticks) replaces the Exco, and the
+   Pathways legend is dropped. Leaving those out meant the "already measured this
+   signature" shortcut fired against a number taken from the chapter pane: the
+   warning stayed hidden while a committee of thirteen long names overflowed the
+   printed page by about 6 mm. If a block can change the pane's HEIGHT it belongs
+   here, and the cost of listing something that cannot is one extra measurement. */
 function paneFitSignature(){
   return [state.execText, state.districtText, state.linksText,
-          state.announcementsText, state.theme].join('\u0000');
+          state.announcementsText, state.theme,
+          state.meeting.mode,
+          /* Only the contest appointments and their ticks move the contest pane,
+             but serialising the whole roles object is cheap and cannot go stale
+             the way a hand-picked subset of keys would. */
+          JSON.stringify(state.roles), JSON.stringify(state.roleActive),
+          JSON.stringify(state.customRoles)].join('\u0000');
 }
 /* Three separate facts, and conflating any two of them has cost a defect each:
      sig      - the signature the NUMBER describes. Renders only against this.
@@ -3973,6 +4364,29 @@ async function renderSheetParts(opts){
       h = Math.round(pages * PRINT_H_PX);
       page.style.minHeight = h + 'px';
       await new Promise(r=>setTimeout(r, 60));
+    } else {
+      /* THE JPG CUT (V44). The footer is out of flow - the fix stylesheet above
+         pins it position:absolute; bottom:0 - so it contributes nothing to
+         page.scrollHeight, and natural() is therefore the height of the content
+         ALONE. Painting it at the bottom of a page that tall lands the opaque
+         footer band ON TOP of the last row rather than under it, and the image
+         ends mid-row.
+         The PDF never showed this because pagination rounds the page up to whole
+         sheets, which leaves slack below the last row by construction. The JPG
+         does not paginate on purpose (a single image would just gain a band of
+         white), so it has to make the room explicitly.
+         Measured on Rama's 27 Aug sheet: content ended at 1690, the canvas was
+         cut at 1674 - the missing 16 px is the overlap, and the row it ate was
+         "Club President Adjourns Meeting". */
+      const footH = foot ? foot.offsetHeight : 0;
+      if(footH){
+        h = natural() + footH;
+        page.style.minHeight = h + 'px';
+        await new Promise(r=>setTimeout(r, 40));
+        /* Growing the page grows the pane's percentage min-height with it, so
+           re-read rather than trusting the number we just set. */
+        h = Math.max(h, natural());
+      }
     }
     /* The pane fills the sheet less the footer strip, so its background and its
        column rule run all the way to the bottom of the last page. */
@@ -5573,8 +5987,210 @@ function toggleRoleActive(key, on){
   renderPreviewNow();
   const dropped = (ROLE_OWNED_SEGMENTS[key] || []).length;
   if(!on && dropped){
-    showBanner(`${ROLE_LABELS[key]} switched off — ${dropped} agenda item${dropped>1?'s':''} removed from the programme. Tick it again to bring them back.`, false);
+    /* roleLabelMap(), not ROLE_LABELS: contest appointments and custom roles are
+       both absent from the built-in nine and the banner read "undefined switched
+       off" for either of them. */
+    showBanner(`${roleLabelMap()[key] || 'Role'} switched off — ${dropped} agenda item${dropped>1?'s':''} removed from the programme. Tick it again to bring them back.`, false);
   }
+}
+
+/* ================= Meeting mode (V43) =================
+   Switching mode REPLACES the running order, because the two running orders have
+   nothing in common - there is no useful merge between "TME Welcome Remarks" and
+   "Briefing for Judges". Everything else survives: club setup, the officers, the
+   links, the announcements, and BOTH role sets, so switching to a contest and
+   back does not cost the chapter roster.
+   It asks first, and only when there is something to lose. A running order still
+   identical to its template is replaced silently - refusing to touch it would
+   mean a confirm dialog on the first click of a fresh sheet, which trains people
+   to dismiss the one that matters. */
+function setMeetingMode(mode){
+  const next = (mode === 'contest') ? 'contest' : 'chapter';
+  const cur = state.meeting.mode === 'contest' ? 'contest' : 'chapter';
+  if(next === cur) return;
+  if(!runningOrderIsPristine(cur)){
+    const what = next === 'contest' ? 'contest running order' : 'chapter-meeting running order';
+    if(!confirm('Switch to the ' + what + '?\n\n'
+      + 'The programme segments on screen will be replaced. Your club setup, '
+      + 'officers, announcements and both sets of role names are kept.')){
+      /* Put the control back where it was - the select has already moved. */
+      syncModeControls();
+      return;
+    }
+  }
+  state.meeting.mode = next;
+  state.segments = buildModeSegments(next);
+  /* Carry the clock over ONLY if it is still the outgoing mode's default. A club
+     that meets 19:30-22:00 typed those times deliberately, and resetting them
+     to 18:45-21:30 because tonight is a contest is a change nobody asked for
+     and the confirm never mentioned. When they are left alone the template no
+     longer lands on the target end time, which is exactly what the end-check in
+     the toolbar and Balance Segments are for. */
+  const from = MODE_TIMES[cur], to = MODE_TIMES[next];
+  if(from && to
+     && state.meeting.startTime === from.startTime
+     && state.meeting.endTime === from.endTime){
+    state.meeting.startTime = to.startTime;
+    state.meeting.endTime = to.endTime;
+  }
+  editingSegId = null;
+  expandedSegs.clear();
+  syncLanguageEvaluatorSegment();
+  syncRoleSegments();
+  syncModeControls();
+  syncFormInputs();
+  renderFormPane();
+  renderPreviewNow();
+  saveState();
+  showBanner(next === 'contest'
+    ? 'Contest running order loaded. Fill the Contest Committee under Contest Appointments, then add contestants to each contest block.'
+    : 'Chapter-meeting running order loaded.', false);
+}
+
+/* True when the running order is still exactly what the mode's template lays
+   down, so switching away from it destroys nothing and needs no confirm.
+
+   This compares the WHOLE segment rather than a list of fields, and that is the
+   entire point. The first version enumerated eight fields it thought mattered
+   and missed five that a user can edit - pathway, level, the three timing
+   lights, signalsManual, the per-segment sub-note and the flex range. Editing
+   any of those and switching mode wiped the running order with no prompt, and
+   setMeetingMode() then autosaved the wiped order over the file on disk. A
+   whitelist of fields is a promise to remember every field anyone ever adds;
+   this cannot go stale.
+
+   The comparison is deliberately BIASED TOWARD "not pristine": a false negative
+   costs one confirm dialog the user clicks through, a false positive costs them
+   their evening's work. So anything that differs at all - including a key the
+   file carried and the template does not - counts as changed.
+   `id` is excluded because it is allocated from a counter and never matches;
+   `disabled` is normalised because syncRoleSegments() sets it to false on rows
+   a freshly built template leaves absent. */
+function segFingerprint(sg){
+  const o = {};
+  Object.keys(sg).sort().forEach(k=>{
+    if(k === 'id') return;
+    if(k === 'disabled'){ o.disabled = !!sg.disabled; return; }
+    if(sg[k] === undefined) return;
+    o[k] = sg[k];
+  });
+  if(!('disabled' in o)) o.disabled = false;
+  return JSON.stringify(o);
+}
+function runningOrderIsPristine(mode){
+  const tpl = buildModeSegments(mode);
+  const cur = state.segments || [];
+  if(cur.length !== tpl.length) return false;
+  for(let i = 0; i < cur.length; i++){
+    if(segFingerprint(cur[i]) !== segFingerprint(tpl[i])) return false;
+  }
+  return true;
+}
+
+/* The mode lives in two controls that must agree: the selector in Meeting Info
+   and the body class the form pane uses to show one mode's sections and hide the
+   other's. */
+function syncModeControls(){
+  const sel = document.getElementById('f-mode');
+  if(sel) sel.value = isContest() ? 'contest' : 'chapter';
+  document.body.classList.toggle('mode-contest', isContest());
+  document.body.classList.toggle('mode-chapter', !isContest());
+}
+
+/* ================= The roles grid, rendered (V43) =================
+   It was static markup for nine built-in roles until the contest mode needed a
+   different set in the same place. Rendering it from modeRoleLabels() keeps ONE
+   grid rather than two that drift, and every id it emits - r-KEY, rc-KEY, rw-KEY
+   - is the convention syncFormInputs() already fills, so nothing downstream
+   changed. */
+function renderRolesGrid(){
+  const box = document.getElementById('rolesGrid');
+  if(!box) return;
+  box.innerHTML = Object.entries(modeRoleLabels()).map(([key,label])=>{
+    const on = roleIsActive(key);
+    return `<div id="rw-${key}"${on?'':' class="role-off"'}>` +
+      `<label class="role-lbl"><input type="checkbox" id="rc-${key}"${on?' checked':''} ` +
+      `onchange="toggleRoleActive('${key}', this.checked)"> ${esc(label)}</label>` +
+      `<input type="text" id="r-${key}" placeholder="TBD" value="${esc(state.roles[key]||'')}"` +
+      `${on?'':' disabled'} oninput="bindRole('${key}', this.value)"></div>`;
+  }).join('');
+}
+
+/* ================= Contestants (V43) =================
+   One editor per contest block in the running order, found by walking the
+   segments rather than by a fixed pair of lists: a club running three contests
+   in one sitting adds a third block from the Add bar and gets a third editor,
+   and one that runs a single contest deletes a block and the editor goes with
+   it. The block's title is edited here too, which is what retitles the shipped
+   "Table Topics Contest" into "Humorous Speech Contest" for the other half of
+   the year. */
+function contestBlocks(){ return (state.segments || []).filter(s => s.isContestants && !s.disabled); }
+
+function renderContestants(){
+  const box = document.getElementById('contestList');
+  if(!box) return;
+  const blocks = contestBlocks();
+  if(!blocks.length){
+    box.innerHTML = `<div class="hint">No contest blocks in the running order. `
+      + `Add one from <b>Programme Segments</b> (&ldquo;Contest (contestant list)&rdquo;).</div>`;
+    return;
+  }
+  box.innerHTML = blocks.map(seg=>{
+    const rows = seg.contestants.map((name, i)=>`
+      <div class="ct-row">
+        <span class="ct-num">${i+1}</span>
+        <input type="text" placeholder="Contestant name — leave blank for TBD"
+          value="${esc(name)}" oninput="updContestant('${seg.id}',${i},this.value)">
+        <button class="ct-del" title="Remove this contestant"
+          aria-label="Remove contestant ${i+1}" onclick="removeContestant('${seg.id}',${i})">✕</button>
+      </div>`).join('');
+    return `<div class="ct-block" data-ct-id="${seg.id}">
+      <label>Contest name</label>
+      <input type="text" class="ct-title" value="${esc(seg.title)}"
+        oninput="bindContestTitle('${seg.id}', this.value)">
+      <div class="ct-rows">${rows || '<div class="hint">No contestants yet.</div>'}</div>
+      <button type="button" class="ct-add" onclick="addContestant('${seg.id}')">+ Add contestant</button>
+    </div>`;
+  }).join('');
+}
+
+/* Typing does NOT re-render the editor. The input already holds the character
+   the user just typed, so redrawing it would move the caret to the end of the
+   field on every keystroke - the same reason liveEdit() syncs the sheet rather
+   than rebuilding the form. Only add and remove change the row COUNT, and only
+   those redraw. */
+function updContestant(segId, idx, val){
+  const seg = state.segments.find(s=>s.id===segId);
+  if(!seg || !Array.isArray(seg.contestants) || idx < 0 || idx >= seg.contestants.length) return;
+  seg.contestants[idx] = val;
+  updatePreview();
+}
+function bindContestTitle(segId, val){
+  const seg = state.segments.find(s=>s.id===segId);
+  if(!seg) return;
+  seg.title = val;
+  renderSegmentsList();
+  updatePreview();
+}
+function addContestant(segId){
+  const seg = state.segments.find(s=>s.id===segId);
+  if(!seg) return;
+  if(!Array.isArray(seg.contestants)) seg.contestants = [];
+  seg.contestants.push('');
+  renderContestants();
+  updatePreview();
+  /* Put the caret in the row that was just created - otherwise adding five
+     contestants is five clicks and five hunts for the new field. */
+  const rows = document.querySelectorAll(`.ct-block[data-ct-id="${segId}"] .ct-row input`);
+  const last = rows[rows.length - 1];
+  if(last) last.focus();
+}
+function removeContestant(segId, idx){
+  const seg = state.segments.find(s=>s.id===segId);
+  if(!seg || !Array.isArray(seg.contestants)) return;
+  seg.contestants.splice(idx, 1);
+  renderContestants();
+  updatePreview();
 }
 
 function bindRole(key, val){
@@ -6114,6 +6730,7 @@ function renderSegmentsList(){
 function renderFormPane(){
   renderSegmentsList();
   renderSpeechCards();
+  renderContestants();
 }
 
 function toggleSeg(id){
@@ -6186,6 +6803,12 @@ function updateSeg(id, key, value){
   } else if(seg.isEvaluation){
     const i = evalSegs().findIndex(e => e.id === seg.id);
     if(i >= 0) refreshCardPreview(speechSegs()[i]);
+  } else if(seg.isContestants && key === 'title'){
+    /* Same mirroring a speech card gets: the Contestants section carries its own
+       copy of this block's name, and without this it kept showing the old one -
+       so the next keystroke in that field wrote the stale title back over the
+       rename. Guarded on the title because nothing else here is duplicated. */
+    renderContestants();
   }
   updatePreview();
   const {clockById} = computeSchedule();
@@ -6212,6 +6835,74 @@ function removeSeg(id){
   renderFormPane();
   renderPreviewNow();
 }
+/* ================= The Add lists (V43) =================
+   Both add bars were the same 21 hardcoded <option>s, written out twice. They
+   are rendered now because the contest running order needs a different list in
+   the same control, and one list is one place to add the next item rather than
+   two that have to be kept in step by hand. (V42's two copies were in fact
+   identical - checked entry for entry before this was written.)
+   Labels here are the ADD-MENU wording, which is not always the preset's label:
+   the menu is read as a list of things you might insert, the sheet as a sentence
+   about what happens next. */
+const ADD_OPTIONS = {
+  chapter: [
+    ['custom','Custom item'],
+    ['registration','Registration & Fellowship'],
+    ['calltoorder','SAA Calls Meeting to Order'],
+    ['welcome','TME Welcome Remarks'],
+    ['langeval','Language Evaluator Introduces Word of the Day'],
+    ['president','President Opening Address'],
+    ['returncontrol','President Returns Control to TME'],
+    ['speechvote',"Timer's Report | Voting for Best Speaker"],
+    ['breaktime','Break Time (flexible)'],
+    ['ttmasterintro','TME Introduces Table Topics Master'],
+    ['tabletopics','Conduct Table Topics Session (flexible)'],
+    ['ttreturn','TT Master Returns Control to TME'],
+    ['ttvote',"Timer's Report | Voting for Best Table Topics Speaker"],
+    ['peintro','TME Introduces Project Evaluation Segment'],
+    ['evalvote',"Timer's Report | Voting for Best Speech Evaluation"],
+    ['timerreport',"Call for Timer's Report (on its own)"],
+    ['reports','TME Calls for Reports'],
+    ['awards','Award Presentation'],
+    ['closing',"President's Closing Address"],
+    ['photo','Photo Taking Session'],
+    ['adjourn','President Adjourns Meeting'],
+  ],
+  contest: [
+    ['custom','Custom item'],
+    ['contest','Contest (contestant list)'],
+    ['csetup','Set up of Room by SAA'],
+    ['cbriefchair','Briefing for Contest Chair & Photographer'],
+    ['cbriefjudges','Briefing for Judges, Tally Counters & Timers'],
+    ['cdraw','Contestants to Draw Ballots'],
+    ['ccalltoorder','SAA Calls Contest to Order'],
+    ['copening','Opening Address'],
+    ['crules','Briefing of Contest Rules'],
+    ['ctestspeech','Test Speaker Speech'],
+    ['cholding','Contestants Proceed to Holding Room'],
+    ['ccollect',"Collection of Judges' Ballots & Timers' Record"],
+    ['cbreak','Refreshment Break (flexible)'],
+    ['ccerts','Presentation of Certificates of Participation'],
+    ['cappreciation','Certificates of Appreciation'],
+    ['cresults','Announcement of Results'],
+    ['cclosing','Closing Address'],
+    ['cphoto','Photography Session'],
+  ],
+};
+function renderAddOptions(){
+  const list = ADD_OPTIONS[isContest() ? 'contest' : 'chapter'];
+  const html = list.map(([k,label])=>`<option value="${k}">${esc(label)}</option>`).join('');
+  ['addSegTypeTop','addSegType'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    /* Keep the user's choice across a re-render when the new list still has it,
+       so switching mode and back does not silently re-point a half-made click. */
+    const want = sel.value;
+    sel.innerHTML = html;
+    if(want && list.some(([k])=>k===want)) sel.value = want;
+  });
+}
+
 /* atTop: the copy of this control that sits ABOVE the running order. A pre-
    meeting item - guest registration, a committee huddle, a contest briefing -
    belongs at the front, and scrolling past twenty-five rows to reach the Add
@@ -6223,6 +6914,9 @@ function addSeg(atTop){
   if(atTop) state.segments.unshift(seg); else state.segments.push(seg);
   expandedSegs.add(seg.id);
   renderSegmentsList();
+  /* A contest block added here needs its editor to appear in the Contestants
+     section, which renderSegmentsList() alone does not draw. */
+  if(seg.isContestants) renderContestants();
   updatePreview();
   const card = document.querySelector(`.seg-card[data-seg-id="${seg.id}"]`);
   if(card) card.scrollIntoView({behavior:'smooth', block:'center'});
@@ -6392,7 +7086,12 @@ function downloadSheet(){
 
 /* ================= Init ================= */
 function syncFormInputs(){
-  /* Custom-role rows must exist before the loop below tries to fill them. */
+  /* The mode decides which grid is drawn, so it has to be settled first; the
+     built-in and custom role rows must both exist before the loop below tries
+     to fill them. */
+  syncModeControls();
+  renderAddOptions();
+  renderRolesGrid();
   renderCustomRoles();
   lastClubName = state.meeting.clubName;
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };

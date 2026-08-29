@@ -38,9 +38,7 @@ Open the tool. **Club Setup** is the first panel in the form on the left. Open i
 > club doesn't run live voting at all, clear the link and all three codes and the voting lines
 > stop printing.
 
-Start and end time live in **Meeting Info**, not Club Setup, because they occasionally change. The
-defaults are 19:00 and 21:30, and the standard timings are tuned so a meeting lands exactly on the
-end time.
+The defaults are 19:00 and 21:30 for a **chapter meeting**, and the standard timings are tuned so a meeting lands exactly on the end time. A **speech contest** uses its own template (165 minutes, 18:45–21:30). Switching Meeting type in Meeting Info replaces the running order; club setup, officers and both role sets are kept.
 
 The browser tab still reads **NSE Programme Sheet Builder**. That is cosmetic and nothing on the
 printed sheet depends on it, but Route 2 below changes it if it bothers you.
@@ -56,7 +54,7 @@ next time. Two things worth knowing before you rely on that:
   club, use Route 2. If you just want a ready-made file to hand to whoever takes over as VPE, you
   no longer need Route 2 — see **Saving meetings as files**, below.
 
-### Two things you do not need code for
+### Things you do not need code for
 
 - **Language Evaluator.** Off by default, because Nee Soon East doesn't run one every meeting.
   Tick the role and the Word of the Day row appears with it. (This is per meeting — see Route 2 to
@@ -65,6 +63,10 @@ next time. Two things worth knowing before you rely on that:
   Use the **− / +** stepper in the Speeches section header to add or remove a slot — the paired
   evaluation always moves with its speech. After changing the count, re-apply your standard
   timings so the meeting still lands on the end time.
+- **Speech contest.** Meeting Info → Meeting type → Speech Contest. The Speeches panel is
+  replaced by Contestants; the roster becomes Contest Appointments; the printed side column
+  becomes the Contest Committee and drops the Pathways legend. Switching back to Chapter
+  Meeting restores that template. There is no merge between the two running orders.
 
 ---
 

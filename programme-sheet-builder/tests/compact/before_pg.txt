@@ -1,0 +1,51 @@
+    blank classic 2
+    blank zine 2
+    blank swiss 2
+    blank brutalist 2
+    blank retrofuture 2
+    blank handmade 2
+    blank+LE classic 2
+    blank+LE zine 2
+    blank+LE swiss 2
+    blank+LE brutalist 2
+    blank+LE retrofuture 2
+    blank+LE handmade 2
+    filled classic 3
+    filled zine 3
+    filled swiss 3
+    filled brutalist 2
+    filled retrofuture 2
+    filled handmade 2
+Traceback (most recent call last):
+  File "/home/claude/psb/tests/compact/pg.py", line 74, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/claude/psb/tests/compact/pg.py", line 69, in main
+    r = await counts_for(f)
+        ^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/psb/tests/compact/pg.py", line 37, in counts_for
+    await page.goto('file://' + os.path.abspath(path), wait_until='domcontentloaded')
+  File "/usr/local/lib/python3.11/dist-packages/playwright/async_api/_generated.py", line 8992, in goto
+    await self._impl_obj.goto(
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_page.py", line 555, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_frame.py", line 153, in goto
+    await self._channel.send(
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/dist-packages/playwright/_impl/_connection.py", line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Page.goto: Timeout 30000ms exceeded.
+Call log:
+  - navigating to "file:///home/claude/psb/ProgSheetGenV30.html", waiting until "domcontentloaded"
+

@@ -1,8 +1,8 @@
 {
   "name": "toastmasters-tools",
   "private": true,
-  "version": "0.1.0",
-  "description": "Native window around the existing Toastmasters HTML tools.",
+  "version": "0.45.0",
+  "description": "Native window around the existing Toastmasters HTML tools (V45).",
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",

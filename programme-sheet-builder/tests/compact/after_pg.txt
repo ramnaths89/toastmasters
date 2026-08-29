@@ -1,0 +1,26 @@
+    blank classic 2
+    blank zine 2
+    blank swiss 2
+    blank brutalist 2
+    blank retrofuture 2
+    blank handmade 2
+    blank+LE classic 2
+    blank+LE zine 2
+    blank+LE swiss 2
+    blank+LE brutalist 2
+    blank+LE retrofuture 2
+    blank+LE handmade 2
+    filled classic 2
+    filled zine 2
+    filled swiss 2
+    filled brutalist 2
+    filled retrofuture 2
+    filled handmade 2
+    filled+LE classic 2
+    filled+LE zine 2
+    filled+LE swiss 2
+    filled+LE brutalist 2
+    filled+LE retrofuture 2
+    filled+LE handmade 2
+/home/claude/psb/tests/compact/candidate.html {"blank/classic": 2, "blank/zine": 2, "blank/swiss": 2, "blank/brutalist": 2, "blank/retrofuture": 2, "blank/handmade": 2, "blank+LE/classic": 2, "blank+LE/zine": 2, "blank+LE/swiss": 2, "blank+LE/brutalist": 2, "blank+LE/retrofuture": 2, "blank+LE/handmade": 2, "filled/classic": 2, "filled/zine": 2, "filled/swiss": 2, "filled/brutalist": 2, "filled/retrofuture": 2, "filled/handmade": 2, "filled+LE/classic": 2, "filled+LE/zine": 2, "filled+LE/swiss": 2, "filled+LE/brutalist": 2, "filled+LE/retrofuture": 2, "filled+LE/handmade": 2}
+  NOT-2-PAGES: none

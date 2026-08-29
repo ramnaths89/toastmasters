@@ -1,0 +1,10 @@
+{
+ "as-built (pass 1)": "",
+ "A exco lh 1.12/1.16/1.12": ".exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}",
+ "B + links lh 1.16": ".exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}",
+ "C + legend 1.2/mb .5": ".exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}.path-legend div{line-height:1.2;margin-bottom:.5px}",
+ "D + announce 9px/1.26": ".exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}.path-legend div{line-height:1.2;margin-bottom:.5px}.announcements .announce-line{font-size:9px;line-height:1.26}",
+ "E + pane-body pad 3/3.2mm": ".exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}.path-legend div{line-height:1.2;margin-bottom:.5px}.announcements .announce-line{font-size:9px;line-height:1.26}.pane-body{padding:3mm 3.2mm 0 0}",
+ "F E + legend 8.5px": ".exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}.path-legend div{font-size:8.5px;line-height:1.2;margin-bottom:.5px}.announcements .announce-line{font-size:9px;line-height:1.26}.pane-body{padding:3mm 3.2mm 0 0}",
+ "G E + block mb 6px": ".exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}.path-legend div{line-height:1.2;margin-bottom:.5px}.announcements .announce-line{font-size:9px;line-height:1.26}.pane-body{padding:3mm 3.2mm 0 0}.exco-block{margin-bottom:6px}.exco-item{margin-bottom:2px}"
+}

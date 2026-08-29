@@ -47,6 +47,12 @@ header{
   flex:0 0 auto;display:flex;align-items:center;gap:14px;
   padding:10px 16px;background:var(--blue);
   border-bottom:var(--bd) solid var(--ink);
+  position:relative; overflow:hidden;
+}
+header::after{
+  content:""; position:absolute; top:-12px; right:18%;
+  width:36px; height:80px; background:var(--yellow);
+  transform:skewX(-18deg); pointer-events:none;
 }
 .crest{
   flex:0 0 auto;width:38px;height:38px;border:var(--bd) solid var(--ink);

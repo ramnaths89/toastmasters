@@ -1,0 +1,637 @@
+
+:root{
+  --maroon:#772432; --maroon-dark:#4f1420; --blue:#004165; --yellow:#F2DF74; --yellow-deep:#b5892e;
+  --ink:#23282b; --ink-soft:#5c6469; --line:#e2e1dd; --cream:#faf8f4; --bg:#eef0f1;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:"Source Sans 3","Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;}
+.builder-header{
+  background:var(--maroon);
+  color:#fff; padding:14px 22px; display:flex; align-items:center; gap:14px;
+  box-shadow:none; position:relative; z-index:5;
+  border-bottom:4px solid var(--yellow);
+  overflow:hidden;
+}
+.builder-header::before{
+  content:""; position:absolute; top:-18px; right:8%; width:72px; height:120px;
+  background:var(--blue); transform:skewX(-18deg); pointer-events:none; opacity:.85;
+}
+.builder-header::after{
+  content:""; position:absolute; top:-8px; right:4%; width:28px; height:90px;
+  background:var(--yellow); transform:skewX(-18deg); pointer-events:none;
+}
+.builder-header img{width:36px;height:36px;border-radius:50%;background:#fff;padding:2px;}
+.builder-header h1{font-family:"Montserrat","Segoe UI",Arial,sans-serif;font-size:17px;margin:0;font-weight:700;}
+.builder-header p{margin:2px 0 0;font-size:12.5px;opacity:0.85;}
+.builder-body{display:flex; height:calc(100vh - 64px);}
+.form-pane{
+  flex:0 0 50%; min-width:0; overflow-y:auto; background:#fff;
+  padding:16px 16px 60px;
+}
+.preview-pane{flex:1 1 auto; overflow-y:auto; background:var(--bg); padding:18px; display:flex; justify-content:center;}
+.preview-pane iframe{width:100%; max-width:900px; height:1900px; border:none; box-shadow:0 6px 24px rgba(0,0,0,0.18); background:#fff;}
+
+.section{margin-bottom:18px; border:1px solid var(--line); border-radius:6px; overflow:hidden;}
+.section > summary{
+  cursor:pointer; list-style:none; padding:9px 12px; background:var(--cream);
+  font-family:"Montserrat",Arial,sans-serif; font-weight:700; font-size:13.5px; color:var(--maroon);
+  text-transform:uppercase; letter-spacing:0.4px; display:flex; align-items:center; justify-content:space-between;
+}
+.section > summary::-webkit-details-marker{display:none;}
+.section > summary:after{content:'▾'; font-size:11px; color:var(--ink-soft);}
+.section[open] > summary:after{content:'▴';}
+.section .content{padding:12px;}
+
+label{display:block; font-size:11.5px; font-weight:600; color:var(--ink-soft); margin:8px 0 3px; text-transform:uppercase; letter-spacing:0.3px;}
+label:first-child{margin-top:0;}
+input[type=text], input[type=number], input[type=time], input[type=date], textarea, select{
+  width:100%; font-size:13.5px; padding:6px 8px; border:1px solid var(--line); border-radius:4px;
+  font-family:inherit; color:var(--ink); background:#fff;
+}
+textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;}
+.hint{font-size:11px; color:var(--ink-soft); margin-top:3px; font-style:italic;}
+
+.seg-card{
+  border:1px solid var(--line); border-radius:6px; padding:10px; margin-bottom:10px; background:#fdfcfa;
+  position:relative;
+}
+.seg-card.is-flex{ border-color:var(--blue); background:#f3f8fa; }
+.seg-badge{font-size:9.5px; font-weight:700; color:#fff; background:var(--maroon); padding:2px 7px; border-radius:3px; text-transform:uppercase; letter-spacing:0.3px;}
+.seg-card.is-flex .seg-badge{background:var(--blue);}
+.seg-time{font-size:11px; color:var(--ink-soft); margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700;}
+.seg-actions{display:flex; gap:4px;}
+.seg-actions button{
+  border:1px solid var(--line); background:#fff; border-radius:4px; width:24px; height:24px; cursor:pointer;
+  font-size:12px; line-height:1; color:var(--ink-soft);
+}
+.seg-actions button:hover{background:var(--cream); color:var(--maroon);}
+.seg-actions button.danger:hover{background:#fdeeec; color:var(--tbd,#9c3b33); border-color:#e3b3ac;}
+
+.addbar{display:flex; gap:6px; margin-top:4px;}
+/* The copy above the running order. Ruled off so it reads as a control for the
+   list below it rather than as the list's first row. */
+.addbar-top{ margin:0 0 10px; padding-bottom:10px; border-bottom:1px dashed var(--line); }
+.addbar select{flex:1 1 auto;}
+.addbar button{
+  flex:0 0 auto; background:var(--maroon); color:#fff; border:none; border-radius:4px; padding:6px 12px;
+  font-size:12px; font-weight:600; cursor:pointer;
+}
+.addbar button:hover{background:var(--maroon-dark);}
+
+.toolbar{
+  display:flex; gap:8px; padding:10px 16px; background:#fff; border-bottom:1px solid var(--line);
+  align-items:center; flex-wrap:wrap;
+}
+.toolbar .spacer{flex:1 1 auto;}
+.btn{
+  background:var(--maroon); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-size:12.5px;
+  font-weight:600; cursor:pointer; font-family:"Montserrat",Arial,sans-serif; display:flex; align-items:center; gap:6px;
+}
+.btn:hover{background:var(--maroon-dark);}
+.btn.secondary{background:#fff; color:var(--maroon); border:1px solid var(--maroon);}
+.btn.secondary:hover{background:var(--cream);}
+.btn.blue{background:var(--blue);}
+.btn.blue:hover{background:#00304a;}
+.end-check{font-size:11.5px; padding:4px 10px; border-radius:4px; font-weight:600;}
+.end-check.ok{background:#e6f3ea; color:#2e7d46;}
+.end-check.warn{background:#fdeeec; color:#9c3b33;}
+
+/* The V29 narrow rule stacked the panes and capped the form at 70vh, so a phone
+   showed a squeezed form with the sheet somewhere off the bottom. Replaced by the
+   one-pane-at-a-time layout at the end of this file (V30). */
+/* The LAYOUT half of this block is gone (V37).
+   It stacked the two panes into a column at 980px, while the tabbed one-pane
+   layout and the hidden splitter only arrive at 900px (NARROW_PX). Between 901
+   and 980 the builder was therefore in a state nobody designed: the panes were
+   stacked, the Edit/Preview tabs had not appeared, and the splitter was still in
+   the flow - now an 8px bar the full width of the window, still carrying
+   cursor:col-resize, and still driving applyPaneWidth(), whose flex-basis is a
+   HEIGHT in a column container. Dragging it in that band set the form pane's
+   height from a horizontal mouse position.
+   One breakpoint now, at 900: side by side above it, tabs below it. Reported by
+   Rama, who noticed the split surviving a moment too long on the way down.
+   The form-density rules below stay at 980 - they are about how much room the
+   FORM has, which is a different question from how the two panes sit. */
+@media (max-width: 980px){
+  .preview-pane iframe{height:1400px;}
+}
+
+/* Collapsible segment cards */
+.seg-card{ padding:0; overflow:hidden; }
+.seg-card .seg-top{
+  padding:9px 10px; margin-bottom:0; cursor:pointer; user-select:none;
+  display:flex; align-items:center; gap:7px;
+}
+.seg-card .seg-top:hover{ background:rgba(0,0,0,0.03); }
+.seg-card .seg-title{
+  flex:1 1 auto; min-width:0; font-size:12.8px; font-weight:600; color:var(--ink);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.seg-card .seg-details{ display:none; padding:2px 12px 12px; border-top:1px dashed var(--line); }
+.seg-card.open .seg-details{ display:block; }
+.seg-card .caret{ flex:0 0 auto; font-size:11px; color:var(--ink-soft); }
+.drag-handle{ flex:0 0 auto; cursor:grab; color:var(--ink-soft); font-size:13px; letter-spacing:-1px; }
+.drag-handle:active{ cursor:grabbing; }
+.seg-card.dragging{ opacity:0.45; }
+.seg-card.drag-over{ border-top:3px solid var(--blue); }
+.seg-time{ margin-left:0; white-space:nowrap; }
+
+/* Roles grid */
+.roles-grid{ display:grid; grid-template-columns:1fr 1fr; gap:2px 12px; }
+.roles-grid label{ margin-top:6px; }
+.lbl-hint{ font-weight:400; text-transform:none; letter-spacing:0; color:var(--ink-soft); font-style:italic; }
+
+/* Speech & evaluator cards */
+.speech-card{
+  border:1px solid var(--line); border-left:4px solid var(--maroon); border-radius:6px;
+  padding:0; margin-bottom:8px; background:#fdfcfa; overflow:hidden;
+}
+/* Collapsed by default (V31), same behaviour as a Programme Segments row: the
+   head is the click target and the fields live in .sc-details. */
+.sc-head{
+  display:flex; align-items:center; gap:8px; margin-bottom:0;
+  padding:8px 10px; cursor:pointer; user-select:none;
+}
+.sc-head:hover{ background:rgba(0,0,0,0.03); }
+.speech-card .sc-details{ display:none; padding:2px 12px 12px; border-top:1px dashed var(--line); }
+.speech-card.open .sc-details{ display:block; }
+.speech-card .caret{ flex:0 0 auto; font-size:11px; color:var(--ink-soft); }
+.sc-sum{
+  flex:1 1 auto; min-width:0; font-size:11px; color:var(--ink-soft); font-style:italic;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:right;
+}
+
+/* Speaker-count stepper, sitting in the section header (V31). Clicks inside it
+   must not toggle the <details> it lives in — the wrapper cancels the default. */
+.section > summary .sum-t{ flex:0 0 auto; }
+.sp-step{
+  display:inline-flex; align-items:center; gap:2px; margin-left:auto; margin-right:10px;
+  border:1px solid var(--line); border-radius:5px; background:#fff; overflow:hidden;
+}
+.sp-step button{
+  width:24px; height:22px; border:none; background:#fff; color:var(--maroon);
+  font-size:14px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit;
+}
+.sp-step button:hover:not(:disabled){ background:var(--cream); }
+.sp-step button:disabled{ color:var(--line); cursor:default; }
+.sp-step #spCount{
+  min-width:20px; text-align:center; font-size:12.5px; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+
+/* "Balance Segments" spelled out rather than a ⚖ nobody recognised (V31). Two
+   short words on two lines keep the button as narrow as the chip beside it. */
+.btn.balance{
+  padding:5px 10px; font-size:11px; line-height:1.15; text-align:center;
+  white-space:normal; max-width:82px; display:inline-block; position:relative;
+}
+.sc-badge{
+  font-size:10px; font-weight:700; color:#fff; background:var(--maroon); padding:2px 8px;
+  border-radius:3px; text-transform:uppercase; letter-spacing:0.4px; flex:0 0 auto;
+}
+.sc-name{ flex:1 1 auto; font-weight:700; font-size:13.5px; color:var(--ink); }
+.sc-remove{
+  border:1px solid var(--line); background:#fff; border-radius:4px; width:24px; height:24px;
+  cursor:pointer; font-size:12px; line-height:1; color:var(--ink-soft); flex:0 0 auto;
+}
+.sc-remove:hover{ background:#fdeeec; color:#9c3b33; border-color:#e3b3ac; }
+.sc-projrow{ display:grid; grid-template-columns:2fr 1fr 3fr; gap:8px; }
+.sc-note{
+  margin-top:8px; font-size:11.5px; color:var(--blue); background:#eaf2f6;
+  border-left:3px solid var(--blue); padding:5px 9px; border-radius:0 4px 4px 0;
+}
+.sc-alt{
+  margin-top:7px; font-size:11.5px; border:1px dashed var(--blue); color:var(--blue);
+  background:#fff; border-radius:4px; padding:4px 10px; cursor:pointer;
+}
+.sc-alt:hover{ background:#eaf2f6; }
+@media (max-width: 980px){
+  /* .form-pane{width:100%; flex:0 0 auto} removed with the stacking above: it
+     forced the pane full-width and dropped the 50% flex-basis the splitter sets. */
+  .sc-projrow{ grid-template-columns:1fr 1fr; }
+  .sc-projrow .sc-proj{ grid-column:1 / -1; }
+}
+
+/* Splitter between form pane and preview */
+#splitter{
+  flex:0 0 8px; cursor:col-resize; background:var(--line); position:relative;
+  transition:background 0.12s;
+}
+#splitter:hover, body.resizing #splitter{ background:var(--maroon); }
+#splitter::after{
+  content:'⋮'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  color:#fff; font-size:14px; opacity:0; transition:opacity 0.12s;
+}
+#splitter:hover::after, body.resizing #splitter::after{ opacity:0.9; }
+body.resizing{ user-select:none; cursor:col-resize; }
+body.resizing .preview-pane iframe{ pointer-events:none; }
+
+/* Save indicator.
+   Fixed, out of flow, and a constant 26px in every state. The old toolbar text
+   span changed width on every autosave ("Autosaving…" -> "Saved ✓" -> back) and
+   the flex-wrap toolbar re-measured each time, shoving the buttons while Rama
+   was mid-edit. Only colour, one glyph and a composited scale change here, so
+   nothing it does can trigger layout. The wording lives in the tooltip. */
+.save-dot{
+  position:fixed; top:12px; left:12px; z-index:200;
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:700; line-height:1;
+  background:#e6f3ea; color:#2e7d46; border:1px solid #a8d3ba;
+  box-shadow:0 1px 4px rgba(0,0,0,0.28);
+  transition:transform .18s ease, background-color .18s ease;
+  cursor:default; user-select:none;
+}
+.save-dot.pulse{ transform:scale(1.22); background:#c7e7d6; }
+.save-dot.warn{ background:#fdeeec; color:#9c3b33; border-color:#e3b3ac; }
+/* Keep the badge clear of the header logo. */
+.builder-header{ padding-left:50px; }
+.btn.ghost{ background:#fff; color:var(--ink-soft); border:1px solid var(--line); }
+.btn.ghost:hover{ background:var(--cream); color:var(--maroon); border-color:var(--maroon); }
+
+/* ---------- Icon toolbar buttons + tooltips ----------
+   The toolbar is icons only now, so every one carries a data-tip explaining what
+   it does. Tooltips are a pseudo-element on the button rather than the native
+   title attribute: they appear instantly instead of after the browser's ~1s
+   delay, and they wrap to a readable width. */
+.btn.icon{
+  width:38px; height:38px; padding:0; justify-content:center; font-size:16px; line-height:1;
+  position:relative; flex:0 0 auto;
+}
+.btn.icon:disabled{ opacity:0.6; cursor:default; }
+.btn.icon[data-tip]::after, .btn.balance[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute; top:calc(100% + 9px); left:50%;
+  transform:translateX(-50%) translateY(-4px);
+  background:#23282b; color:#fff; font-family:"Source Sans 3",Arial,sans-serif;
+  font-size:11.5px; font-weight:400; line-height:1.5; letter-spacing:0;
+  text-align:left; white-space:normal; width:max-content; max-width:270px;
+  padding:8px 11px; border-radius:6px; box-shadow:0 5px 18px rgba(0,0,0,0.3);
+  opacity:0; pointer-events:none; z-index:300;
+  transition:opacity .13s ease, transform .13s ease;
+}
+.btn.icon[data-tip]::before, .btn.balance[data-tip]::before{
+  content:''; position:absolute; top:calc(100% + 3px); left:50%;
+  transform:translateX(-50%) translateY(-4px);
+  border:6px solid transparent; border-bottom-color:#23282b;
+  opacity:0; pointer-events:none; z-index:301;
+  transition:opacity .13s ease, transform .13s ease;
+}
+.btn.icon:hover::after, .btn.icon:focus-visible::after,
+.btn.icon:hover::before, .btn.icon:focus-visible::before,
+.btn.balance:hover::after, .btn.balance:focus-visible::after,
+.btn.balance:hover::before, .btn.balance:focus-visible::before{
+  opacity:1; transform:translateX(-50%) translateY(0);
+}
+/* The buttons near the window edge — pin their tooltip to the right so it cannot
+   run off screen. #dlBtn is NOT the last button, but its tooltip is the widest,
+   and its centred box was the whole of the 19px of horizontal scroll present at
+   every desktop width since V29 (measured by hiding elements one at a time, V36:
+   removing #dlBtn's overhang takes the delta to exactly 0 from 950px to 1920px). */
+.btn.icon.tip-right::after{ left:auto; right:0; transform:translateY(-4px); }
+.btn.icon.tip-right:hover::after, .btn.icon.tip-right:focus-visible::after{ transform:translateY(0); }
+/* The end-time chip changes wording as timings move; a floor on its width stops
+   it shoving the icons around, same reasoning as the save badge. */
+.end-check{ min-width:210px; text-align:center; }
+
+/* Saved-meetings dropdown. Capped width so a long meeting title cannot push the
+   icon buttons around - same reasoning as the end-check chip's min-width. */
+.file-select{
+  flex:0 1 auto; width:auto; max-width:230px; min-width:150px;
+  font-size:12px; padding:8px 8px; height:38px;
+  border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink);
+  font-family:inherit; cursor:pointer;
+}
+.file-select:hover{ border-color:var(--maroon); }
+@media (max-width: 760px){ .file-select{ min-width:0; max-width:130px; } }
+
+/* ---------- Download menu ---------- */
+.menu-wrap{ position:relative; flex:0 0 auto; }
+.dl-menu{
+  display:none; position:absolute; top:calc(100% + 8px); right:0; z-index:320;
+  background:#fff; border:1px solid var(--line); border-radius:8px; padding:5px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2); width:290px;
+}
+.dl-menu.open{ display:block; }
+.dl-menu button{
+  display:flex; align-items:flex-start; gap:10px; width:100%; text-align:left;
+  background:#fff; border:none; border-radius:6px; padding:8px 9px; cursor:pointer;
+  font-family:inherit; color:var(--ink);
+}
+.dl-menu button:hover{ background:var(--cream); }
+.dl-menu .dl-i{ flex:0 0 22px; font-size:14px; line-height:1.35; text-align:center; color:var(--maroon); }
+.dl-menu b{ display:block; font-size:12.5px; font-weight:700; }
+.dl-menu em{ display:block; font-size:11px; font-style:normal; color:var(--ink-soft); line-height:1.4; margin-top:1px; }
+
+/* ---------- Instructions overlay ---------- */
+.help-overlay{
+  display:none; position:fixed; inset:0; z-index:400; background:rgba(20,14,16,0.55);
+  padding:28px 16px; overflow-y:auto;
+}
+.help-overlay.open{ display:block; }
+.help-panel{
+  max-width:760px; margin:0 auto; background:#fff; border-radius:10px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.4); overflow:hidden;
+}
+.help-head{
+  background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  color:#fff; padding:16px 20px; display:flex; align-items:center; gap:14px;
+}
+.help-head h2{ margin:0; font-size:17px; font-family:"Montserrat",Arial,sans-serif; flex:1 1 auto; }
+.help-close{
+  flex:0 0 auto; width:30px; height:30px; border-radius:50%; border:1px solid rgba(255,255,255,0.5);
+  background:transparent; color:#fff; font-size:13px; cursor:pointer; line-height:1;
+}
+.help-close:hover{ background:rgba(255,255,255,0.16); }
+.help-body{ padding:18px 22px 26px; font-size:13px; line-height:1.6; color:var(--ink); }
+.help-lead{
+  margin:0 0 16px; padding:10px 13px; background:var(--cream);
+  border-left:4px solid var(--yellow-deep); border-radius:0 4px 4px 0;
+}
+.help-body h3{
+  font-family:"Montserrat",Arial,sans-serif; font-size:13px; text-transform:uppercase;
+  letter-spacing:0.6px; color:var(--maroon); border-bottom:2px solid var(--yellow);
+  padding-bottom:4px; margin:20px 0 10px;
+}
+.help-body dl{ margin:0; display:grid; grid-template-columns:150px 1fr; gap:8px 14px; }
+.help-body dt{ font-weight:700; color:var(--ink); }
+.help-body dd{ margin:0; color:var(--ink-soft); }
+.help-body p{ margin:0 0 10px; color:var(--ink-soft); }
+.help-body b{ color:var(--ink); }
+@media (max-width: 620px){
+  .help-body dl{ grid-template-columns:1fr; gap:2px; }
+  .help-body dd{ margin-bottom:8px; }
+  .end-check{ min-width:0; }
+}
+
+/* Speech card drag affordances */
+.sc-grip{ cursor:grab; color:var(--ink-soft); font-size:13px; letter-spacing:-1px; flex:0 0 auto; }
+.sc-grip:active{ cursor:grabbing; }
+.speech-card.dragging{ opacity:0.45; }
+.speech-card.drop-above{ box-shadow:0 -3px 0 var(--blue); }
+.speech-card.drop-below{ box-shadow:0 3px 0 var(--blue); }
+
+.sc-preview{
+  margin-top:8px; font-size:11.5px; line-height:1.5; color:var(--ink-soft);
+  background:#fff; border:1px dashed var(--gray); border-radius:4px; padding:6px 9px;
+}
+.sc-preview b{ color:var(--ink); }
+
+/* Role tick boxes */
+.role-lbl{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+.role-lbl input[type=checkbox]{ width:14px; height:14px; margin:0; accent-color:var(--maroon); cursor:pointer; flex:0 0 auto; }
+.roles-grid > div.role-off .role-lbl{ color:var(--gray); text-decoration:line-through; }
+.roles-grid > div.role-off input[type=text]{ background:#f4f4f2; color:#aaa; }
+.seg-card.is-off{ opacity:0.6; background:#f6f6f4; border-style:dashed; }
+.seg-card.is-off .seg-badge{ background:var(--gray); }
+.seg-card.is-off .seg-title{ text-decoration:line-through; }
+.off-why{ font-weight:400; font-style:italic; color:var(--ink-soft); text-decoration:none; display:inline-block; }
+
+.row4{ display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; }
+.row4 label, .roles-grid label{ display:flex; align-items:center; gap:4px; }
+.row4 .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; flex:0 0 auto; }
+.row4 .dot.g{ background:#2e7d46; } .row4 .dot.y{ background:#d8b400; } .row4 .dot.r{ background:#a4342b; }
+.sc-lightstate{ margin-top:7px; font-size:11px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.ls-auto{ color:#2e7d46; font-style:italic; }
+.ls-manual{ color:var(--blue); font-weight:600; }
+.ls-relink{
+  border:1px dashed var(--blue); background:#fff; color:var(--blue); border-radius:4px;
+  padding:2px 8px; font-size:11px; cursor:pointer; font-family:inherit;
+}
+.ls-relink:hover{ background:#eaf2f6; }
+.sc-warn{
+  margin-top:7px; font-size:11.5px; color:#9c3b33; background:#fdeeec;
+  border-left:3px solid #9c3b33; padding:5px 9px; border-radius:0 4px 4px 0;
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+.sc-warn .ls-relink{ border-color:#9c3b33; color:#9c3b33; }
+.sc-warn .ls-relink:hover{ background:#f9dedb; }
+
+/* Print-fit notice (V36). Full width under the toolbar, and STICKY: it reports a
+   measured property of the sheet that stays true until the sheet changes, so the
+   5-second #banner toast was the wrong vehicle. Amber for "one line from the
+   edge", red for "already being cut". */
+.print-notice{
+  margin:0 16px; padding:7px 12px; border-radius:4px; font-size:12px;
+  display:flex; align-items:flex-start; gap:9px; line-height:1.4;
+  border-left:3px solid currentColor;
+}
+.print-notice[hidden]{ display:none; }
+.print-notice.near{ color:#8a6100; background:#fdf3df; }
+.print-notice.over{ color:#9c3b33; background:#fdeeec; }
+.print-notice .pn-x{
+  margin-left:auto; flex:0 0 auto; border:0; background:transparent; cursor:pointer;
+  color:inherit; font-size:15px; line-height:1; padding:0 2px; font-family:inherit;
+}
+.print-notice .pn-x:hover{ opacity:.65; }
+
+/* Recovery bar (V36). Same shelf as the print notice, louder, and it never
+   auto-hides: it is dismissed by acting on it or by saying no. */
+.recover-bar{
+  margin:6px 16px 0; padding:9px 12px; border-radius:4px; font-size:12.5px;
+  color:#7c2a22; background:#fdeeec; border:1px solid #e3b3ac; border-left:4px solid #9c3b33;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap; line-height:1.4;
+}
+.recover-bar[hidden]{ display:none; }
+.recover-bar .rb-msg{ flex:1 1 340px; }
+.recover-bar button{
+  flex:0 0 auto; font-family:inherit; font-size:11.5px; cursor:pointer;
+  border-radius:4px; padding:4px 10px; border:1px solid #9c3b33;
+  background:#9c3b33; color:#fff;
+}
+.recover-bar button.ghost{ background:#fff; color:#9c3b33; }
+.recover-bar button:hover{ opacity:.88; }
+@media (max-width: 980px){ .row4{ grid-template-columns:1fr 1fr; } }
+
+/* Sits at the foot of the form pane, so it never spans the whole window. */
+.print-hint{
+  margin-top:4px;
+  padding:9px 12px;
+  font-size:11.5px;
+  line-height:1.5;
+  color:var(--ink-soft);
+  background:#fffbe9;
+  border:1px solid #e8dcae;
+  border-left:4px solid var(--yellow-deep);
+  border-radius:4px;
+}
+.print-hint b{ color:var(--ink); }
+
+/* ---------- Project combobox (click ▾ to browse, type to narrow) ---------- */
+.cbx{ position:relative; width:100%; min-width:0; }
+.cbx .cbx-input{ width:100%; padding-right:26px; }
+.cbx-btn{
+  position:absolute; top:0; right:0; height:100%; width:24px; padding:0;
+  border:none; background:transparent; cursor:pointer; color:var(--ink-soft);
+  font-size:11px; line-height:1;
+}
+.cbx-btn:hover{ color:var(--maroon); }
+.cbx.open .cbx-btn{ color:var(--maroon); transform:rotate(180deg); }
+.cbx-list{
+  display:none; position:absolute; z-index:80; left:0; right:0; top:calc(100% + 2px);
+  max-height:260px; overflow-y:auto; background:#fff; border:1px solid var(--blue);
+  border-radius:5px; box-shadow:0 8px 22px rgba(0,0,0,0.18); padding:3px;
+}
+.cbx.open .cbx-list{ display:block; }
+.cbx.up .cbx-list{ top:auto; bottom:calc(100% + 2px); }
+.cbx-opt{
+  display:flex; align-items:baseline; gap:8px; padding:4px 7px; border-radius:4px;
+  cursor:pointer; line-height:1.25;
+}
+.cbx-opt.hide{ display:none; }
+.cbx-opt .cbx-n{ flex:1 1 auto; font-size:12.5px; color:var(--ink); }
+.cbx-opt .cbx-m{
+  flex:0 0 auto; font-size:10.5px; color:var(--ink-soft); white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+/* Projects that sit in the chosen pathway+level lead the list, ruled off from the rest. */
+.cbx-opt.here .cbx-n{ font-weight:700; }
+.cbx-opt.here + .cbx-opt:not(.here){ border-top:1px dashed var(--line); margin-top:3px; padding-top:6px; }
+.cbx-opt.sel{ background:#f3efe6; }
+.cbx-opt.act{ background:var(--blue); }
+.cbx-opt.act .cbx-n, .cbx-opt.act .cbx-m{ color:#fff; }
+.cbx-empty{ display:none; padding:6px 7px; font-size:11.5px; color:var(--ink-soft); font-style:italic; }
+@media print{ .cbx-list, .cbx-btn{ display:none !important; } }
+
+/* ---------- Custom roles (V30) ----------
+   Tick, title, person, remove — on one line, so a club that runs six extra roles
+   does not push the rest of the form off the screen. */
+.cr-row{
+  display:grid; grid-template-columns:auto 1fr 1fr auto; gap:6px;
+  align-items:center; margin-bottom:6px;
+}
+.cr-row input[type=checkbox]{ width:14px; height:14px; margin:0; accent-color:var(--maroon); cursor:pointer; }
+.cr-row.role-off .cr-label, .cr-row.role-off input[type=text]{ background:#f4f4f2; color:#aaa; }
+.cr-del{
+  border:1px solid var(--line); background:#fff; border-radius:4px; width:26px; height:28px;
+  cursor:pointer; font-size:11px; line-height:1; color:var(--ink-soft);
+}
+.cr-del:hover{ background:#fdeeec; color:#9c3b33; border-color:#e3b3ac; }
+.cr-add{
+  margin-top:6px; border:1px dashed var(--maroon); background:#fff; color:var(--maroon);
+  border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;
+  font-family:inherit;
+}
+.cr-add:hover{ background:var(--cream); }
+
+/* ---------- Save dialog (V30) ----------
+   Replaces window.prompt(), which a file:// page can suppress outright. */
+.save-overlay{
+  display:none; position:fixed; inset:0; z-index:420; background:rgba(20,14,16,0.55);
+  padding:0 16px; overflow-y:auto;
+}
+.save-overlay.open{ display:flex; align-items:center; justify-content:center; }
+.save-panel{
+  width:100%; max-width:460px; background:#fff; border-radius:10px; overflow:hidden;
+  box-shadow:0 18px 50px rgba(0,0,0,0.4);
+}
+.save-head{
+  background:linear-gradient(135deg, var(--maroon) 0%, var(--maroon-dark) 100%);
+  color:#fff; padding:13px 18px; font-family:"Montserrat",Arial,sans-serif;
+  font-size:15px; font-weight:700;
+}
+.save-body{ padding:16px 18px 6px; }
+.save-body .ext{
+  font-size:12px; color:var(--ink-soft); margin-top:5px; font-variant-numeric:tabular-nums;
+}
+.save-body .ext b{ color:var(--ink); }
+.save-foot{ display:flex; gap:8px; padding:12px 18px 16px; justify-content:flex-end; flex-wrap:wrap; }
+.save-foot .btn{ padding:9px 16px; }
+
+/* ---------- One pane at a time on a narrow window or a phone (V30) ---------- */
+.view-tabs{ display:none; }
+.mobile-bar{ display:none; }
+@media (max-width: 900px){
+  html,body{ overflow-x:hidden; }
+  .builder-header p{ display:none; }              /* the long hint is desktop advice */
+  .view-tabs{
+    display:flex; gap:6px; padding:8px 12px; background:#fff;
+    border-bottom:1px solid var(--line); position:sticky; top:0; z-index:60;
+  }
+  .view-tabs button{
+    flex:1 1 0; padding:9px 8px; border:1px solid var(--line); background:#fff;
+    color:var(--ink-soft); border-radius:6px; font-family:"Montserrat",Arial,sans-serif;
+    font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .view-tabs button.on{ background:var(--maroon); border-color:var(--maroon); color:#fff; }
+
+  /* display:block, so the panes stack whatever the flex rules above say. This
+     used to lean on the 980px block for the column direction; that block no
+     longer touches layout, so the one-pane view states it for itself. */
+  .builder-body{ display:block; height:auto; }
+  #splitter{ display:none; }
+  /* applyPaneWidth() sets flex-basis for the desktop splitter; in one column that
+     would become a height. */
+  .form-pane{ flex:none !important; width:100% !important; max-height:none;
+              padding:12px 12px 96px; overflow:visible; }
+  .preview-pane{ display:none; padding:10px 10px 96px; }
+  body.show-preview .form-pane{ display:none; }
+  body.show-preview .preview-pane{ display:block; }
+  .preview-pane iframe{ height:1500px; max-width:none; }
+
+  /* The icon toolbar is for a mouse and tooltips. On a phone the two things that
+     matter get full-width labelled buttons pinned to the bottom instead. */
+  .toolbar .menu-wrap, .toolbar #saveBtn{ display:none; }
+  .mobile-bar{
+    display:flex; gap:8px; position:fixed; left:0; right:0; bottom:0; z-index:210;
+    padding:9px 12px calc(9px + env(safe-area-inset-bottom, 0px));
+    background:#fff; border-top:1px solid var(--line); box-shadow:0 -3px 14px rgba(0,0,0,0.12);
+  }
+  .mobile-bar .btn{ flex:1 1 0; justify-content:center; padding:12px 10px; font-size:13.5px; }
+  .mobile-bar .dl-menu{ top:auto; bottom:calc(100% + 8px); right:0; left:0; width:auto; }
+  .save-dot{ top:auto; bottom:74px; left:12px; }
+  .end-check{ min-width:0; flex:1 1 100%; }
+  .file-select{ max-width:none; flex:1 1 auto; }
+}
+
+
+/* ================= Contest mode (V43) =================
+   Sections that belong to one meeting type only. The body class is set by
+   syncModeControls(); both rules are needed because the default markup carries
+   neither class until the first sync, and a section that flickers into view on
+   load reads as a bug. */
+.mode-contest-only{ display:none; }
+body.mode-contest .mode-contest-only{ display:block; }
+body.mode-contest .mode-chapter-only{ display:none; }
+/* Inline spans in a <summary> must not become blocks or the caret drops below
+   the text; the summary rules above target the hint <div>s. */
+body.mode-contest summary .mode-contest-only{ display:inline; }
+body.mode-contest summary .mode-chapter-only{ display:none; }
+summary .mode-contest-only{ display:none; }
+
+/* Speeches & Evaluators is chapter-only; Contestants is contest-only. Hidden
+   with display:none on the <details> itself, so a section that is not part of
+   this meeting type cannot be opened, tabbed into, or found by Ctrl+F. */
+#contestSection{ display:none; }
+body.mode-contest #contestSection{ display:block; }
+body.mode-contest #speechSection{ display:none; }
+
+.ct-block{
+  border:1px solid var(--line); border-left:4px solid var(--maroon); border-radius:6px;
+  padding:10px; margin-bottom:10px; background:#fdfcfa;
+}
+.ct-block .ct-title{ font-weight:600; }
+.ct-rows{ margin-top:8px; }
+.ct-row{
+  display:grid; grid-template-columns:22px 1fr auto; gap:6px;
+  align-items:center; margin-bottom:5px;
+}
+/* Tabular numerals so a ten-contestant list does not step sideways at 10. */
+.ct-num{
+  font-size:11px; font-weight:700; color:var(--ink-soft); text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+.ct-del{
+  border:1px solid var(--line); background:#fff; border-radius:4px; width:26px; height:28px;
+  cursor:pointer; font-size:11px; line-height:1; color:var(--ink-soft);
+}
+.ct-del:hover{ background:#fdeeec; color:#9c3b33; border-color:#e3b3ac; }
+.ct-add{
+  margin-top:4px; border:1px dashed var(--maroon); background:#fff; color:var(--maroon);
+  border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;
+  font-family:inherit;
+}
+.ct-add:hover{ background:var(--cream); }

@@ -1,0 +1,1 @@
+/home/claude/psb/ProgSheetGenV30.html {"blank/classic": 2, "blank/zine": 2, "blank/swiss": 2, "blank/brutalist": 2, "blank/retrofuture": 2, "blank/handmade": 2, "filled/classic": 3, "filled/zine": 3, "filled/swiss": 3, "filled/brutalist": 2, "filled/retrofuture": 2, "filled/handmade": 2}

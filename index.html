@@ -4,82 +4,88 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Toastmasters Tools · Ramanathan S</title>
-<meta name="description" content="One Toastmasters utility — club finder, programme sheet builder, timer and Ah-Counter's log. Unofficial, in development.">
+<meta name="description" content="Unofficial Toastmasters utility for District 80 — club finder, programme sheet (chapter or contest), timing lights and Ah-Counter's log. V45.">
 <meta name="theme-color" content="#004165">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="TM Tools">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
 :root{
-  --stock:#F4F1E8; --stock-2:#EAE6DA; --stock-3:#E0DBCB;
-  --ink:#004165;            /* Loyal Blue  PANTONE 302  */
-  --red:#CD202C;            /* Fair Red    PANTONE 1795 */
-  --yellow:#F2DF74;         /* Happy Yellow PANTONE 127 */
-  --over:#000811;
-  --rule:#A9B2B1;
-  --soft:#5D869D;
-  --disp:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --pad:clamp(18px,5vw,40px);
+  --blue:#004165;     /* Loyal Blue  PANTONE 302 */
+  --red:#CD202C;      /* Fair Red    PANTONE 1795 */
+  --yellow:#F2DF74;   /* Happy Yellow PANTONE 127 */
+  --maroon:#772432;   /* True Maroon PANTONE 202 */
+  --gray:#A9B2B1;     /* Cool Gray   PANTONE 429 */
+  --stock:#F4F1E8;
+  --stock-2:#EAE6DA;
+  --ink:#000811;
   --bar:56px;
+  --disp:"Arial Narrow","Arial Black","Helvetica Neue",Arial,system-ui,sans-serif;
+  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%; height:100%}
 html,body{margin:0; height:100%; overflow:hidden}
 body{
-  background:var(--stock); color:var(--over);
-  font:400 17px/1.55 var(--body);
+  background:var(--stock); color:var(--ink);
+  font:400 16px/1.5 var(--body);
 }
 
-/* ── app chrome ───────────────────────────────────────────── */
 .app{display:flex; flex-direction:column; height:100dvh;}
 .appbar{
   flex:0 0 auto;
   display:flex; align-items:center; gap:10px;
   min-height:var(--bar);
-  padding:8px 12px 8px 14px;
-  padding-left:max(14px, env(safe-area-inset-left));
+  padding:0 12px 0 0;
   padding-right:max(12px, env(safe-area-inset-right));
-  background:var(--ink); color:var(--stock);
-  border-bottom:2px solid var(--over);
+  background:var(--blue); color:var(--stock);
+  border-bottom:4px solid var(--yellow);
   z-index:20;
+  position:relative;
+}
+.appbar::before{
+  content:""; width:8px; align-self:stretch; background:var(--red); flex:none;
 }
 .brand{
-  display:flex; flex-direction:column; gap:2px;
+  display:flex; flex-direction:column; gap:1px;
   text-decoration:none; color:inherit; min-width:0; flex:0 1 auto;
+  padding:8px 4px;
 }
 .brand strong{
-  font:800 13px/1 var(--disp); letter-spacing:.08em; text-transform:uppercase;
+  font:800 13px/1 var(--disp); letter-spacing:.14em; text-transform:uppercase;
   white-space:nowrap;
 }
 .brand em{
-  font:400 10px/1 var(--body); letter-spacing:.06em; text-transform:uppercase;
-  color:#CFE0EA; font-style:normal; white-space:nowrap;
+  font:700 9px/1 var(--disp); letter-spacing:.16em; text-transform:uppercase;
+  color:var(--yellow); font-style:normal; white-space:nowrap;
 }
 .tabs{
-  display:flex; align-items:stretch; gap:4px;
+  display:flex; align-items:stretch; gap:0;
   margin-left:auto; flex:1 1 auto; justify-content:flex-end;
   overflow-x:auto; -webkit-overflow-scrolling:touch;
 }
 .tabs button{
   appearance:none; border:0; background:transparent;
   color:var(--stock); cursor:pointer;
-  font:700 11px/1 var(--disp); letter-spacing:.08em; text-transform:uppercase;
-  padding:8px 10px; border-radius:4px; white-space:nowrap;
+  font:800 11px/1 var(--disp); letter-spacing:.12em; text-transform:uppercase;
+  padding:0 12px; white-space:nowrap;
+  border-left:1px solid rgba(244,241,232,.18);
+  min-height:var(--bar);
 }
-.tabs button:hover{ background:rgba(244,241,232,.12); }
+.tabs button:hover{ background:rgba(244,241,232,.1); }
 .tabs button[aria-current="page"]{
-  background:var(--yellow); color:var(--over);
+  background:var(--yellow); color:var(--ink);
 }
-.tabs button:focus-visible{ outline:2px solid var(--yellow); outline-offset:2px; }
+.tabs button:focus-visible{ outline:2px solid var(--yellow); outline-offset:-4px; }
 .pop{
   flex:0 0 auto;
-  font:700 10px/1 var(--disp); letter-spacing:.08em; text-transform:uppercase;
+  font:800 10px/1 var(--disp); letter-spacing:.12em; text-transform:uppercase;
   color:var(--ink); background:var(--stock);
-  border:1.5px solid var(--over); text-decoration:none;
-  padding:7px 9px; white-space:nowrap;
+  border:2px solid var(--ink); text-decoration:none;
+  padding:8px 10px; white-space:nowrap; margin-left:8px;
 }
 .pop[hidden]{ display:none !important; }
 .pop:hover{ background:var(--yellow); }
@@ -91,161 +97,268 @@ body{
   visibility:hidden; pointer-events:none; z-index:0;
 }
 .pane.is-on{ visibility:visible; pointer-events:auto; z-index:1; }
-#view-home{
-  overflow:auto;
-  background:var(--stock);
-  background-image:radial-gradient(var(--stock-3) .6px,transparent .6px);
-  background-size:7px 7px;
-}
+#view-home{ overflow:auto; background:var(--stock); }
 iframe.pane{ width:100%; height:100%; border:0; background:#fff; }
 
-/* ── home (existing landing) ──────────────────────────────── */
-.wrap{max-width:840px;margin:0 auto;padding:var(--pad) var(--pad) 0}
+/* Constructivist field — planes, not decoration */
+.field{
+  position:relative;
+  min-height:100%;
+  overflow:hidden;
+}
+.planes{ position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.planes i{ position:absolute; display:block; }
+.planes .p-blue{
+  width:42vw; height:70vh; min-width:280px;
+  background:var(--blue);
+  top:-8%; left:-6%;
+  transform:rotate(-11deg);
+}
+.planes .p-red{
+  width:18vw; height:120%; min-width:72px;
+  background:var(--red);
+  top:-10%; left:38%;
+  transform:skewX(-18deg);
+  mix-blend-mode:multiply;
+}
+.planes .p-yel{
+  width:min(34vw,280px); height:min(34vw,280px);
+  background:var(--yellow);
+  border-radius:50%;
+  right:-4%; top:8%;
+  mix-blend-mode:multiply;
+}
+.planes .p-mar{
+  height:14px; width:55%;
+  background:var(--maroon);
+  bottom:22%; left:-4%;
+  transform:rotate(-8deg);
+}
+.planes .p-bar{
+  width:100%; height:8px;
+  background:var(--ink);
+  top:0; left:0;
+}
+.planes .grid{
+  inset:0; position:absolute;
+  background-image:
+    linear-gradient(rgba(0,8,17,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,8,17,.06) 1px, transparent 1px);
+  background-size:48px 48px;
+}
 
-header.hero{padding-top:clamp(24px,7vw,56px)}
-.eyebrow{
-  font:700 11px/1 var(--disp); letter-spacing:.22em; text-transform:uppercase;
-  color:var(--red); margin:0 0 18px;
+.wrap{
+  position:relative; z-index:1;
+  max-width:1080px; margin:0 auto;
+  padding:clamp(20px,4vw,48px) clamp(16px,4vw,40px) 0;
 }
-.eyebrow span{color:var(--soft)}
 
-.mast{position:relative;margin:0 0 14px;line-height:.92}
-.mast .lay{
-  display:block; font:800 clamp(38px,10.5vw,74px)/.92 var(--disp);
-  letter-spacing:-.025em; text-transform:uppercase;
+header.hero{ padding-top:clamp(8px,2vw,20px); margin-bottom:clamp(28px,5vw,48px); }
+.kicker{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  font:800 11px/1 var(--disp); letter-spacing:.22em; text-transform:uppercase;
+  color:var(--red); margin:0 0 16px;
 }
-.mast .red{
-  position:absolute; inset:0; color:var(--red);
-  transform:translate(3px,3px); mix-blend-mode:multiply; opacity:.85;
-  z-index:0; pointer-events:none;
+.kicker .rule{ flex:1; height:4px; background:var(--ink); min-width:40px; }
+.kicker span{ color:var(--blue); }
+
+.mast{
+  display:grid;
+  grid-template-columns: auto 1fr;
+  gap:18px 28px;
+  align-items:end;
+  margin:0 0 18px;
 }
-.mast .blue{position:relative;color:var(--ink);z-index:1}
+.num{
+  font:900 clamp(72px,16vw,148px)/.8 var(--disp);
+  letter-spacing:-.06em;
+  color:var(--blue);
+  mix-blend-mode:multiply;
+}
+.titles h1{
+  margin:0;
+  font:900 clamp(36px,8vw,72px)/.88 var(--disp);
+  letter-spacing:-.03em; text-transform:uppercase;
+  color:var(--ink);
+}
+.titles h1 b{ color:var(--red); font-weight:900; }
+.titles .sub{
+  margin:10px 0 0;
+  font:800 12px/1.2 var(--disp); letter-spacing:.16em; text-transform:uppercase;
+  color:var(--maroon);
+}
 
 .standfirst{
-  font:400 clamp(17px,2.4vw,20px)/1.5 var(--body);
-  color:#2b3a42; max-width:56ch; margin:0 0 22px;
+  font:400 clamp(16px,2.2vw,19px)/1.5 var(--body);
+  color:#1c2a32; max-width:62ch; margin:0 0 16px;
+  background:var(--stock);
+  border:3px solid var(--ink);
+  padding:14px 16px;
 }
-.standfirst b{color:var(--ink);font-weight:700}
+.standfirst b{ color:var(--blue); font-weight:700; }
 
 .flag{
-  display:inline-flex;align-items:center;gap:9px;
-  background:var(--yellow); color:var(--over);
-  border:1.5px solid var(--over);
-  padding:7px 13px 7px 11px; margin-bottom:clamp(30px,6vw,52px);
-  font:700 12px/1 var(--disp); letter-spacing:.05em; text-transform:uppercase;
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--yellow); color:var(--ink);
+  border:3px solid var(--ink);
+  padding:8px 14px;
+  font:800 12px/1 var(--disp); letter-spacing:.08em; text-transform:uppercase;
 }
-.flag::before{
-  content:""; width:9px; height:9px; background:var(--red);
-  border-radius:50%; flex:none;
+.flag i{
+  width:14px; height:14px; background:var(--red); flex:none;
+  transform:rotate(45deg);
 }
 
-.phase{margin:0 0 clamp(30px,6vw,48px)}
+.phase{ margin:0 0 clamp(28px,5vw,44px); }
 .phase-h{
   display:flex; align-items:baseline; gap:14px;
-  border-top:2px solid var(--ink); padding-top:9px; margin-bottom:20px;
+  background:var(--ink); color:var(--stock);
+  padding:8px 12px; margin-bottom:16px;
 }
 .phase-h h2{
-  margin:0; font:700 13px/1 var(--disp); letter-spacing:.16em;
-  text-transform:uppercase; color:var(--ink);
+  margin:0; font:800 13px/1 var(--disp); letter-spacing:.18em;
+  text-transform:uppercase;
 }
 .phase-h .when{
-  font:400 italic 15px/1 var(--body); color:var(--soft); margin-left:auto;
-  text-align:right;
+  font:700 12px/1 var(--disp); letter-spacing:.1em; text-transform:uppercase;
+  color:var(--yellow); margin-left:auto;
+}
+
+.board{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+}
+@media (min-width:820px){
+  .board{ grid-template-columns:1fr 1fr; gap:16px; }
+  .board .card.span{ grid-column:1 / -1; }
 }
 
 .card{
-  display:block; text-decoration:none; color:inherit;
-  background:var(--stock-2); border:1.5px solid var(--over);
-  padding:20px clamp(16px,3.5vw,26px) 22px; margin-bottom:14px;
-  position:relative; transition:transform .16s ease, box-shadow .16s ease;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:0 16px;
+  text-decoration:none; color:inherit;
+  background:var(--stock);
+  border:3px solid var(--ink);
+  padding:0;
+  position:relative;
   cursor:pointer;
+  overflow:hidden;
 }
+.card .idx{
+  writing-mode:vertical-rl;
+  transform:rotate(180deg);
+  font:900 18px/1 var(--disp); letter-spacing:.14em; text-transform:uppercase;
+  background:var(--blue); color:var(--yellow);
+  padding:14px 8px;
+  display:flex; align-items:center; justify-content:center;
+}
+.card.sheet .idx{ background:var(--maroon); color:var(--yellow); }
+.card.timer .idx{ background:var(--ink); color:var(--stock); }
+.card.log .idx{ background:var(--yellow); color:var(--ink); }
+.card .body{ padding:16px 16px 18px 0; min-width:0; }
 .card:hover,.card:focus-visible{
-  transform:translate(-2px,-2px);
-  box-shadow:4px 4px 0 var(--ink);
+  background:var(--yellow);
 }
-.card:focus-visible{outline:3px solid var(--red);outline-offset:3px}
-.card:active{transform:translate(0,0);box-shadow:1px 1px 0 var(--ink)}
+.card:focus-visible{ outline:3px solid var(--red); outline-offset:3px; }
 
-.chips{display:flex;gap:4px;margin-bottom:13px}
+.chips{ display:flex; gap:0; margin-bottom:10px; }
 .chips i{
-  width:20px;height:9px;display:block;border:1px solid rgba(0,8,17,.35);
-  transition:transform .16s ease;
+  width:22px; height:10px; display:block;
+  border:1.5px solid var(--ink); margin-right:-1.5px;
 }
-.card:hover .chips i:nth-child(2){transform:translateX(2px)}
-.card:hover .chips i:nth-child(3){transform:translateX(4px)}
 
 .card h3{
-  margin:0 0 3px; font:700 clamp(21px,3.4vw,25px)/1.15 var(--disp);
-  letter-spacing:-.015em; color:var(--ink);
+  margin:0 0 2px;
+  font:900 clamp(20px,3vw,26px)/1.05 var(--disp);
+  letter-spacing:-.02em; text-transform:uppercase; color:var(--blue);
 }
+.card.sheet h3{ color:var(--maroon); }
 .card .role{
-  font:600 11px/1 var(--disp); letter-spacing:.14em; text-transform:uppercase;
-  color:var(--red); margin:0 0 11px;
+  font:800 11px/1 var(--disp); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--red); margin:0 0 10px;
 }
-.card p{margin:0 0 12px;max-width:60ch;color:#22303a}
-.card ul{margin:0;padding:0;list-style:none;display:grid;gap:5px}
+.card p{ margin:0 0 10px; max-width:62ch; color:#1a242c; }
+.card ul{ margin:0; padding:0; list-style:none; display:grid; gap:4px; }
 .card li{
-  position:relative; padding-left:17px;
-  font:400 15.5px/1.45 var(--body); color:#3d4a52;
+  position:relative; padding-left:16px;
+  font:400 14.5px/1.4 var(--body); color:#2a363e;
 }
 .card li::before{
-  content:""; position:absolute; left:0; top:.6em;
-  width:8px; height:1.5px; background:var(--red);
+  content:""; position:absolute; left:0; top:.55em;
+  width:8px; height:8px; background:var(--red);
+  transform:rotate(45deg);
 }
 .go{
-  display:inline-block;margin-top:14px;
-  font:700 12px/1 var(--disp);letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink);border-bottom:2px solid var(--yellow);padding-bottom:3px;
+  display:inline-block; margin-top:12px;
+  font:800 12px/1 var(--disp); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink); background:var(--stock);
+  border:2px solid var(--ink); padding:6px 10px;
 }
-.card:hover .go{border-bottom-color:var(--red)}
+.card:hover .go{ background:var(--red); color:var(--stock); border-color:var(--ink); }
+
+.card-note{
+  margin:4px 0 0; padding:12px 14px;
+  font:400 14.5px/1.45 var(--body); color:#2a363e;
+  border:3px solid var(--ink); background:var(--stock);
+  grid-column:1 / -1;
+}
+.card-note a{
+  color:var(--blue); font-weight:700; text-decoration:underline;
+  text-decoration-color:var(--yellow); text-underline-offset:2px;
+}
+.card-note a:hover{ text-decoration-color:var(--red); }
 
 footer.colophon{
-  border-top:2px solid var(--ink); margin-top:clamp(34px,7vw,60px);
-  padding:22px 0 clamp(40px,9vw,72px);
+  border-top:8px solid var(--blue); margin-top:clamp(28px,6vw,52px);
+  padding:22px 0 clamp(36px,8vw,64px);
+  position:relative;
+}
+footer.colophon::before{
+  content:""; position:absolute; top:-8px; left:24%;
+  width:18%; height:8px; background:var(--red);
+}
+footer.colophon::after{
+  content:""; position:absolute; top:-8px; left:42%;
+  width:10%; height:8px; background:var(--yellow);
 }
 footer.colophon h2{
-  margin:0 0 14px; font:700 12px/1 var(--disp); letter-spacing:.18em;
+  margin:0 0 14px; font:800 12px/1 var(--disp); letter-spacing:.2em;
   text-transform:uppercase; color:var(--red);
 }
 .note{
-  font:400 15px/1.6 var(--body); color:#40515b; max-width:64ch; margin:0 0 13px;
+  font:400 15px/1.55 var(--body); color:#2a363e; max-width:68ch; margin:0 0 12px;
+  padding-left:12px; border-left:4px solid var(--maroon);
 }
-.note b{color:var(--ink);font-weight:700}
+.note b{ color:var(--blue); font-weight:700; }
 .sig{
-  display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:20px;
-  padding-top:14px;border-top:1px solid var(--rule);
-  font:600 12px/1.4 var(--disp);letter-spacing:.06em;
-  text-transform:uppercase;color:var(--soft);
+  display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:18px;
+  padding-top:14px; border-top:3px solid var(--ink);
+  font:800 11px/1.4 var(--disp); letter-spacing:.1em;
+  text-transform:uppercase; color:var(--maroon);
 }
-.sig .by{color:var(--ink)}
-a.lnk{color:var(--ink);text-decoration:underline;text-decoration-color:var(--yellow);text-underline-offset:2px}
-a.lnk:hover{text-decoration-color:var(--red)}
-
-.card-note{
-  margin:-4px 0 18px; padding-left:2px;
-  font:400 14.5px/1.5 var(--body); color:#4a5a63;
-}
-.card-note a{
-  color:var(--ink); font-weight:600; text-decoration:underline;
-  text-decoration-color:var(--yellow); text-underline-offset:2px;
-}
-.card-note a:hover{text-decoration-color:var(--red)}
+.sig .by{ color:var(--ink); }
+a.lnk{ color:var(--blue); text-decoration:underline; text-decoration-color:var(--yellow); text-underline-offset:2px; }
+a.lnk:hover{ text-decoration-color:var(--red); }
 
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important}
-  .card:hover,.card:focus-visible{transform:none;box-shadow:3px 3px 0 var(--ink)}
 }
 @media (max-width:720px){
   .app{flex-direction:column}
-  .appbar{order:2; border-bottom:0; border-top:2px solid var(--over);
-    padding-bottom:max(8px, env(safe-area-inset-bottom));}
+  .appbar{order:2; border-bottom:0; border-top:4px solid var(--yellow);
+    padding-bottom:max(0px, env(safe-area-inset-bottom));}
   .brand em{display:none}
   .tabs{margin-left:0; justify-content:space-between; width:100%;}
-  .tabs button{flex:1; text-align:center; padding:10px 4px; font-size:10px;}
+  .tabs button{flex:1; text-align:center; padding:0 4px; font-size:10px;}
   .pop{display:none;}
-  .phase-h{flex-wrap:wrap;gap:4px}
-  .phase-h .when{margin-left:0;width:100%;text-align:left}
+  .mast{grid-template-columns:1fr; gap:4px;}
+  .num{ line-height:.75; }
+  .phase-h{flex-wrap:wrap;gap:6px}
+  .phase-h .when{margin-left:0;width:100%;}
+  .card{grid-template-columns:auto 1fr;}
+  .planes .p-red{ left:58%; width:28px; }
 }
 </style>
 </head>
@@ -255,7 +368,7 @@ a.lnk:hover{text-decoration-color:var(--red)}
   <nav class="appbar" aria-label="Toastmasters Tools">
     <a class="brand" href="#home" data-nav="home">
       <strong>Toastmasters Tools</strong>
-      <em>Unofficial · District 80</em>
+      <em>Unofficial · D80 · V45</em>
     </a>
     <div class="tabs" role="tablist" aria-label="Tools">
       <button type="button" role="tab" data-nav="home" aria-controls="view-home">Home</button>
@@ -269,24 +382,37 @@ a.lnk:hover{text-decoration-color:var(--red)}
 
   <div class="stage">
     <div id="view-home" class="pane home is-on" role="tabpanel">
-      <div class="wrap">
+      <div class="field">
+        <div class="planes" aria-hidden="true">
+          <i class="grid"></i>
+          <i class="p-blue"></i>
+          <i class="p-red"></i>
+          <i class="p-yel"></i>
+          <i class="p-mar"></i>
+          <i class="p-bar"></i>
+        </div>
+        <div class="wrap">
 
 <header class="hero">
-  <p class="eyebrow">District 80 · Singapore <span>— unofficial</span></p>
+  <p class="kicker">District 80 · Singapore <span>unofficial</span> <span class="rule" aria-hidden="true"></span></p>
 
-  <h1 class="mast">
-    <span class="lay red" aria-hidden="true">Toastmasters<br>Tools</span>
-    <span class="lay blue">Toastmasters<br>Tools</span>
-  </h1>
+  <div class="mast">
+    <div class="num" aria-hidden="true">45</div>
+    <div class="titles">
+      <h1>Toastmasters<br><b>Tools</b></h1>
+      <p class="sub">Four instruments · one room</p>
+    </div>
+  </div>
 
   <p class="standfirst">
     One utility for running and visiting Toastmasters meetings in Singapore —
-    a club finder, a programme sheet, timing lights and an Ah-Counter's log.
-    Tools open <b>inside this app</b> and keep running when you switch, so a
-    live timer is not lost when you tap Ah-Counter. Nothing is uploaded.
+    a club finder, a programme sheet that covers <b>chapter meetings and speech
+    contests</b>, timing lights, and an Ah-Counter's log. Tools open
+    <b>inside this app</b> and keep running when you switch, so a live timer is
+    not lost when you tap Ah-Counter. Nothing is uploaded.
   </p>
 
-  <p class="flag">Work in progress — expect rough edges</p>
+  <p class="flag"><i aria-hidden="true"></i> Work in progress — expect rough edges</p>
 </header>
 
 <main>
@@ -294,10 +420,13 @@ a.lnk:hover{text-decoration-color:var(--red)}
   <section class="phase">
     <div class="phase-h">
       <h2>Before the meeting</h2>
-      <p class="when">Planning and visiting</p>
+      <p class="when">01 — 02 · Planning</p>
     </div>
 
-    <a class="card" href="#finder" data-nav="finder">
+    <div class="board">
+    <a class="card finder" href="#finder" data-nav="finder">
+      <span class="idx">01 Finder</span>
+      <div class="body">
       <div class="chips" aria-hidden="true">
         <i style="background:#004165"></i><i style="background:#CD202C"></i><i style="background:#F2DF74"></i>
       </div>
@@ -306,48 +435,56 @@ a.lnk:hover{text-decoration-color:var(--red)}
       <p>Every District 80 club — 217 of them, across 9 divisions and 45 areas — with
          when and where each one meets, turned into real dates you can actually turn up to.</p>
       <ul>
-        <li>Filter by division, language, day, time and format; <em>Today</em> and <em>This week</em> answer the usual question in one tap</li>
-        <li>A calendar that expands "2nd &amp; 4th Thursday" into dates, and marks Singapore public holidays</li>
-        <li>Star the clubs you like — the Starred tab lists their meetings for the year ahead and flags any date where two fall together</li>
-        <li>Add a single meeting to Google Calendar, export a CSV, or share your starred list as a link</li>
+        <li>Filter by division, language, day, time and format; <em>Today</em> and <em>This week</em> in one tap</li>
+        <li>A calendar that expands “2nd &amp; 4th Thursday” into dates, and marks Singapore public holidays</li>
+        <li>Star clubs — the Starred tab lists their year ahead and flags clash days</li>
+        <li>Add a meeting to Google Calendar, export a CSV, or share starred clubs as a link</li>
       </ul>
       <span class="go">Open the club finder →</span>
+      </div>
     </a>
 
-    <a class="card" href="#builder" data-nav="builder">
+    <a class="card sheet" href="#builder" data-nav="builder">
+      <span class="idx">02 Sheet</span>
+      <div class="body">
       <div class="chips" aria-hidden="true">
         <i style="background:#772432"></i><i style="background:#004165"></i><i style="background:#F2DF74"></i>
       </div>
-      <h3>Programme Sheet Builder</h3>
+      <h3>Programme Sheet</h3>
       <p class="role">For the Toastmaster of the Day</p>
-      <p>Fill in the panel on the left and the agenda redraws on the right. Built around
-         Nee Soon East's sheet, but <b>Club Setup is the first panel</b> — put your own club's
-         name, number, district line, venue and committee on it in about five minutes.</p>
+      <p>Fill the left panel; the agenda redraws on the right. Built around Nee Soon East,
+         but <b>Club Setup is the first panel</b> — five minutes to put your club on it.
+         <b>Chapter meeting or speech contest</b> — switching replaces the running order,
+         not the officers.</p>
       <ul>
-        <li>Pick Pathway → Level → Project and the detail line, duration and timing lights fill in from the official catalogue</li>
-        <li>Untick a role that isn't running today and it drops out of the roster and the agenda together</li>
-        <li>Add or remove a prepared speech and its paired evaluation moves with it</li>
-        <li>Drag segments to reorder, or apply your club's standard timings to retime the whole meeting at once</li>
-        <li>Save a meeting to a folder on your own computer and reopen it from the dropdown — handy for starting next month from last month's</li>
-        <li>Download a print-ready A4 PDF, a JPG under 500&nbsp;KB for WhatsApp, or the sheet as an editable HTML page</li>
+        <li>Pathway → Level → Project fills duration and timing lights from the official catalogue</li>
+        <li>Contest mode: contestants, contest committee, 165-minute template to 21:30</li>
+        <li>Break flexes 10–20 minutes (nominal 15) so a blank chapter sheet still totals 150</li>
+        <li>Save a meeting as JSON on your own disk; download A4 PDF, JPG under 500&nbsp;KB, or HTML</li>
       </ul>
       <span class="go">Open the builder →</span>
+      </div>
     </a>
 
     <p class="card-note">
       Running a different club?
       <a href="https://github.com/ramnaths89/toastmasters/blob/main/programme-sheet-builder/customise-for-your-club.md">Customise it for yours →</a>
-      — what to fill in, how saving works, and how to make your club the permanent default.
+      — Club Setup, contest vs chapter, saving, and how to make your club the permanent default.
+      Officer names on the public sheet are placeholders, not real people.
     </p>
+    </div>
   </section>
 
   <section class="phase">
     <div class="phase-h">
       <h2>In the room</h2>
-      <p class="when">Meeting roles, live</p>
+      <p class="when">03 — 04 · Live</p>
     </div>
 
-    <a class="card" href="#timer" data-nav="timer">
+    <div class="board">
+    <a class="card timer" href="#timer" data-nav="timer">
+      <span class="idx">03 Timer</span>
+      <div class="body">
       <div class="chips" aria-hidden="true">
         <i style="background:#00c853"></i><i style="background:#ff9100"></i><i style="background:#d50000"></i>
       </div>
@@ -358,28 +495,32 @@ a.lnk:hover{text-decoration-color:var(--red)}
          seconds after red.</p>
       <ul>
         <li>Presets for Prepared Speech, Table Topics and Evaluation, or set the three times yourself</li>
-        <li>Reset logs the speaker — name, segment and time — and clears for the next one; switch segment or adjust a time mid-speech and the lights, bell and log all follow</li>
-        <li>Copy the whole list at the end for your Timer's report — the log is also saved in this browser, so a reload no longer wipes it</li>
+        <li>Reset logs the speaker and clears for the next; switch segment mid-speech and the lights follow</li>
+        <li>Copy the list for the Timer's report — the log is saved in this browser</li>
       </ul>
       <span class="go">Open the timer →</span>
+      </div>
     </a>
 
-    <a class="card" href="#ah-counter" data-nav="ah-counter">
+    <a class="card log" href="#ah-counter" data-nav="ah-counter">
+      <span class="idx">04 Log</span>
+      <div class="body">
       <div class="chips" aria-hidden="true">
-        <i style="background:#06301B"></i><i style="background:#C6A44E"></i><i style="background:#F5F0E4"></i>
+        <i style="background:#004165"></i><i style="background:#772432"></i><i style="background:#F2DF74"></i>
       </div>
-      <h3>The Ah-Counter's Log</h3>
+      <h3>Ah-Counter's Log</h3>
       <p class="role">For the Ah-Counter</p>
       <p>Count crutch words without losing your place. One tap per crutch, one row per
          speaker, and a report at the end you can read out or hand over.</p>
       <ul>
-        <li>Add speakers as they're called; drag to reorder, and use letter keys once you're quick</li>
+        <li>Add speakers as they're called; drag to reorder; letter keys once you're quick</li>
         <li>Undo the last count with one tap — or Z — when you mis-tap</li>
-        <li>Add a remark against any line for the detail a number can't carry</li>
-        <li>Copy the report, or download it as a CSV</li>
+        <li>Remarks on any line; copy the report or download CSV</li>
       </ul>
       <span class="go">Open the log →</span>
+      </div>
     </a>
+    </div>
   </section>
 
 </main>
@@ -416,13 +557,22 @@ a.lnk:hover{text-decoration-color:var(--red)}
     is no account and no tracking. Clearing your browser data clears them too.
   </p>
 
+  <p class="note">
+    <b>On a club laptop.</b> Chrome or Edge can Install this page as a window.
+    For a double-clickable desktop wrap that does not use <code>file://</code>,
+    see <a class="lnk" href="https://github.com/ramnaths89/toastmasters/blob/main/desktop/README.md">desktop/</a>
+    — <code>python3 desktop/launch.py</code> opens an app window on a local origin.
+  </p>
+
   <p class="sig">
     <span class="by">Built by Ramanathan S</span>
     <span>Nee Soon East Toastmasters · District 80</span>
+    <span>Programme sheet V45</span>
     <span>Found a bug? Tell me — it helps.</span>
   </p>
 </footer>
 
+        </div>
       </div>
     </div>
 

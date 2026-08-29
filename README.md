@@ -1,7 +1,7 @@
 # Toastmasters Tools
 
-Small, single-page web tools for Toastmasters clubs and meetings, by Ramanathan S
-(District 80, Singapore).
+Unofficial single-page tools for Toastmasters clubs and meetings, by Ramanathan S
+(Nee Soon East, District 80, Singapore). **V45.**
 
 **Live:** https://ramnaths89.github.io/toastmasters/
 
@@ -13,28 +13,28 @@ once the page itself is on the device.
 The root page is **one app** with all four tools. Switching tabs keeps a running timer
 alive. Each tool still has its own URL for a second screen or a bookmark.
 
-A path to a double-clickable desktop app — wrap this hub, do not rewrite the tools — is in
-[desktop/](desktop/).
+A double-clickable desktop wrap — same HTML, a real `http://127.0.0.1` origin, no
+`file://` — is in [desktop/](desktop/). `python3 desktop/launch.py` opens a frameless
+Chrome/Edge window. Tauri 2 is there when you want a signed `.exe` / `.app`.
 
-Three of the four are written and edited as that single file. The programme sheet builder outgrew
-it, so it is assembled from parts in `programme-sheet-builder/src/` and ships with the test suites
-that guard it — see [Programme sheet builder: source and tests](#programme-sheet-builder-source-and-tests).
+Three of the four are written and edited as that single file. The programme sheet builder
+is assembled from numbered parts in `programme-sheet-builder/src/` — see
+[programme-sheet-builder/README.md](programme-sheet-builder/README.md).
 
 ## Tools
 
 | Tool | Path | For | Notes |
 |------|------|-----|-------|
 | D80 Club Finder | [`d80-club-finder/`](d80-club-finder/) | Anyone looking for a club to visit | All 217 District 80 clubs across 9 divisions and 45 areas, with meeting schedules expanded into real dates. Filter by division / language / day / time / format. Four tabs — Table, Calendar, Breakdown, Starred. Star clubs to get their whole year on one page with clash days flagged, and copy that list as a link. CSV, clipboard and Google Calendar export. Data compiled 29 Jul 2026 — not live. |
-| Programme Sheet Builder | [`programme-sheet-builder/`](programme-sheet-builder/) | Toastmaster of the Day | Fill the panel on the left, the agenda redraws on the right. Official Pathways catalogue built in (project details, durations, timing lights). Club Setup is the first panel, so any club can put its own details on it — see [Customise it for your club](programme-sheet-builder/customise-for-your-club.md). Save a meeting as a `.json` file and reopen it later, or export HTML, a print-ready A4 PDF, or a JPG under 500 KB for WhatsApp. Officer names ship as placeholders, not real people. |
-| TMtimer | [`timer/`](timer/) | Timer | Full-screen timing lights — white, green, amber, red, then a bell after a delay you set (30 s by default) — with presets for Prepared Speech, Table Topics and Evaluation, custom times, and a session log you can edit and copy for the Timer's report. Segments and times can be changed mid-speech and the lights follow. The log is saved in this browser (`timer.log.v1`). |
+| Programme Sheet Builder **V45** | [`programme-sheet-builder/`](programme-sheet-builder/) | Toastmaster of the Day | Fill the panel on the left, the agenda redraws on the right. **Chapter meeting or speech contest.** Official Pathways catalogue built in. Club Setup is the first panel — see [Customise it for your club](programme-sheet-builder/customise-for-your-club.md). Break flexes 10–20 min (nominal 15). Save as `.json`; export HTML, A4 PDF, or a JPG under 500 KB. Officer names ship as placeholders, not real people. |
+| TMtimer | [`timer/`](timer/) | Timer | Full-screen timing lights — white, green, amber, red, then a bell after a delay you set (30 s by default) — with presets for Prepared Speech, Table Topics and Evaluation, custom times, and a session log you can edit and copy for the Timer's report. The log is saved in this browser (`timer.log.v1`). |
 | The Ah-Counter's Log | [`ah-counter/`](ah-counter/) | Ah-Counter | One tap per crutch word, one row per speaker. Undo, remarks, keyboard shortcuts, and an end-of-meeting report you can copy or download as CSV. |
 
-The hub (`index.html`) is the mega-app: a Home screen that groups the tools by
-**before the meeting** and **in the room**, plus a tab bar that opens each tool
-inside the same page (`#finder`, `#builder`, `#timer`, `#ah-counter`). Individual
-folder URLs still work on their own — use those when the Timer needs a projector
-and the Ah-Counter needs a second laptop. Chrome / Edge can **Install** the hub
-as a standalone window (`manifest.json`).
+The hub (`index.html`) groups the tools by **before the meeting** and **in the room**,
+plus a tab bar that opens each tool inside the same page (`#finder`, `#builder`,
+`#timer`, `#ah-counter`). Individual folder URLs still work on their own — use those
+when the Timer needs a projector and the Ah-Counter needs a second laptop. Chrome / Edge
+can **Install** the hub as a standalone window (`manifest.json`).
 
 ## Using these in another club
 
@@ -48,8 +48,8 @@ or editing `defaultState()` so your club survives a Reset and can be handed on a
 
 One field in there is easy to miss and prints on the sheet: **the Slido voting link and its
 three room codes**, which ship as `NSE_1`, `NSE_2` and `NSE_3`. Leave them and your members
-vote in Nee Soon East's polls. The guide's checklist covers them; searching the file for
-"Nee Soon" does not.
+vote in Nee Soon East's polls. Clear the link and all three codes and the voting lines stop
+printing. The guide's checklist covers them; searching the file for "Nee Soon" does not.
 
 ## Adding a tool
 
@@ -60,7 +60,7 @@ vote in Nee Soon East's polls. The guide's checklist covers them; searching the 
 4. Register it in the hub script: a `TOOLS` entry, a tab `<button data-nav="…">`,
    and an `<iframe class="pane" id="frame-…">`.
 5. Add a row to the table above.
-6. Commit (or upload via the GitHub web UI) — GitHub Pages redeploys in about a minute.
+6. Commit — GitHub Pages redeploys in about a minute.
 
 ## Updating a tool
 
@@ -80,101 +80,53 @@ TMtimer does not persist a running clock — reload resets the seconds, not the 
 
 ## Programme sheet builder: source and tests
 
-`programme-sheet-builder/index.html` is a build artifact — do not hand-edit it. It is assembled by
-`src/build_generator.py`, which substitutes the parts into `skeleton.html`:
+`programme-sheet-builder/index.html` is a build artifact — do not hand-edit it. V45 uses the
+numbered-part pipeline from V44:
 
 ```
-skeleton.html + builder.css + sheet.css + app.js + app2.js + pathways_data.json
-              + ti-logo.b64 + h2c.js (html2canvas 1.4.1, MIT)
+00_head_open.html + 01_builder.css + 02_body.html + 03_sheetcss.js
+                  + 04_h2c.js + 05_app.js + 06_app2.js + 07_tail.html
 ```
 
-To change the tool: edit the relevant file in `src/`, run `python3 src/build_generator.py`, then
-run the suites in `tests/` before committing. The script writes the gitignored
-`src/NSE_Programme_Generator.html` and copies it over `index.html` in the same step — that used
-to be manual, and forgetting it was the easiest way to test the old build and believe the new
-one passed. `cmp src/NSE_Programme_Generator.html index.html` should now be a no-op after a
-successful build.
+```
+cd programme-sheet-builder
+python3 build.py ProgSheetGenV45.html
+python3 publish.py index.html
+```
 
-The build script only ever substitutes — it must never write a part back. An earlier version
-carried `builder.css` as an inline string and silently reverted weeks of edits. It also refuses to
-build if `sheet.css` contains a backtick or `${`, because that CSS is injected into a JavaScript
-template literal and either character would break the whole app at parse time.
+`publish.py` strips officer names to `<President Name>`-style placeholders (already the
+state of git `src/`) and **refuses** to write a file that still contains one. Club identity
+stays. `build.py` refuses a backtick or `${` in the sheet CSS, a literal `</script>` in a
+script part, and raw control characters.
 
-The suites need Python Playwright and Chromium, plus `pdfinfo` (poppler-utils), and run against
-the built `index.html`. **Run `pgprobe.py` first — it is the quickest and catches the worst
-failure.** Status re-measured against the current build on 11 Aug 2026:
+The suites in `tests/` need Python Playwright, Chromium, and `pdfinfo` (poppler). They default
+to this folder's `index.html`. **Run a page-count probe before shipping any change that
+touches a row or a line** — `tests/pgprobe.py` or `tests/pane/pgprobe5.py`. The sheet sits
+about 4 mm from the two-page boundary.
 
-| Suite | Checks | Against this build |
-|---|---|---|
-| `pgprobe.py` | Page count per theme | passes — `ALL 2 PAGES` |
-| `checkall.py` | Print geometry and a real PDF per theme, blank and filled | 10/10, about 72 s |
-| `uicheck.py` | Toolbar, export sizes, PDF path | 19/22 — see below |
-| `t13.py` | Functional behaviour end to end | **does not run** — raises a Playwright timeout on `.speech-card input` |
-| `fscheck.py` | Saving and reopening meetings, incl. revoked folder permission | **does not run** — hangs past two minutes with no output |
+`test_11_v34_markdown` is deliberately not in `run_all`: Markdown save was removed in V35.
 
-Read that last pair literally. `t13.py` and `fscheck.py` do not report failures, they abort:
-`t13.py` ends in a traceback and `fscheck.py` looks like a frozen machine. Both were written
-before the interface gained the save dialog, custom roles and the speech-count spinner. Until
-they are rewritten they are not a safety net, and running them will waste your time before it
-tells you anything.
-
-`uicheck.py`'s three remaining failures:
-
-- **`renders at high res before downscaling`** measures 2154 px against an expectation set
-  before the export was rewritten to render the print layout in V32. Nobody has looked at it
-  since.
-- **two toolbar failures**, both the same thing: *Balance Segments* is a text label where every
-  other toolbar control is an icon with a tooltip, so the hover-tooltip check fails with it.
-
-The fourth failure is gone: the JPG export measures 498 KB at 1500 px / q0.8, which is inside
-the "under 500 KB" the Download menu promises. The assertion had been left behind at an older
-450 KB and has been moved to 500 to match. **If you change the export width or quality, change
-the menu text and the customise guide in the same commit** — those numbers drifted apart once
-already, and the docs lost.
-
-### The suites this build was actually verified with are not in this repo
-
-V36 was built and checked against three suite trees that live only in
-`progsheetV36-src-and-tests.zip` beside the working copy: `tests/features/` (12 files, 748
-feature checks), `tests/json/` (17 save-and-recovery attack suites) and `tests/pane/` (the
-print-pane fit measurements). The five suites published here are the V29-era set and cover a
-fraction of what the tool now does — nothing here exercises saving, recovery, custom roles, the
-Education Series or the two-tab lock. Treat a clean run of the published five as a smoke test,
-not as clearance to ship.
-
-`checkall.py` is the check that matters most: it measures the printed layout at **both** 794px and
-718px, because A4's content width is 190mm ≈ 718px at 96dpi, which is under the 720px mobile
-breakpoint. A width media query written without `screen and` therefore fires on paper but not in a
-headless test. Any new width query in `sheet.css` must be scoped `@media screen and (max-width: …)`.
-
-**The sheet sits about 4 mm from the two-page boundary.** Adding a single line to any row has tipped
-themes onto a third page before now. Never ship a row or line change without running `pgprobe.py`.
+Do not re-add `column-count` on the reference pane. Do not change print CSS without a
+page-count probe. Full working notes: [programme-sheet-builder/HANDOVER.md](programme-sheet-builder/HANDOVER.md).
 
 ## A standalone desktop app
 
-These tools are already the app. A desktop build should wrap the existing HTML, not start
-again in Swift, C# or Electron-from-scratch. The options, trade-offs and a local preview
-server live in [desktop/](desktop/). Short version:
+These tools are already the app. A desktop build wraps the existing HTML. Short version:
 
-1. **Install from Chrome / Edge** — the timer and Ah-Counter already ship a web app manifest
-   (`display: standalone`). On a club laptop that is often enough: menu → *Install…* and the
-   browser chrome goes away.
-2. **Tauri 2** — the real double-clickable `.exe` / `.app` / `.deb`. A ~10 MB window that
-   loads these files from disk. Native file dialogs can later replace the builder's
-   Chrome-only File System Access API.
-3. **Electron** — same wrap, much larger binaries. Only if Tauri is a poor fit.
+1. **Install from Chrome / Edge** — hub `manifest.json`, `display: standalone`.
+2. **`python3 desktop/launch.py`** — starts a local origin and opens a frameless
+   `--app` window. This is the working desktop app on a club laptop with Python and Chrome.
+3. **Tauri 2** — real `.exe` / `.app` / `.deb`. Starter in `desktop/tauri/`. Needs icons
+   (`npx tauri icon icon.svg`) before a signed bundle. Empty of secrets; not a store build.
 
-Do not load the pages as `file://`. Several APIs (clipboard, storage origin, File System
-Access) need a real origin. `python3 desktop/serve.py` gives you `http://127.0.0.1:8765`
-for local testing, which is also how a Tauri window should load them.
+Do not load the pages as `file://`. Details: [desktop/](desktop/).
 
 ## Housekeeping
 
-- `.nojekyll` stops GitHub Pages from running Jekyll over the files, which would otherwise
-  ignore any folder beginning with an underscore.
-- `.gitignore` covers the HTML and PDF artifacts the test suites drop into `tests/`, the
-  builder's own output in `src/`, and desktop build folders.
-- Numbered working copies (`V27`, `V28`, `V29` …) stay in OneDrive; git carries the history here.
+- `.nojekyll` stops GitHub Pages from running Jekyll over the files.
+- `.gitignore` covers generated monoliths, test artifacts, and desktop build folders.
+- Numbered working copies (`V44`, `V45`, …) stay in OneDrive; git carries the published history here.
+- Never overwrite an existing V-file — always increment.
 
 ## Disclaimer
 

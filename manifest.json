@@ -1,11 +1,15 @@
 {
   "name": "Toastmasters Tools",
   "short_name": "TM Tools",
-  "description": "Club finder, programme sheet, timer and Ah-Counter — one unofficial Toastmasters utility.",
+  "description": "Unofficial District 80 Toastmasters utility — club finder, programme sheet (chapter or contest), timer and Ah-Counter. V45.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#F4F1E8",
   "theme_color": "#004165",
   "lang": "en",
-  "scope": "./"
+  "scope": "./",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
 }

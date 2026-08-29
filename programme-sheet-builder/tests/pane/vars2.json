@@ -1,0 +1,7 @@
+{
+ "A as built (new inset + new leading)": "",
+ "B new leading, OLD padding 3.5/4/0/0": ".pane-body{padding:3.5mm 4mm 0 0}",
+ "C OLD leading, new inset": "aside h3{line-height:1.2;margin-bottom:4px;padding-bottom:2px}.exco-block{margin-bottom:7px}.exco-item{margin-bottom:2.5px}.exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}.path-legend div{line-height:1.2;margin-bottom:1px}.announcements .announce-line{line-height:1.26;margin-bottom:2px}.announcements .announce-gap{height:2px}",
+ "D OLD leading + OLD padding (=V31)": "aside h3{line-height:1.2;margin-bottom:4px;padding-bottom:2px}.exco-block{margin-bottom:7px}.exco-item{margin-bottom:2.5px}.exco-role{line-height:1.12}.exco-name{line-height:1.16}.exco-sub{line-height:1.12}.links a{line-height:1.16}.path-legend div{line-height:1.2;margin-bottom:1px}.announcements .announce-line{line-height:1.26;margin-bottom:2px}.announcements .announce-gap{height:2px}.pane-body{padding:3.5mm 4mm 0 0}",
+ "E new leading, inset but 0 right pad": ".pane-body{padding:4mm 0 0 3.5mm}"
+}

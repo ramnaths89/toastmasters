@@ -498,6 +498,27 @@
       * { transition: none !important; }
     }
 
+    .tm-mark {
+      position: fixed; top: 10px; left: 10px; z-index: 8;
+      display: flex; align-items: center; gap: 8px;
+      pointer-events: none;
+      font-family: 'Arial Narrow', Arial, system-ui, sans-serif;
+      font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+      font-size: 11px; color: #F4F1E8;
+    }
+    .tm-mark b {
+      background: #004165; color: #F2DF74;
+      padding: 6px 8px; border: 2px solid #F4F1E8;
+    }
+    .tm-mark i {
+      width: 10px; height: 28px; background: #CD202C;
+      transform: skewX(-18deg); display: block;
+    }
+    body.phase-green .tm-mark,
+    body.phase-amber .tm-mark,
+    body.phase-red .tm-mark,
+    body.phase-white .tm-mark { opacity: 0; }
+
     /* ══ Big centred phase word (accessibility) ══ */
     .phase-word {
       position: fixed;
@@ -624,6 +645,8 @@
   </style>
 </head>
 <body>
+
+  <div class="tm-mark" aria-hidden="true"><i></i><b>TMtimer</b></div>
 
   <!-- Big centred phase word for accessibility -->
   <div class="phase-word" id="phaseWord" role="status" aria-live="polite" aria-label="Current light">
