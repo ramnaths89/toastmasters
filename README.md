@@ -30,7 +30,9 @@ is assembled from numbered parts in `programme-sheet-builder/src/` — see
 | TMtimer | [`timer/`](timer/) | Timer | Full-screen timing lights — white, green, amber, red, then a bell after a delay you set (30 s by default) — with presets for Prepared Speech, Table Topics and Evaluation, custom times, and a session log you can edit and copy for the Timer's report. The log is saved in this browser (`timer.log.v1`). |
 | The Ah-Counter's Log | [`ah-counter/`](ah-counter/) | Ah-Counter | One tap per crutch word, one row per speaker. Undo, remarks, keyboard shortcuts, and an end-of-meeting report you can copy or download as CSV. |
 
-The hub (`index.html`) groups the tools by **before the meeting** and **in the room**,
+The hub (`index.html`) is a Loyal Blue home in official Toastmasters colours
+(Loyal Blue, Fair Red, Happy Yellow, True Maroon, Cool Gray). It groups the tools
+by **before the meeting** and **in the room**,
 plus a tab bar that opens each tool inside the same page (`#finder`, `#builder`,
 `#timer`, `#ah-counter`). Individual folder URLs still work on their own — use those
 when the Timer needs a projector and the Ah-Counter needs a second laptop. Chrome / Edge

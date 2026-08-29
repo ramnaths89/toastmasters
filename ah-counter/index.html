@@ -46,16 +46,12 @@ body{
 header{
   flex:0 0 auto;display:flex;align-items:center;gap:14px;
   padding:10px 16px;background:var(--blue);
-  border-bottom:var(--bd) solid var(--ink);
+  border-bottom:1px solid rgba(242,223,116,.35);
   position:relative; overflow:hidden;
 }
-header::after{
-  content:""; position:absolute; top:-12px; right:18%;
-  width:36px; height:80px; background:var(--yellow);
-  transform:skewX(-18deg); pointer-events:none;
-}
+header::after{ display:none; }
 .crest{
-  flex:0 0 auto;width:38px;height:38px;border:var(--bd) solid var(--ink);
+  flex:0 0 auto;width:38px;height:38px;border:0;border-radius:999px;
   display:grid;place-items:center;background:var(--yellow);
 }
 .crest span{font-family:'Archivo',sans-serif;font-weight:900;font-size:22px;color:var(--ink);line-height:1}
@@ -65,8 +61,8 @@ header::after{
   letter-spacing:-.01em;text-transform:uppercase;color:var(--white);white-space:nowrap;
 }
 .titles h1 em{
-  font-style:normal;background:var(--yellow);color:var(--ink);
-  padding:2px 6px 3px;margin-left:3px;border:2px solid var(--ink);
+  font-style:italic;background:transparent;color:var(--yellow);
+  padding:0;margin-left:4px;border:0;
 }
 .titles .kicker{
   font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
@@ -86,7 +82,7 @@ header::after{
 .grow{flex:1}
 .tally{
   display:flex;align-items:center;gap:10px;padding:5px 13px;
-  border:var(--bd) solid var(--ink);background:var(--yellow);
+  border:0;border-radius:999px;background:var(--yellow);
 }
 .tally b{font-family:'Space Mono',monospace;font-weight:700;font-size:26px;color:var(--ink);line-height:1}
 .tally i{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);line-height:1.25;display:block}

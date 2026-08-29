@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0a0a">
+  <meta name="theme-color" content="#004165">
   <title>TMtimer</title>
   <link rel="manifest" href="manifest.json">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --bg: #0a0a0a;
+      --bg: #004165;
       --fg: #ffffff;
       --btn-bg: rgba(255,255,255,0.08);
       --btn-fg: #ffffff;
@@ -508,11 +508,12 @@
     }
     .tm-mark b {
       background: #004165; color: #F2DF74;
-      padding: 6px 8px; border: 2px solid #F4F1E8;
+      padding: 6px 10px; border: 1px solid #F2DF74;
+      border-radius: 999px;
     }
     .tm-mark i {
-      width: 10px; height: 28px; background: #CD202C;
-      transform: skewX(-18deg); display: block;
+      width: 6px; height: 28px; background: #CD202C;
+      border-radius: 99px; display: block;
     }
     body.phase-green .tm-mark,
     body.phase-amber .tm-mark,

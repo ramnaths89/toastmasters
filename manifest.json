@@ -4,7 +4,7 @@
   "description": "Unofficial District 80 Toastmasters utility — club finder, programme sheet (chapter or contest), timer and Ah-Counter. V45.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#F4F1E8",
+  "background_color": "#004165",
   "theme_color": "#004165",
   "lang": "en",
   "scope": "./",

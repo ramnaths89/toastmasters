@@ -4,7 +4,7 @@
   "description": "Timing lights and a session log for the Toastmasters Timer.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#004165",
+  "theme_color": "#004165",
   "lang": "en"
 }
