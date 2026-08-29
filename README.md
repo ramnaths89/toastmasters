@@ -116,7 +116,8 @@ page-count probe. Full working notes: [programme-sheet-builder/HANDOVER.md](prog
 These tools are already the app. A desktop build wraps the existing HTML. Short version:
 
 1. **`desktop/dist/ToastmastersTools.exe`** — Windows 64-bit, all four tools embedded.
-   Double-click. SmartScreen will warn (unsigned). Rebuild: `python3 desktop/app/build.py`.
+   Double-click. Unsigned: SmartScreen can *Run anyway*; Smart App Control (pink **Okay**)
+   cannot — install the site as an app from Edge instead. Rebuild: `python3 desktop/app/build.py`.
 2. **Install from Chrome / Edge** — hub `manifest.json`, `display: standalone`.
 3. **`python3 desktop/launch.py`** — local origin + frameless Chrome/Edge `--app`.
 4. **Tauri 2** — starter in `desktop/tauri/` for a later signed bundle.

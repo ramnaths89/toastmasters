@@ -29,7 +29,7 @@ sits about 4 mm from a third A4 page and is guarded by `pgprobe.py`. Do not do t
 
 | Path | What you get | Size | Fit |
 |------|----------------|------|-----|
-| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~10 MB | **This is the .exe.** `desktop/dist/ToastmastersTools.exe`. Unsigned — SmartScreen will warn. |
+| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~10 MB | **This is the .exe.** `desktop/dist/ToastmastersTools.exe`. Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
 | **PWA (Install app)** | Chrome / Edge / Android “Add to…”, no browser chrome | 0 extra | Hub `manifest.json`. Fastest try in a browser. |
 | **`launch.py` (this folder)** | Frameless Chrome `--app` window on `http://127.0.0.1:8765` | 0 extra | Needs Python 3 and Chrome/Edge. |
 | **Tauri 2** | Signed `.exe` / `.dmg` / `.deb` when you have certs | ~8–15 MB | Starter in `desktop/tauri/`. Not required for the Go wrap. |
@@ -55,7 +55,9 @@ All four tools are inside that file (~8 MB, unsigned). Rebuild with:
 
       python3 desktop/app/build.py
 
-Unsigned: SmartScreen will ask you to run anyway. Details: [app/README.md](app/README.md).
+Unsigned. SmartScreen: *More info* → *Run anyway*. Smart App Control (pink **Okay**
+only) will not run it — use Edge *Install this site as an app*, or see
+[app/README.md](app/README.md).
 
 ### 3. Frameless browser window (Python)
 

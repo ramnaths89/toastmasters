@@ -13,8 +13,18 @@ On a club laptop:
 
 1. Copy the `.exe` onto the machine (USB or email).
 2. Double-click it.
-3. Windows SmartScreen will warn because the file is **not code-signed**.
-   *More info* → *Run anyway*.
+3. Windows will warn because the file is **not code-signed**. What you see depends
+   on the machine:
+   - **SmartScreen** (blue/yellow “Windows protected your PC”): *More info* → *Run anyway*.
+   - **Smart App Control** (pink **Okay** / **Get apps from the Store**, no Run anyway):
+     that dialog cannot launch the file. Click Okay. Either install the site as an
+     app from Edge (https://ramnaths89.github.io/toastmasters/ → ⋮ → Apps →
+     *Install this site as an app*), or turn Smart App Control off under
+     Settings → Privacy & security → Windows Security → App & browser control.
+     Microsoft treats turning it off as one-way on that PC.
+   - Right-click the `.exe` → Properties → tick **Unblock** if it is there, then try
+     again. That only clears “downloaded from the internet”; it does not replace a
+     signature.
 4. The window uses **Microsoft Edge WebView2** (already on current Windows 10/11).
    If that runtime is missing, it falls back to Edge or Chrome `--app`.
 5. Close the window to quit.
