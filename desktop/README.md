@@ -53,8 +53,9 @@ and CSS on purpose.
 
 Download [`desktop/dist/ToastmastersTools-portable.zip`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ToastmastersTools-portable.zip).
 Right-click the zip → Properties → **Unblock** → extract. Double-click
-`ToastmastersTools.cmd`. That is a script plus Edge, not an unsigned app, so
-Smart App Control does not show the pink Okay dialog. Close the window to quit.
+`Install.cmd` to put a **Toastmasters Tools** shortcut on the Desktop and in
+the Start menu. After that, share the zip (or the extracted folder on a USB
+stick) — not the `.exe`. `START.cmd` runs once without installing.
 
 The unsigned `.exe` remains for PCs that only show SmartScreen (*More info* →
 *Run anyway*):

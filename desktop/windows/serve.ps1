@@ -5,6 +5,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 
 $Root = $PSScriptRoot
+Get-ChildItem -LiteralPath $Root -Recurse -ErrorAction SilentlyContinue | Unblock-File -ErrorAction SilentlyContinue
 $Port = 8765
 $ProfileDir = Join-Path $env:LOCALAPPDATA 'ToastmastersTools\edge-profile'
 

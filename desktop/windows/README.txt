@@ -1,23 +1,27 @@
-Toastmasters Tools — Windows (Smart App Control)
+Toastmasters Tools — standalone on Windows
 
-The .exe is unsigned. Windows 11 Smart App Control blocks it with a pink
-Okay button and no Run anyway. This folder is the workaround: it is not an
-app binary. It is a script that opens Edge around the same HTML.
+This folder IS the app. There is no installer .exe (Smart App Control blocks
+those when they are unsigned).
 
-Do this:
+On your PC
+----------
+1. If this came as a zip from the internet: right-click the zip → Properties
+   → tick Unblock → Apply → extract.
+2. Open the ToastmastersTools folder.
+3. Double-click Install.cmd
+4. Use the Desktop shortcut "Toastmasters Tools" after that.
 
-1. If you downloaded a zip from the internet, right-click the zip → Properties
-   → tick Unblock → Apply. Then extract.
-2. Double-click ToastmastersTools.cmd
-3. Close the Edge window to quit
+To share
+--------
+Send ToastmastersTools-portable.zip, or copy the whole extracted folder onto
+a USB stick. On the other PC, Unblock the zip if it was downloaded, then
+Install.cmd (or START.cmd once).
 
-Needs Microsoft Edge (or Chrome). Does not need Python. Works offline.
+A USB copy of the folder (not via Downloads) usually has no "downloaded from
+the internet" flag.
 
-Club Setup, starred clubs, the timer log and the Ah-Counter log save in this
-Windows user account (Edge profile under AppData). They stay after you quit.
+START.cmd opens the tools without installing. Close the window to quit.
+Needs Microsoft Edge or Chrome. Works offline. Club Setup and logs stay on
+that Windows user account.
 
-Open-online.cmd is a one-line fallback: it opens the live website in Edge.
-That needs internet.
-
-The unsigned ToastmastersTools.exe is still in desktop/dist for PCs that only
-show SmartScreen (More info → Run anyway).
+Open-online.cmd opens the live website and needs internet.

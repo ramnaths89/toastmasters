@@ -10,9 +10,9 @@ and the builder's folder picker have a real origin.
 `desktop/dist/ToastmastersTools.exe` — Windows 64-bit, unsigned.
 
 When Smart App Control blocks that file, use
-`desktop/dist/ToastmastersTools-portable.zip` instead: Unblock the zip, extract,
-double-click `ToastmastersTools.cmd`. That is a script that opens Edge, not an
-unsigned `.exe`.
+`desktop/dist/ToastmastersTools-portable.zip`: Unblock, extract, double-click
+`Install.cmd`. That installs a Desktop shortcut for this Windows user. Share
+the zip or the folder; do not share the `.exe` to a PC that uses Smart App Control.
 
 On a club laptop with the `.exe`:
 

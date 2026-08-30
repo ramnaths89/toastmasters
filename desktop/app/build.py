@@ -67,7 +67,15 @@ def pack_portable() -> None:
         out = dest_root / rel
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, out)
-    for name in ("ToastmastersTools.cmd", "serve.ps1", "Open-online.cmd", "README.txt"):
+    for name in (
+        "START.cmd",
+        "Install.cmd",
+        "Install.ps1",
+        "ToastmastersTools.cmd",
+        "serve.ps1",
+        "Open-online.cmd",
+        "README.txt",
+    ):
         shutil.copy2(win / name, dest_root / name)
     DIST.mkdir(parents=True, exist_ok=True)
     zpath = DIST / "ToastmastersTools-portable.zip"

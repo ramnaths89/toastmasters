@@ -116,8 +116,9 @@ page-count probe. Full working notes: [programme-sheet-builder/HANDOVER.md](prog
 
 These tools are already the app. A desktop build wraps the existing HTML. Short version:
 
-1. **`desktop/dist/ToastmastersTools-portable.zip`** — Windows, Smart App Control
-   safe. Unblock the zip, extract, double-click `ToastmastersTools.cmd`.
+1. **`desktop/dist/ToastmastersTools-portable.zip`** — Windows standalone.
+   Unblock the zip, extract, double-click `Install.cmd` for a Desktop shortcut.
+   Share that zip (or the folder on a USB). Smart App Control does not block it.
 2. **`desktop/dist/ToastmastersTools.exe`** — Windows 64-bit, all four tools embedded.
    Double-click. Unsigned: SmartScreen can *Run anyway*; Smart App Control (pink **Okay**)
    cannot. Rebuild both: `python3 desktop/app/build.py`.
