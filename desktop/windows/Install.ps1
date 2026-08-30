@@ -26,13 +26,13 @@ if (-not (Test-Path -LiteralPath $serve)) {
 }
 
 $ps = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
-$args = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$serve`""
+$shortcutArgs = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$serve`""
 
 function New-Shortcut($path) {
   $w = New-Object -ComObject WScript.Shell
   $lnk = $w.CreateShortcut($path)
   $lnk.TargetPath = $ps
-  $lnk.Arguments = $args
+  $lnk.Arguments = $shortcutArgs
   $lnk.WorkingDirectory = $dst
   $lnk.WindowStyle = 7
   $edge = Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'
