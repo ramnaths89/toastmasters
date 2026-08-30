@@ -31,7 +31,8 @@ is assembled from numbered parts in `programme-sheet-builder/src/` — see
 | The Ah-Counter's Log | [`ah-counter/`](ah-counter/) | Ah-Counter | One tap per crutch word, one row per speaker. Undo, remarks, keyboard shortcuts, and an end-of-meeting report you can copy or download as CSV. |
 
 The hub (`index.html`) is a Loyal Blue home in official Toastmasters colours
-(Loyal Blue, Fair Red, Happy Yellow, True Maroon, Cool Gray). It groups the tools
+(Loyal Blue, Fair Red, Happy Yellow, True Maroon, Cool Gray), with marquees,
+count-up stats and hover motion. It groups the tools
 by **before the meeting** and **in the room**,
 plus a tab bar that opens each tool inside the same page (`#finder`, `#builder`,
 `#timer`, `#ah-counter`). Individual folder URLs still work on their own — use those
