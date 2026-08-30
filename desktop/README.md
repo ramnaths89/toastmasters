@@ -124,7 +124,8 @@ Storage keys a desktop shell should treat as user data:
 - `programme-sheet-builder/src/03_sheetcss.js` print rules and default segment durations
 - Inlining the club-finder data into a different format unless you also keep a one-file
   GitHub Pages build
-- Loading Google Fonts at runtime in the hub, Timer, or Ah-Counter (already off)
+- Loading Google Fonts at runtime in the hub or Timer (already off). Ah-Counter V7
+  loads Archivo when the network is there and falls back to the system stack offline.
 
 ## Local server
 

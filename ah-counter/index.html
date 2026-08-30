@@ -6,6 +6,9 @@
 <title>The Ah&#8209;Counter&rsquo;s Log</title>
 <meta name="theme-color" content="#004165">
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* ================================================================
    THE AH-COUNTER'S LOG — V7
@@ -46,12 +49,10 @@ body{
 header{
   flex:0 0 auto;display:flex;align-items:center;gap:14px;
   padding:10px 16px;background:var(--blue);
-  border-bottom:1px solid rgba(242,223,116,.35);
-  position:relative; overflow:hidden;
+  border-bottom:var(--bd) solid var(--ink);
 }
-header::after{ display:none; }
 .crest{
-  flex:0 0 auto;width:38px;height:38px;border:0;border-radius:999px;
+  flex:0 0 auto;width:38px;height:38px;border:var(--bd) solid var(--ink);
   display:grid;place-items:center;background:var(--yellow);
 }
 .crest span{font-family:'Archivo',sans-serif;font-weight:900;font-size:22px;color:var(--ink);line-height:1}
@@ -61,8 +62,8 @@ header::after{ display:none; }
   letter-spacing:-.01em;text-transform:uppercase;color:var(--white);white-space:nowrap;
 }
 .titles h1 em{
-  font-style:italic;background:transparent;color:var(--yellow);
-  padding:0;margin-left:4px;border:0;
+  font-style:normal;background:var(--yellow);color:var(--ink);
+  padding:2px 6px 3px;margin-left:3px;border:2px solid var(--ink);
 }
 .titles .kicker{
   font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
@@ -82,7 +83,7 @@ header::after{ display:none; }
 .grow{flex:1}
 .tally{
   display:flex;align-items:center;gap:10px;padding:5px 13px;
-  border:0;border-radius:999px;background:var(--yellow);
+  border:var(--bd) solid var(--ink);background:var(--yellow);
 }
 .tally b{font-family:'Space Mono',monospace;font-weight:700;font-size:26px;color:var(--ink);line-height:1}
 .tally i{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);line-height:1.25;display:block}
@@ -234,14 +235,19 @@ header::after{ display:none; }
 .ledger::-webkit-scrollbar{width:10px}
 .ledger::-webkit-scrollbar-track{background:var(--gray-lt)}
 .ledger::-webkit-scrollbar-thumb{background:var(--blue);border:2px solid var(--white)}
-.inner{max-width:620px}
+/* Two-column word list: a CSS multi-column flow reading top-to-bottom then
+   left-to-right, like a printed checklist. Each category is one break-avoid
+   block (.grp) so a column break never falls between a label and its rows,
+   or through the middle of a row. */
+.inner{max-width:900px;column-count:2;column-gap:28px}
+.grp{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:2px}
 
 .glabel{
   display:block;margin:18px 0 0;padding:5px 9px;
   font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
   color:var(--white);background:var(--ink);
 }
-.glabel:first-child{margin-top:0}
+.grp:first-child .glabel{margin-top:0}
 
 .row{
   display:flex;align-items:center;gap:10px;min-height:var(--r-h);
@@ -306,6 +312,7 @@ body.keys .rkey{display:inline-block}
 .addword{
   display:flex;align-items:center;gap:10px;min-height:calc(var(--r-h) + 8px);margin-top:16px;
   padding:0 5px 0 10px;border:var(--bd) dashed var(--ink);cursor:text;background:var(--paper);
+  break-inside:avoid;column-span:all;
 }
 .addword:hover{border-style:solid}
 .addword .p{color:var(--ink);font-family:'Space Mono',monospace;font-weight:700;font-size:18px;flex:0 0 auto}
@@ -431,6 +438,10 @@ tr.zero td.tt{background:var(--gray-lt)}
 
 /* ---------------- tablet ---------------- */
 @media (max-width:1000px){ .roster{flex:0 0 224px} }
+/* Two columns need real width — the longest row ("repeated (word/phrase)" plus its
+   stepper) doesn't fit two-up once the desk drops much under ~1000px net of the
+   roster. Fall back to one column rather than let a row clip off-screen. */
+@media (max-width:1100px){ .inner{column-count:1} }
 
 /* ---------------- mobile ---------------- */
 @media (max-width:760px){
@@ -462,7 +473,7 @@ tr.zero td.tt{background:var(--gray-lt)}
   .deskhead{padding:10px var(--pad)}
   .nameField{font-size:26px;flex:1 1 100%}
   .dtot b{font-size:26px}
-  .inner{max-width:none}
+  .inner{max-width:none;column-count:1}
   .rlbl{font-size:17px}
   .rnum{font-size:20px;width:42px}
   .sbtn{width:40px;height:40px;font-size:19px}
@@ -909,10 +920,16 @@ tr.zero td.tt{background:var(--gray-lt)}
     var inner = $('inner');
     inner.innerHTML = '';
     groups().forEach(function(g){
+      /* Each group is wrapped in its own block so the two-column layout (a CSS
+         multi-column flow on #inner) never splits a category's label away from
+         its rows, or one row's stepper away from its label. */
+      var grp = document.createElement('div');
+      grp.className = 'grp';
+
       var lab = document.createElement('div');
       lab.className = 'glabel';
       lab.appendChild(document.createTextNode(g.name));
-      inner.appendChild(lab);
+      grp.appendChild(lab);
 
       g.items.forEach(function(f){
         var row = document.createElement('div');
@@ -933,7 +950,7 @@ tr.zero td.tt{background:var(--gray-lt)}
           if (ev.target.classList.contains('minus')){ bump(state.active, f.id, -1); return; }
           bump(state.active, f.id, +1);
         });
-        inner.appendChild(row);
+        grp.appendChild(row);
       });
 
       if (g.name === 'patterns' && !g.own){
@@ -945,8 +962,10 @@ tr.zero td.tt{background:var(--gray-lt)}
         orow.addEventListener('click', function(ev){
           if (ev.target.id !== 'otherIn') $('otherIn').focus();
         });
-        inner.appendChild(orow);
+        grp.appendChild(orow);
       }
+
+      inner.appendChild(grp);
     });
 
     var add = document.createElement('div');
