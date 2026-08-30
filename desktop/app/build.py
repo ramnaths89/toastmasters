@@ -5,6 +5,7 @@
 
 Writes:
     desktop/dist/ToastmastersTools.exe
+    desktop/dist/ToastmastersTools-portable.zip
     desktop/dist/toastmasters-tools-linux-amd64
 """
 from __future__ import annotations
@@ -14,6 +15,8 @@ import shutil
 import struct
 import subprocess
 import sys
+import time
+import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -49,6 +52,39 @@ def stage_web() -> None:
     print("staged", len(COPIES), "files into", WEB)
 
 
+def pack_portable() -> None:
+    """Zip the HTML plus a .cmd launcher. Smart App Control blocks the unsigned
+    .exe; it does not treat this folder as an app binary."""
+    win = ROOT / "desktop" / "windows"
+    staging = HERE / "portable-stage"
+    if staging.exists():
+        shutil.rmtree(staging)
+    dest_root = staging / "ToastmastersTools"
+    for rel in COPIES:
+        src = ROOT / rel
+        if not src.is_file():
+            sys.exit("missing %s" % src)
+        out = dest_root / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, out)
+    for name in ("ToastmastersTools.cmd", "serve.ps1", "Open-online.cmd", "README.txt"):
+        shutil.copy2(win / name, dest_root / name)
+    DIST.mkdir(parents=True, exist_ok=True)
+    zpath = DIST / "ToastmastersTools-portable.zip"
+    if zpath.exists():
+        zpath.unlink()
+    now = time.localtime()[:6]
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as zf:
+        for path in dest_root.rglob("*"):
+            if path.is_file():
+                info = zipfile.ZipInfo(path.relative_to(staging).as_posix())
+                info.date_time = now
+                info.compress_type = zipfile.ZIP_DEFLATED
+                zf.writestr(info, path.read_bytes())
+    shutil.rmtree(staging)
+    print("portable zip", zpath, zpath.stat().st_size, "bytes")
+
+
 def png_to_ico(png_path: Path, ico_path: Path) -> None:
     """Wrap a PNG as a Vista-style ICO (Windows accepts PNG images inside ICO)."""
     png = png_path.read_bytes()
@@ -70,6 +106,7 @@ def run(env, *args, cwd=None) -> None:
 
 def main() -> None:
     stage_web()
+    pack_portable()
     DIST.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     env["CGO_ENABLED"] = "0"

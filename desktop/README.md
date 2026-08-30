@@ -29,7 +29,8 @@ sits about 4 mm from a third A4 page and is guarded by `pgprobe.py`. Do not do t
 
 | Path | What you get | Size | Fit |
 |------|----------------|------|-----|
-| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~10 MB | **This is the .exe.** `desktop/dist/ToastmastersTools.exe`. Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
+| **`ToastmastersTools-portable.zip`** | Double-click `ToastmastersTools.cmd`. Edge window, all four tools, offline. **This is the Smart App Control path.** | ~1 MB | No unsigned `.exe`. Unblock the zip if Windows copied it from the internet. |
+| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~10 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
 | **PWA (Install app)** | Chrome / Edge / Android “Add to…”, no browser chrome | 0 extra | Hub `manifest.json`. Fastest try in a browser. |
 | **`launch.py` (this folder)** | Frameless Chrome `--app` window on `http://127.0.0.1:8765` | 0 extra | Needs Python 3 and Chrome/Edge. |
 | **Tauri 2** | Signed `.exe` / `.dmg` / `.deb` when you have certs | ~8–15 MB | Starter in `desktop/tauri/`. Not required for the Go wrap. |
@@ -48,16 +49,19 @@ and CSS on purpose.
 
   Then open http://127.0.0.1:8765/ — hash routes `#home` `#finder` `#builder` `#timer` `#ah-counter`.
 
-### 2. Windows `.exe` (the complete set)
+### 2. Windows, when Smart App Control blocks the `.exe`
 
-Copy `desktop/dist/ToastmastersTools.exe` onto a Windows laptop and double-click.
-All four tools are inside that file (~8 MB, unsigned). Rebuild with:
+Download [`desktop/dist/ToastmastersTools-portable.zip`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ToastmastersTools-portable.zip).
+Right-click the zip → Properties → **Unblock** → extract. Double-click
+`ToastmastersTools.cmd`. That is a script plus Edge, not an unsigned app, so
+Smart App Control does not show the pink Okay dialog. Close the window to quit.
+
+The unsigned `.exe` remains for PCs that only show SmartScreen (*More info* →
+*Run anyway*):
 
       python3 desktop/app/build.py
 
-Unsigned. SmartScreen: *More info* → *Run anyway*. Smart App Control (pink **Okay**
-only) will not run it — use Edge *Install this site as an app*, or see
-[app/README.md](app/README.md).
+That also writes the portable zip.
 
 ### 3. Frameless browser window (Python)
 

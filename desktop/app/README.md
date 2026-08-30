@@ -9,7 +9,12 @@ and the builder's folder picker have a real origin.
 
 `desktop/dist/ToastmastersTools.exe` — Windows 64-bit, unsigned.
 
-On a club laptop:
+When Smart App Control blocks that file, use
+`desktop/dist/ToastmastersTools-portable.zip` instead: Unblock the zip, extract,
+double-click `ToastmastersTools.cmd`. That is a script that opens Edge, not an
+unsigned `.exe`.
+
+On a club laptop with the `.exe`:
 
 1. Copy the `.exe` onto the machine (USB or email).
 2. Double-click it.
