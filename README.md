@@ -116,16 +116,17 @@ page-count probe. Full working notes: [programme-sheet-builder/HANDOVER.md](prog
 
 These tools are already the app. A desktop build wraps the existing HTML. Short version:
 
-1. **`desktop/dist/ToastmastersTools-portable.zip`** — Windows standalone, all four tools.
-   Unblock the zip, extract, double-click `Install.cmd` for a Desktop shortcut.
-   Share that zip (or the folder on a USB). Smart App Control does not block it.
-2. **`desktop/dist/ProgrammeSheet-portable.zip`** — the **programme sheet builder on its
-   own**, same recipe, Desktop shortcut *Programme Sheet Builder*. Own origin and profile,
-   so it does not share a working sheet with the hub. ~200 KB.
+1. **`desktop/dist/ProgrammeSheet-portable.zip`** — the **programme sheet builder on its
+   own**, and the only pack that runs under **Smart App Control**: `index.html`, two `.cmd`
+   files and a shortcut; no `.exe`, no PowerShell. Unblock the zip, extract, `Install.cmd` →
+   Desktop shortcut *Programme Sheet Builder* (Edge app window, offline, own profile). ~200 KB.
+2. **`desktop/dist/ToastmastersTools-portable.zip`** — all four tools behind a PowerShell
+   local server. Runs where PowerShell is unconstrained; **not** under Smart App Control
+   (Constrained Language Mode) — use the website there.
 3. **`desktop/dist/ToastmastersTools.exe`** and **`desktop/dist/ProgrammeSheet.exe`** —
    Windows 64-bit, tools embedded, one double-click. Unsigned: SmartScreen can *Run anyway*;
-   Smart App Control (pink **Okay**) cannot — use the zips there.
-   Rebuild everything: `python3 desktop/app/build.py` (or `build.py sheet`).
+   Smart App Control (pink **Okay**) blocks them, and only a CA-issued code-signing
+   certificate changes that. Rebuild everything: `python3 desktop/app/build.py` (or `build.py sheet`).
 4. **Install from Chrome / Edge** — hub `manifest.json`, `display: standalone`.
 5. **`python3 desktop/launch.py`** — local origin + frameless Chrome/Edge `--app`.
 6. **Tauri 2** — starter in `desktop/tauri/` for a later signed bundle.

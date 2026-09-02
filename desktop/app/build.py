@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Stage the HTML tools and cross-compile the Windows .exe (and a Linux binary),
-plus the portable zip that Smart App Control will run.
+plus a portable zip per app. The sheet zip is cmd-only and is the copy that
+runs under Smart App Control; the unsigned .exe files never will.
 
     python3 desktop/app/build.py            # both apps
     python3 desktop/app/build.py hub        # the four-tool hub only
@@ -34,17 +35,6 @@ DIST = ROOT / "desktop" / "dist"
 WEB = HERE / "web"
 WIN = ROOT / "desktop" / "windows"
 
-# Launchers shared by every portable pack. The hub is the canonical text; the
-# sheet variant is produced by the substitutions in VARIANTS[...]["subs"].
-LAUNCHERS = (
-    "START.cmd",
-    "Install.cmd",
-    "Install.ps1",
-    "serve.ps1",
-    "Open-online.cmd",
-    "README.txt",
-)
-
 VARIANTS = {
     "hub": {
         "title": "Toastmasters Tools",
@@ -53,6 +43,21 @@ VARIANTS = {
         "exe": "ToastmastersTools.exe",
         "zip": "ToastmastersTools-portable.zip",
         "linux": "toastmasters-tools-linux-amd64",
+        # The hub needs a server (its iframes point at folder URLs), so its
+        # pack carries the PowerShell one. Under Smart App Control PowerShell
+        # runs in Constrained Language Mode and that server cannot start;
+        # see desktop/README.md.
+        "launchers": WIN,
+        "launcher_files": (
+            "START.cmd",
+            "Install.cmd",
+            "Install.ps1",
+            "serve.ps1",
+            "Open-online.cmd",
+            "README.txt",
+            "ToastmastersTools.cmd",
+        ),
+        "shortcut": None,
         # (repo path, path inside the app)
         "copies": [
             ("index.html", "index.html"),
@@ -67,42 +72,74 @@ VARIANTS = {
             ("ah-counter/index.html", "ah-counter/index.html"),
             ("ah-counter/manifest.json", "ah-counter/manifest.json"),
         ],
-        "extra_launchers": ("ToastmastersTools.cmd",),
-        "subs": [],
     },
     "sheet": {
         "title": "Programme Sheet Builder",
         "app_id": "ProgrammeSheet",
-        # Its own origin, so its localStorage never collides with the hub's
-        # copy of the builder and both apps can be open at once.
+        # Its own origin for the .exe, so its localStorage never collides with
+        # the hub's copy of the builder and both apps can be open at once.
         "port": 8770,
         "exe": "ProgrammeSheet.exe",
         "zip": "ProgrammeSheet-portable.zip",
         "linux": "programme-sheet-linux-amd64",
+        # The portable pack is cmd-only: Edge --app=file:///…/index.html, no
+        # server, no PowerShell. That is the one shape Smart App Control
+        # leaves alone (cmd.exe is not policed; Edge is Microsoft-signed).
+        "launchers": WIN / "sheet",
+        "launcher_files": ("START.cmd", "Install.cmd", "Open-online.cmd", "README.txt"),
+        # Desktop / Start Menu shortcut, generated here because a cmd-only
+        # installer cannot create one on the target PC.
+        "shortcut": {
+            "file": "Programme Sheet Builder.lnk",
+            "run": r"%LOCALAPPDATA%\ProgrammeSheet\app\START.cmd",
+            "icon": r"%LOCALAPPDATA%\ProgrammeSheet\app\icon.ico",
+            "description": "Programme Sheet Builder — Toastmasters agenda, offline",
+        },
         # The builder is one self-contained file; it becomes the root page.
         "copies": [
             ("programme-sheet-builder/index.html", "index.html"),
             ("icon.svg", "icon.svg"),
             ("icon-512.png", "icon-512.png"),
         ],
-        "extra_launchers": (),
-        "subs": [
-            ("ToastmastersTools-portable.zip", "ProgrammeSheet-portable.zip"),
-            ("ToastmastersTools.cmd", "START.cmd"),
-            ("ToastmastersTools folder", "ProgrammeSheet folder"),
-            ("ToastmastersTools", "ProgrammeSheet"),
-            ("Toastmasters Tools", "Programme Sheet Builder"),
-            ("the tools", "the builder"),
-            ("the bundled hub", "the bundled programme sheet builder"),
-            ("live GitHub Pages hub", "live programme sheet builder"),
-            ("https://ramnaths89.github.io/toastmasters/",
-             "https://ramnaths89.github.io/toastmasters/programme-sheet-builder/"),
-            ("8765, 8766, 8767, 8768, 8769", "8770, 8771, 8772, 8773, 8774"),
-            ("$Port = 8765", "$Port = 8770"),
-            ("Club Setup and logs stay", "Club Setup and the working sheet stay"),
-        ],
     },
 }
+
+# Windows text files ship with CRLF. cmd.exe mis-parses labels and goto in
+# some LF-only batch files, and Notepad users read README.txt.
+CRLF_SUFFIXES = {".cmd", ".bat", ".ps1", ".txt"}
+
+
+def make_shortcut(spec: dict, dest: Path) -> None:
+    """Write a Windows .lnk that runs a .cmd via cmd.exe /c.
+
+    The target path holds %LOCALAPPDATA% so one shortcut fits every user;
+    cmd.exe expands it when it parses its own command line. Runs minimised so
+    the console does not flash before Edge opens. Icon and target also carry
+    environment blocks (HasExpIcon / HasExpString) so Explorer resolves them
+    on a PC whose Windows lives on another drive letter."""
+    try:
+        import pylnk3
+    except ImportError:
+        sys.exit("pylnk3 is needed to write %s:  pip install pylnk3" % spec["file"])
+    cmd = r"C:\Windows\System32\cmd.exe"
+    lnk = pylnk3.for_file(
+        cmd,
+        arguments='/c "%s"' % spec["run"],
+        description=spec["description"],
+        window_mode=pylnk3.WINDOW_MINIMIZED,
+    )
+    env = pylnk3.ExtraData_EnvironmentVariableDataBlock()
+    env.target_ansi = env.target_unicode = r"%windir%\System32\cmd.exe"
+    ico = pylnk3.ExtraData_IconEnvironmentDataBlock()
+    ico.target_ansi = ico.target_unicode = spec["icon"]
+    lnk.extra_data = pylnk3.ExtraData(blocks=[env, ico])
+    lnk.link_flags.HasExpString = True
+    lnk.link_flags.HasExpIcon = True
+    lnk.link_flags.HasIconLocation = True
+    lnk.icon = spec["icon"]
+    lnk.icon_index = 0
+    lnk.save(str(dest))
+    print("wrote", dest, dest.stat().st_size, "bytes")
 
 
 def copies_of(v: dict) -> list[tuple[Path, str]]:
@@ -115,11 +152,12 @@ def copies_of(v: dict) -> list[tuple[Path, str]]:
     return out
 
 
-def launcher_text(v: dict, name: str) -> bytes:
-    text = (WIN / name).read_text(encoding="utf-8")
-    for old, new in v["subs"]:
-        text = text.replace(old, new)
-    return text.encode("utf-8")
+def launcher_bytes(v: dict, name: str) -> bytes:
+    path = v["launchers"] / name
+    data = path.read_bytes()
+    if path.suffix.lower() in CRLF_SUFFIXES:
+        data = data.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    return data
 
 
 def stage_web(v: dict) -> None:
@@ -143,8 +181,11 @@ def pack_portable(v: dict) -> None:
         out = dest_root / dest
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, out)
-    for name in LAUNCHERS + tuple(v["extra_launchers"]):
-        (dest_root / name).write_bytes(launcher_text(v, name))
+    for name in v["launcher_files"]:
+        (dest_root / name).write_bytes(launcher_bytes(v, name))
+    if v["shortcut"]:
+        shutil.copy2(HERE / "icon.ico", dest_root / "icon.ico")
+        make_shortcut(v["shortcut"], dest_root / v["shortcut"]["file"])
     DIST.mkdir(parents=True, exist_ok=True)
     zpath = DIST / v["zip"]
     if zpath.exists():

@@ -1,5 +1,8 @@
 # Serves the bundled hub on 127.0.0.1 and opens Edge/Chrome --app.
-# Not an .exe: Smart App Control does not treat this as an unsigned app.
+# Not an .exe, but under Smart App Control PowerShell runs in Constrained
+# Language Mode and Add-Type / HttpListener below are refused - this pack is
+# for PCs without SAC. The sheet-only pack (desktop/windows/sheet) avoids
+# PowerShell entirely.
 # Close the app window to stop the server.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms

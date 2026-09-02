@@ -1,7 +1,10 @@
 Toastmasters Tools — standalone on Windows
 
-This folder IS the app. There is no installer .exe (Smart App Control blocks
-those when they are unsigned).
+This folder IS the app. There is no installer .exe. It runs a small local
+server in PowerShell, so it needs a PC where PowerShell is not constrained.
+On a PC with Smart App Control ON, PowerShell is locked down and this pack
+will not start: use Open-online.cmd (the website) or the separate
+ProgrammeSheet-portable.zip, which needs neither PowerShell nor a server.
 
 On your PC
 ----------

@@ -29,10 +29,10 @@ sits about 4 mm from a third A4 page and is guarded by `pgprobe.py`. Do not do t
 
 | Path | What you get | Size | Fit |
 |------|----------------|------|-----|
-| **`ProgrammeSheet-portable.zip`** | **Programme sheet builder only.** `Install.cmd` → Desktop shortcut *Programme Sheet Builder*. Edge window, offline, own origin `127.0.0.1:8770`. Smart App Control runs it. | ~200 KB | For the TME who only needs the sheet. Nothing else in the window. |
-| **`ProgrammeSheet.exe`** | Same, as one double-clickable file (WebView2). | ~7 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
-| **`ToastmastersTools-portable.zip`** | Double-click `START.cmd`. Edge window, all four tools, offline. **This is the Smart App Control path.** | ~500 KB | No unsigned `.exe`. Unblock the zip if Windows copied it from the internet. |
-| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~8 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
+| **`ProgrammeSheet-portable.zip`** | **Programme sheet builder only.** `Install.cmd` → Desktop shortcut *Programme Sheet Builder*. Edge app window opened straight from the folder (`file://`), offline, own Edge profile. **cmd + Edge only — the one pack Smart App Control runs.** | ~200 KB | For the TME who only needs the sheet. Nothing else in the window. |
+| **`ProgrammeSheet.exe`** | Same, as one double-clickable file (WebView2, `127.0.0.1:8770`). | ~7 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control blocks it. |
+| **`ToastmastersTools-portable.zip`** | Double-click `START.cmd`. Edge window, all four tools, offline, via a PowerShell local server. | ~500 KB | Runs where PowerShell is unconstrained. **Under Smart App Control PowerShell is in Constrained Language Mode and this pack fails** — use the website or the sheet pack there. |
+| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~8 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control blocks it. |
 | **PWA (Install app)** | Chrome / Edge / Android “Add to…”, no browser chrome | 0 extra | Hub `manifest.json`. Fastest try in a browser. |
 | **`launch.py` (this folder)** | Frameless Chrome `--app` window on `http://127.0.0.1:8765` | 0 extra | Needs Python 3 and Chrome/Edge. |
 | **Tauri 2** | Signed `.exe` / `.dmg` / `.deb` when you have certs | ~8–15 MB | Starter in `desktop/tauri/`. Not required for the Go wrap. |
@@ -51,32 +51,47 @@ and CSS on purpose.
 
   Then open http://127.0.0.1:8765/ — hash routes `#home` `#finder` `#builder` `#timer` `#ah-counter`.
 
-### 2. Windows, when Smart App Control blocks the `.exe`
+### 2. Windows, and Smart App Control
 
-Download [`desktop/dist/ToastmastersTools-portable.zip`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ToastmastersTools-portable.zip).
-Right-click the zip → Properties → **Unblock** → extract. Double-click
-`Install.cmd` to put a **Toastmasters Tools** shortcut on the Desktop and in
-the Start menu. After that, share the zip (or the extracted folder on a USB
-stick) — not the `.exe`. `START.cmd` runs once without installing.
+What Smart App Control (SAC) does, per Microsoft's own docs: an unsigned `.exe`
+is blocked with no per-app exception; `powershell.exe` runs unsigned scripts in
+**Constrained Language Mode**, where `Add-Type`, COM objects and `HttpListener`
+are refused; `cmd.exe` batch files are not policed at all; Microsoft-signed
+Edge runs. Nothing built here can be signed without a CA-issued certificate,
+and there is no legitimate way to make an unsigned `.exe` pass. So:
 
-The unsigned `.exe` remains for PCs that only show SmartScreen (*More info* →
-*Run anyway*).
-
-**Programme sheet only.** The same pipeline builds a second app that opens the
-builder and nothing else:
+**Programme sheet only — the SAC-safe pack.**
 [`desktop/dist/ProgrammeSheet-portable.zip`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ProgrammeSheet-portable.zip)
-(Unblock → extract → `Install.cmd` → Desktop shortcut **Programme Sheet Builder**)
-or [`desktop/dist/ProgrammeSheet.exe`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ProgrammeSheet.exe).
-It serves the builder on its own origin (`127.0.0.1:8770`) with its own
-profile folder, so its Club Setup and working sheet are separate from the
-builder inside the hub. Both apps can be open at the same time.
+is `index.html` + two `.cmd` files + a ready-made shortcut. No `.exe`, no
+PowerShell, no server: `START.cmd` opens the builder in an Edge app window
+straight from the folder, with its own Edge profile under
+`%LocalAppData%\ProgrammeSheet\`. Right-click the zip → Properties → **Unblock**
+→ extract → `Install.cmd` → Desktop / Start Menu shortcut **Programme Sheet
+Builder**. `Install.cmd` copies the folder to `%LocalAppData%\ProgrammeSheet\app`
+and places the shortcut; run it again after a newer zip. This is how the
+builder was always meant to run — the OneDrive copy is a `file://` page too.
+
+**All four tools.**
+[`desktop/dist/ToastmastersTools-portable.zip`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ToastmastersTools-portable.zip)
+needs a local server (the hub's iframes point at folder URLs) and carries a
+PowerShell one, so it runs only where PowerShell is unconstrained — not under
+SAC. On an SAC PC use the website (`Open-online.cmd`, or Edge → ⋮ → Apps →
+*Install this site as an app*) or the sheet pack above.
+
+**The `.exe` files** ([`ProgrammeSheet.exe`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ProgrammeSheet.exe),
+[`ToastmastersTools.exe`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ToastmastersTools.exe))
+stay for PCs that only show SmartScreen (*More info* → *Run anyway*). To make
+them pass SAC you would need an OV/EV code-signing certificate (then
+`signtool sign` in `build.py`) or Microsoft Store packaging; turning SAC off
+is the user's decision and is one-way on that PC.
 
 Rebuild all of it after any tool changes:
 
       python3 desktop/app/build.py          # both apps
       python3 desktop/app/build.py sheet    # programme sheet builder only
 
-That also writes the portable zips. Details: [`desktop/app/README.md`](app/README.md).
+That also writes the portable zips (`pip install pylnk3` once, for the sheet
+pack's shortcut). Details: [`desktop/app/README.md`](app/README.md).
 
 ### 3. Frameless browser window (Python)
 

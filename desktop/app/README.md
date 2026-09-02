@@ -22,11 +22,25 @@ Direct links (branch `main`):
 - https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ToastmastersTools-portable.zip
 - https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ToastmastersTools.exe
 
-The `.exe` files are Windows 64-bit and **unsigned**. When Smart App Control
-blocks one, use the matching `-portable.zip`: Unblock, extract, double-click
-`Install.cmd`. That installs a Desktop + Start Menu shortcut for this Windows
-user. `START.cmd` runs once without installing. Share the zip or the folder;
-do not share the `.exe` to a PC that uses Smart App Control.
+The `.exe` files are Windows 64-bit and **unsigned**. Smart App Control (SAC)
+blocks them and offers no per-app exception; only a CA-issued code-signing
+certificate would change that.
+
+- **`ProgrammeSheet-portable.zip` runs under SAC.** It is `index.html`, two
+  `.cmd` files, an icon and a ready-made `Programme Sheet Builder.lnk`. No
+  `.exe`, no PowerShell, no server: `START.cmd` opens the page in an Edge app
+  window from the folder itself (`file://`), with its own Edge profile under
+  `%LocalAppData%\ProgrammeSheet\edge-profile`. `Install.cmd` copies the folder
+  to `%LocalAppData%\ProgrammeSheet\app` and drops the shortcut on the Desktop
+  and in the Start menu; the shortcut runs `cmd.exe /c "%LOCALAPPDATA%\…\START.cmd"`
+  minimised, so one shortcut fits every user.
+- **`ToastmastersTools-portable.zip` does not run under SAC.** The hub needs a
+  local server (its iframes are folder URLs) and the pack's server is
+  PowerShell, which SAC puts in Constrained Language Mode. Use it on PCs
+  without SAC; on SAC PCs open the website.
+
+Unblock a downloaded zip (right-click → Properties → Unblock) before
+extracting so the `.cmd` files do not carry the "downloaded" flag.
 
 On a club laptop with an `.exe`:
 
@@ -62,6 +76,7 @@ python3 desktop/app/build.py hub      # Toastmasters Tools only
 ```
 
 `build.py` stages the variant's files into `web/`, zips them with the launchers
-from `desktop/windows/` (the sheet variant gets its names, port and URL
-substituted), and cross-compiles from Linux or Windows with
+from `desktop/windows/` (hub) or `desktop/windows/sheet/` (sheet; CRLF applied,
+`.lnk` written with `pylnk3` — `pip install pylnk3` once), and cross-compiles
+from Linux or Windows with
 `-ldflags "-X main.title=… -X main.appID=… -X main.prefAddr=…"`.
