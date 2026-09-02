@@ -116,15 +116,19 @@ page-count probe. Full working notes: [programme-sheet-builder/HANDOVER.md](prog
 
 These tools are already the app. A desktop build wraps the existing HTML. Short version:
 
-1. **`desktop/dist/ToastmastersTools-portable.zip`** — Windows standalone.
+1. **`desktop/dist/ToastmastersTools-portable.zip`** — Windows standalone, all four tools.
    Unblock the zip, extract, double-click `Install.cmd` for a Desktop shortcut.
    Share that zip (or the folder on a USB). Smart App Control does not block it.
-2. **`desktop/dist/ToastmastersTools.exe`** — Windows 64-bit, all four tools embedded.
-   Double-click. Unsigned: SmartScreen can *Run anyway*; Smart App Control (pink **Okay**)
-   cannot. Rebuild both: `python3 desktop/app/build.py`.
-3. **Install from Chrome / Edge** — hub `manifest.json`, `display: standalone`.
-4. **`python3 desktop/launch.py`** — local origin + frameless Chrome/Edge `--app`.
-5. **Tauri 2** — starter in `desktop/tauri/` for a later signed bundle.
+2. **`desktop/dist/ProgrammeSheet-portable.zip`** — the **programme sheet builder on its
+   own**, same recipe, Desktop shortcut *Programme Sheet Builder*. Own origin and profile,
+   so it does not share a working sheet with the hub. ~200 KB.
+3. **`desktop/dist/ToastmastersTools.exe`** and **`desktop/dist/ProgrammeSheet.exe`** —
+   Windows 64-bit, tools embedded, one double-click. Unsigned: SmartScreen can *Run anyway*;
+   Smart App Control (pink **Okay**) cannot — use the zips there.
+   Rebuild everything: `python3 desktop/app/build.py` (or `build.py sheet`).
+4. **Install from Chrome / Edge** — hub `manifest.json`, `display: standalone`.
+5. **`python3 desktop/launch.py`** — local origin + frameless Chrome/Edge `--app`.
+6. **Tauri 2** — starter in `desktop/tauri/` for a later signed bundle.
 
 Do not load the pages as `file://`. Details: [desktop/](desktop/).
 

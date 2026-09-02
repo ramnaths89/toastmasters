@@ -29,8 +29,10 @@ sits about 4 mm from a third A4 page and is guarded by `pgprobe.py`. Do not do t
 
 | Path | What you get | Size | Fit |
 |------|----------------|------|-----|
-| **`ToastmastersTools-portable.zip`** | Double-click `ToastmastersTools.cmd`. Edge window, all four tools, offline. **This is the Smart App Control path.** | ~1 MB | No unsigned `.exe`. Unblock the zip if Windows copied it from the internet. |
-| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~10 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
+| **`ProgrammeSheet-portable.zip`** | **Programme sheet builder only.** `Install.cmd` → Desktop shortcut *Programme Sheet Builder*. Edge window, offline, own origin `127.0.0.1:8770`. Smart App Control runs it. | ~200 KB | For the TME who only needs the sheet. Nothing else in the window. |
+| **`ProgrammeSheet.exe`** | Same, as one double-clickable file (WebView2). | ~7 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
+| **`ToastmastersTools-portable.zip`** | Double-click `START.cmd`. Edge window, all four tools, offline. **This is the Smart App Control path.** | ~500 KB | No unsigned `.exe`. Unblock the zip if Windows copied it from the internet. |
+| **`ToastmastersTools.exe`** | Double-clickable Windows app. Embeds all four tools. Native Edge WebView2 window. | ~8 MB | Unsigned — SmartScreen can *Run anyway*; Smart App Control cannot. |
 | **PWA (Install app)** | Chrome / Edge / Android “Add to…”, no browser chrome | 0 extra | Hub `manifest.json`. Fastest try in a browser. |
 | **`launch.py` (this folder)** | Frameless Chrome `--app` window on `http://127.0.0.1:8765` | 0 extra | Needs Python 3 and Chrome/Edge. |
 | **Tauri 2** | Signed `.exe` / `.dmg` / `.deb` when you have certs | ~8–15 MB | Starter in `desktop/tauri/`. Not required for the Go wrap. |
@@ -58,11 +60,23 @@ the Start menu. After that, share the zip (or the extracted folder on a USB
 stick) — not the `.exe`. `START.cmd` runs once without installing.
 
 The unsigned `.exe` remains for PCs that only show SmartScreen (*More info* →
-*Run anyway*):
+*Run anyway*).
 
-      python3 desktop/app/build.py
+**Programme sheet only.** The same pipeline builds a second app that opens the
+builder and nothing else:
+[`desktop/dist/ProgrammeSheet-portable.zip`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ProgrammeSheet-portable.zip)
+(Unblock → extract → `Install.cmd` → Desktop shortcut **Programme Sheet Builder**)
+or [`desktop/dist/ProgrammeSheet.exe`](https://github.com/ramnaths89/toastmasters/raw/main/desktop/dist/ProgrammeSheet.exe).
+It serves the builder on its own origin (`127.0.0.1:8770`) with its own
+profile folder, so its Club Setup and working sheet are separate from the
+builder inside the hub. Both apps can be open at the same time.
 
-That also writes the portable zip.
+Rebuild all of it after any tool changes:
+
+      python3 desktop/app/build.py          # both apps
+      python3 desktop/app/build.py sheet    # programme sheet builder only
+
+That also writes the portable zips. Details: [`desktop/app/README.md`](app/README.md).
 
 ### 3. Frameless browser window (Python)
 

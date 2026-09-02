@@ -19,7 +19,7 @@ func openWindow(url string) error {
 	if err != nil {
 		cache = os.TempDir()
 	}
-	dataPath := filepath.Join(cache, "ToastmastersTools", "webview2")
+	dataPath := filepath.Join(cache, appID, "webview2")
 	_ = os.MkdirAll(dataPath, 0755)
 
 	w := webview2.NewWithOptions(webview2.WebViewOptions{
@@ -52,7 +52,7 @@ func openBrowserApp(url string) error {
 	if err != nil {
 		cache = os.TempDir()
 	}
-	profile := filepath.Join(cache, "ToastmastersTools", "chrome-profile")
+	profile := filepath.Join(cache, appID, "chrome-profile")
 	_ = os.MkdirAll(profile, 0755)
 	cmd := exec.Command(browser,
 		"--app="+url,

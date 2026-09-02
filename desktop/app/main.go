@@ -1,7 +1,16 @@
-// Toastmasters Tools desktop wrap. Serves the four HTML tools from an
-// embedded filesystem on 127.0.0.1 and opens them in a native window.
-// Windows uses Edge WebView2; other OSes (and WebView2 failure) fall back
-// to Chrome/Edge --app. file:// is not used.
+// Toastmasters Tools desktop wrap. Serves the embedded HTML tools on
+// 127.0.0.1 and opens them in a native window. Windows uses Edge WebView2;
+// other OSes (and WebView2 failure) fall back to Chrome/Edge --app. file://
+// is not used.
+//
+// The same source builds two apps. build.py stages a different web/ tree per
+// variant and sets title, appID and prefAddr with -ldflags "-X main.title=…":
+//
+//	hub   — all four tools behind index.html          (ToastmastersTools.exe)
+//	sheet — the programme sheet builder as the root  (ProgrammeSheet.exe)
+//
+// appID names the per-app WebView2 / browser profile folder, so the two apps
+// keep separate localStorage; prefAddr gives each a stable origin of its own.
 package main
 
 import (
@@ -20,9 +29,10 @@ import (
 //go:embed all:web
 var webFS embed.FS
 
-const (
-	title   = "Toastmasters Tools"
-	version = "0.45.0"
+var (
+	title    = "Toastmasters Tools"
+	appID    = "ToastmastersTools"
+	version  = "0.48.0"
 	prefAddr = "127.0.0.1:8765"
 )
 
@@ -44,7 +54,7 @@ func main() {
 	}
 
 	if err := openWindow(url); err != nil {
-		fail("Could not open Toastmasters Tools:\n" + err.Error() + "\n\nThe page is at:\n" + url)
+		fail("Could not open " + title + ":\n" + err.Error() + "\n\nThe page is at:\n" + url)
 		os.Exit(1)
 	}
 }

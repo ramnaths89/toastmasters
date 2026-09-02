@@ -24,7 +24,7 @@ func openBrowserApp(url string) error {
 	if u, err := user.Current(); err == nil && u.HomeDir != "" {
 		home = u.HomeDir
 	}
-	profile := filepath.Join(home, ".cache", "ToastmastersTools", "chrome-profile")
+	profile := filepath.Join(home, ".cache", appID, "chrome-profile")
 	_ = os.MkdirAll(profile, 0755)
 	cmd := exec.Command(browser,
 		"--app="+url,
