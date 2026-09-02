@@ -287,6 +287,19 @@ const SHEET_CSS = `
     margin-left: 7px; white-space: nowrap;
     font-variant-numeric: tabular-nums;
   }
+  /* V48: the struck bell. The icon carries a diagonal bar drawn as a gradient
+     rather than a glyph overlay, so it survives the export rasteriser (which
+     re-parses style nodes and drops nothing here) and prints in one pass. */
+  .sig-bell-off{ color: var(--gray, #8a8a8a); font-weight: 600; }
+  .sig-bell-off .sig-bell-icon{
+    position: relative; display: inline-block; opacity: 0.55;
+  }
+  .sig-bell-off .sig-bell-icon::after{
+    content: ""; position: absolute; left: -1px; top: 50%;
+    width: 125%; height: 0; border-top: 1.5px solid currentColor;
+    transform: rotate(-45deg); transform-origin: center;
+  }
+  .sig-bell-off s{ text-decoration-thickness: 1.5px; }
 
   footer{
     padding: 12px 24px 18px;
@@ -487,6 +500,31 @@ const SHEET_CSS = `
   }
   .contestant-list .cl-name{ text-align: left; color: var(--ink); }
   .contestant-empty{ font-style: italic; }
+
+  /* V46: heading and standing caveat around a participant list. The heading is
+     a label, not a title, so it sits at the sub-line size and takes the muted
+     ink; the caveat is italic because it is an aside about the list rather than
+     part of it. Both are inside the row's item cell and inherit its width. */
+  .participants-head{
+    display:block;
+    margin-top: 5px;
+    font-family:"Montserrat",Arial,sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .participants-note{
+    display:block;
+    margin-top: 3px;
+    padding-left: 11px;
+    font-size: 10.5px;
+    font-style: italic;
+    line-height: 1.3;
+    color: var(--ink-soft);
+  }
+  .participants-note.seg-comments{ font-style: normal; }
 
   /* POETTS block on a prepared-speech row: Project (heading), then
      Evaluator · Timing · Title · Speaker — the order the TME introduces in. */
@@ -865,6 +903,11 @@ const SHEET_CSS = `
        a time off a table, so the gutter is doing no work on paper - it is about
        45 lines of the agenda and the single biggest block win after the rows. */
     .poetts, .role-roster, .contestant-list{ margin-top: 2px; row-gap: 0; line-height: 1.34; }
+    /* V46: the participants heading and its caveat follow the same rule as the
+       block they wrap - tighter leading, less air, one type size down from the
+       agenda body. */
+    .participants-head{ margin-top: 3px; font-size: 9.5px; letter-spacing: 0.5px; }
+    .participants-note{ margin-top: 2px; font-size: 9.5px; line-height: 1.25; }
     /* The timing lights sit inside those blocks; their own leading and the gap
        above them were sized against the looser screen block. */
     .signal-line{ margin-top: 2px; }
@@ -948,13 +991,35 @@ const SHEET_CSS = `
        on their own heavier settings and made the sheet LESS uniform, not more.
        Measured: stress/zine went from 20.3 mm spare to 10.9 mm. body[class] ties
        the specificity and wins on source order. */
-    body[class] .item-title{ font-size: 11px; letter-spacing: 0; }
+    /* V47: text-transform joins the uniform set. Zine printed its item titles
+       in uppercase, which is wider - long titles wrapped to a second line there
+       and nowhere else, and the themes drifted ~12 mm apart in headroom for no
+       reason a reader could see. Paper usage is uniform; a theme keeps its case
+       on screen and in the banner, where it costs nothing. */
+    body[class] .item-title{ font-size: 11px; letter-spacing: 0; text-transform: none; }
     body[class] td.item .item-sub{ font-size: 11px; }
     body[class] thead th{ letter-spacing: 0.6px; }
     body[class] aside h3{ letter-spacing: 0.6px; }
     body[class] td.time{ letter-spacing: 0; }
     body[class] .head-text .club{ letter-spacing: 1.4px; }
     body[class] tbody tr{ border-bottom-width: 1px; border-bottom-style: solid; }
+    /* V47: chip borders join the uniform set. Brutalist gives the TBD chip a
+       2px border and both Brutalist and Neo Memphis give the timing-light strip
+       one - each is an inline-block inside a table row, so the fatter box makes
+       EVERY row that carries a chip taller in that theme. A fresh sheet is
+       mostly TBD chips; measured, Brutalist printed 17 mm longer than Classic
+       from this alone. Colour, dash style and square corners stay - only the
+       box's size is pinned. */
+    body[class] .tbd, body[class] .tbd-inline{ border-width: 1px; }
+    /* The timing-light strip: Classic frames it with nothing, Brutalist and Neo
+       Memphis with 2px - so every speech, evaluation and Table Topics row was
+       2px taller in those themes, and the strip inside the POETTS block another
+       1.5. The lights are coloured boxes; they do not need a frame to read as a
+       strip, and zero is the only width every theme already agrees on. */
+    body[class] .sig-boxes{ border-width: 0; }
+    /* Swiss ruled the column head off with 3px where the others use 1 - the
+       head prints on BOTH pages, so the difference is paid twice. */
+    body[class] thead th{ border-bottom-width: 1px; }
 
     table{ break-before: auto; }
     thead{ display: table-header-group; }

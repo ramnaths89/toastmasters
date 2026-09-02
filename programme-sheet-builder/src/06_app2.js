@@ -80,14 +80,24 @@ function editRowHTML(seg, evPartner){
    speaker is out of qualifying time. It follows the red light wherever that
    lands, so it is derived here rather than stored (Rama, V21). */
 const BELL_GRACE_MIN = 0.5;
-function signalBoxes(green, amber, red, extra){
+function signalBoxes(green, amber, red, extra, noBell){
   const r = Number(red) || 0;
+  /* V48: a struck-through bell rather than no bell at all. The Test Speaker in
+     an evaluation contest is not competing, so there is no disqualifying time
+     for them - but the timer still has to be TOLD that, and a row with the bell
+     silently missing looks like a sheet someone forgot to finish. Showing the
+     time with a line through it and "no bell" says it was decided. */
+  const bell = !r ? ''
+    : noBell
+      ? `<span class="sig-bell sig-bell-off" title="No bell — the Test Speaker is not competing, so there is no disqualifying time">`
+        + `<span class="sig-bell-icon">🔔</span> <s>${fmtSignalTime(r + BELL_GRACE_MIN)}</s> no bell</span>`
+      : `<span class="sig-bell" title="Bell — 30 seconds past the red light, the end of qualifying time">🔔 ${fmtSignalTime(r + BELL_GRACE_MIN)}</span>`;
   return `<span class="sig-boxes">`
     + `<span class="b bg">${fmtSignalTime(green)}</span>`
     + `<span class="b by">${fmtSignalTime(amber)}</span>`
     + `<span class="b br">${fmtSignalTime(r)}</span>`
     + `</span>`
-    + (r ? `<span class="sig-bell" title="Bell — 30 seconds past the red light, the end of qualifying time">🔔 ${fmtSignalTime(r + BELL_GRACE_MIN)}</span>` : '')
+    + bell
     + (extra ? `<span class="sig-suffix">${extra}</span>` : '');
 }
 /* ================= Project combobox =================
@@ -291,10 +301,14 @@ function buildSheetHTML(interactive){
      while printing NOWHERE on the sheet - the one place it was needed. The
      chapter path reaches them through rolePlayerLines(), which a contest never
      calls because it has no TME Welcome Remarks row to render them into. */
-  const committeeRows = Object.entries(CONTEST_ROLE_LABELS)
+  /* V48: no .concat of the custom roles here any more. orderedRoleEntries()
+     now CONTAINS them (that is what made them movable), so appending them again
+     printed every custom appointment twice - "Contest SAA 3" and "Photographer"
+     both appeared at their new position and again at the bottom. */
+  const committeeRows = (isContest() ? orderedRoleEntries() : Object.entries(CONTEST_ROLE_LABELS)
+      .concat(customRoles().filter(r=>r.label).map(r=>[r.key, r.label])))
     .filter(([k]) => roleIsActive(k) && !COMMITTEE_EXCLUDES.has(k))
     .map(([k,label])=>[label, state.roles[k]])
-    .concat(customRoleLines().filter(r=>r.label).map(r=>[r.label, r.name]))
     .map(([label,name])=>`
     <div class="exco-item"><div class="exco-role">${esc(label)}</div>` +
     (name
@@ -342,14 +356,20 @@ function buildSheetHTML(interactive){
 
     let subHtml = '';
     if(seg.isSpeech){
-      const dots = signalBoxes(seg.signalMin, midOf(seg), seg.signalMax);
+      const dots = signalBoxes(seg.signalMin, midOf(seg), seg.signalMax, '', seg.noBell);
       subHtml = `<span class="poetts">` + speechPOETTS(seg).map(r =>
           `<span class="rr-label">${esc(r.label)}</span>`
           + `<span class="rr-name">${r.tbd ? '<span class="tbd-inline">TBD</span>' : esc(r.value)}`
           + `${r.k === 'timing' && seg.signalMax ? dots : ''}</span>`
         ).join('') + `</span>`;
     } else if(seg.flexible){
-      subHtml = `<span class="item-sub"><span class="flex-badge">FLEXIBLE</span>${seg.flexMin}&ndash;${seg.flexMax} min &middot; nominal ${seg.durMin} min${seg.sub?' &middot; '+esc(seg.sub).replace(/\n/g,' &middot; '):''}</span>`;
+      /* V46: the FLEXIBLE chip and its min-max range are gone from the printed
+         row on Rama's instruction. A segment may still be flexible internally -
+         Balance Segments and the break still use it - but the sheet shows one
+         clock time and nothing that invites a reader to negotiate it. */
+      subHtml = seg.sub
+        ? `<span class="item-sub">${esc(seg.sub).replace(/\n/g,'<br>')}</span>`
+        : '';
     } else if(seg.sub){
       const tail = seg.hasSignal?(' &middot; '+fmtSignalTime(seg.signalMin)+'&ndash;'+fmtSignalTime(seg.signalMax)+' min'):'';
       /* A newline in the sub-note is a line break on the sheet - the Award
@@ -369,12 +389,22 @@ function buildSheetHTML(interactive){
        name is a real state, and it is the one the club needs to see. */
     const contestantsHtml = seg.isContestants
       ? (seg.contestants.length
-          ? `<span class="contestant-list">` + seg.contestants.map((name, i)=>
+          /* V46: the list is headed "Participants" and carries the standing note
+             that the printed sequence is NOT the speaking order - the draw
+             happens on the night. Without it a numbered list reads as the
+             running order, which is exactly what a contestant should not
+             assume. */
+          ? `<span class="participants-head">Participants</span>`
+            + `<span class="contestant-list">` + seg.contestants.map((name, i)=>
               `<span class="cl-num">${i+1}.</span>`
               + `<span class="cl-name">${name && name.trim()
                     ? esc(name.trim())
                     : '<span class="tbd-inline">TBD</span>'}</span>`
             ).join('') + `</span>`
+            + `<span class="participants-note">not in any particular order</span>`
+            + (seg.comments && seg.comments.trim()
+                ? `<span class="participants-note seg-comments">${esc(seg.comments.trim()).replace(/\n/g,'<br>')}</span>`
+                : '')
           : `<span class="item-sub contestant-empty">Contestants to be confirmed</span>`)
       : '';
 
@@ -388,7 +418,7 @@ function buildSheetHTML(interactive){
     let signalHtml = '';
     if(seg.hasSignal && !seg.isSpeech){
       signalHtml = `<span class="signal-line">` + signalBoxes(seg.signalMin, midOf(seg), seg.signalMax,
-        seg.signalSuffix ? esc(seg.signalSuffix) : '') + `</span>`;
+        seg.signalSuffix ? esc(seg.signalSuffix) : '', seg.noBell) + `</span>`;
     }
 
     /* h.rows = a row run by two people (Timer then TME on the vote rows) -
@@ -428,6 +458,13 @@ function buildSheetHTML(interactive){
      if it makes it into production for guests and members." Gated on `interactive`, so it
      survives in the live preview and appears in NOTHING that leaves the tab - the HTML
      download, the PDF, the JPG, and the hidden iframe that measures the pane fit. */
+  /* V46: with the FLEXIBLE chip gone the old explainer described a convention
+     the sheet no longer shows, so it is now the editing tip alone - and only in
+     the live preview, never in anything that prints. */
+  const scheduleNoteHtml = interactive
+    ? `<div class="schedule-note"><b>Tip:</b> hover a row &rarr; <b>&#9998; Edit</b> to change it right here; drag the &#10287; grip to reorder.</div>`
+    : '';
+
   const openRolesHtml = (interactive && openRoles.length)
     ? `<div class="theme-strip">Roles still open: ${openRoles.map(r=>`<b>${esc(r)}</b>`).join(', ')} — please fill before the meeting.</div>`
     : '';
@@ -459,7 +496,7 @@ ${interactive ? `<div class="print-fab"><button class="print-btn" onclick="windo
   <div class="body-grid">
     <main>
       ${openRolesHtml}
-      <div class="schedule-note"><span class="flex-badge">FLEXIBLE</span> segments can compress or stretch within their stated range so the meeting still lands on its published start/end time. Every other segment keeps the fixed time shown.${interactive?' <b>Tip:</b> hover a row → <b>✎ Edit</b> to change it right here; drag the ⠿ grip to reorder.':''}</div>
+      ${scheduleNoteHtml}
       <table>
         <thead><tr><th class="col-time">Time</th><th>Programme Item</th><th class="col-holder">Appointment Holder</th></tr></thead>
         <tbody>${tableRows}</tbody>
@@ -768,6 +805,8 @@ function liveEdit(id, field, value){
     ? (value === '' ? 0 : parseFloat(value)) : value;
   if(['signalMin','signalMid','signalMax'].includes(field)) markSignalsManual(seg);
   else if(field === 'durMin'){
+    /* V48: typing a length into a contest block takes it off the formula. */
+    if(seg.isContestants) seg.durManual = true;
     /* The slot drives the lights here exactly as it does in both panes; the
        open row's own light inputs are then refreshed in place - rebuilding the
        row would destroy the field being typed into. */
@@ -2972,6 +3011,13 @@ function setMeetingMode(mode){
   }
   state.meeting.mode = next;
   state.segments = buildModeSegments(next);
+  /* V48: a sheet that has never run a contest has a blank Test Speaker. Fill the
+     standing note on the way in, but only when blank - a club that already named
+     someone keeps them. */
+  if(next === 'contest' && !String(state.roles.ctestspk || '').trim()){
+    state.roles.ctestspk = TEST_SPEAKER_DEFAULT;
+  }
+  syncContestDurations();
   /* Carry the clock over ONLY if it is still the outgoing mode's default. A club
      that meets 19:30-22:00 typed those times deliberately, and resetting them
      to 18:45-21:30 because tonight is a contest is a change nobody asked for
@@ -3058,11 +3104,32 @@ function syncModeControls(){
 function renderRolesGrid(){
   const box = document.getElementById('rolesGrid');
   if(!box) return;
-  box.innerHTML = Object.entries(modeRoleLabels()).map(([key,label])=>{
+  /* V47: drawn in the saved order, with up/down arrows that reorder every
+     printed list of appointment holders at once (see orderedRoleEntries). */
+  /* V48: the merged list, so a custom role can be moved among the built-ins
+     from the same control. A custom key shows its label and arrows here and
+     nothing else - its tick, title and name stay in the Custom Roles editor
+     below, and a second name input for the same key would fight that one for
+     the caret. */
+  const entries = orderedRoleEntries();
+  box.innerHTML = entries.map(([key,label],i)=>{
     const on = roleIsActive(key);
+    const arrows = `<span class="role-move">` +
+      `<button type="button" title="Print this appointment earlier"${i===0?' disabled':''} onclick="moveRole('${key}',-1)">▲</button>` +
+      `<button type="button" title="Print this appointment later"${i===entries.length-1?' disabled':''} onclick="moveRole('${key}',1)">▼</button>` +
+      `</span>`;
+    if(isCustomRoleKey(key)){
+      return `<div id="rwg-${key}" class="role-custom${on?'':' role-off'}">` +
+        `<span class="role-head">` +
+        `<span class="role-lbl role-lbl-custom">${esc(label)}` +
+        `<span class="role-cr-tag" title="A club role — edit its title and name under Custom Roles">custom</span></span>` +
+        arrows + `</span></div>`;
+    }
     return `<div id="rw-${key}"${on?'':' class="role-off"'}>` +
+      `<span class="role-head">` +
       `<label class="role-lbl"><input type="checkbox" id="rc-${key}"${on?' checked':''} ` +
       `onchange="toggleRoleActive('${key}', this.checked)"> ${esc(label)}</label>` +
+      arrows + `</span>` +
       `<input type="text" id="r-${key}" placeholder="TBD" value="${esc(state.roles[key]||'')}"` +
       `${on?'':' disabled'} oninput="bindRole('${key}', this.value)"></div>`;
   }).join('');
@@ -3102,6 +3169,16 @@ function renderContestants(){
         oninput="bindContestTitle('${seg.id}', this.value)">
       <div class="ct-rows">${rows || '<div class="hint">No contestants yet.</div>'}</div>
       <button type="button" class="ct-add" onclick="addContestant('${seg.id}')">+ Add contestant</button>
+      <div class="hint ct-len">${seg.durManual
+        ? `Length: <b>${seg.durMin} min</b> &mdash; set by hand, so adding a contestant will not change it. `
+          + `The estimate for ${seg.contestants.length} would be ${contestBlockMinutes(seg)} min. `
+          + `<button type="button" class="ct-reset" onclick="resetContestDuration('${seg.id}')">↺ use the estimate</button>`
+        : `Length: <b>${contestBlockMinutes(seg)} min</b>`
+          + ` &mdash; ${seg.contestants.length} &times; ${contestBlockRate(seg)} min + ${CONTEST_BLOCK_BASE} min,`
+          + ` recalculated as contestants are added or removed.`}</div>
+      <label>Comments (printed under the participant list)</label>
+      <textarea rows="2" placeholder="e.g. a withdrawal, an eligibility note"
+        oninput="bindContestComments('${seg.id}', this.value)">${esc(seg.comments||'')}</textarea>
     </div>`;
   }).join('');
 }
@@ -3121,7 +3198,15 @@ function bindContestTitle(segId, val){
   const seg = state.segments.find(s=>s.id===segId);
   if(!seg) return;
   seg.title = val;
+  /* The rate is read off the title, so retitling a block can change its length. */
+  syncContestDurations();
   renderSegmentsList();
+  updatePreview();
+}
+function bindContestComments(segId, val){
+  const seg = state.segments.find(s=>s.id===segId);
+  if(!seg) return;
+  seg.comments = val;
   updatePreview();
 }
 function addContestant(segId){
@@ -3129,6 +3214,7 @@ function addContestant(segId){
   if(!seg) return;
   if(!Array.isArray(seg.contestants)) seg.contestants = [];
   seg.contestants.push('');
+  syncContestDurations();
   renderContestants();
   updatePreview();
   /* Put the caret in the row that was just created - otherwise adding five
@@ -3141,6 +3227,7 @@ function removeContestant(segId, idx){
   const seg = state.segments.find(s=>s.id===segId);
   if(!seg || !Array.isArray(seg.contestants)) return;
   seg.contestants.splice(idx, 1);
+  syncContestDurations();
   renderContestants();
   updatePreview();
 }
@@ -3186,8 +3273,15 @@ function bindVoting(key, val){
 function renderCustomRoles(){
   const box = document.getElementById('customRoles');
   if(!box) return;
+  /* Arrows here move the role within the SAME merged order the roles grid
+     shows, so a custom role can be lifted above the built-in appointments
+     without leaving this editor. Ends are judged against that merged list, not
+     against the custom roles alone. */
+  const orderKeys = orderedRoleEntries().map(([k])=>k);
   box.innerHTML = customRoles().map(r=>{
     const on = roleIsActive(r.key);
+    const at = orderKeys.indexOf(r.key);
+    const first = at <= 0, last = at === orderKeys.length - 1;
     return `<div class="cr-row${on?'':' role-off'}" id="rw-${r.key}">
       <input type="checkbox" id="rc-${r.key}"${on?' checked':''}
         onchange="toggleRoleActive('${r.key}', this.checked)"
@@ -3196,6 +3290,10 @@ function renderCustomRoles(){
         value="${esc(r.label)}" oninput="updCustomRole('${r.key}','label',this.value)">
       <input type="text" id="r-${r.key}" placeholder="TBD" value="${esc(state.roles[r.key]||'')}"
         ${on?'':'disabled'} oninput="bindRole('${r.key}', this.value)">
+      <span class="role-move">
+        <button type="button" title="Print this role earlier"${first?' disabled':''} onclick="moveRole('${r.key}',-1)">▲</button>
+        <button type="button" title="Print this role later"${last?' disabled':''} onclick="moveRole('${r.key}',1)">▼</button>
+      </span>
       <button class="cr-del" title="Remove this role" aria-label="Remove this role"
         onclick="removeCustomRole('${r.key}')">✕</button>
     </div>`;
@@ -3475,6 +3573,7 @@ function updSpeech(id, key, value){
     markSignalsManual(seg);
     syncCardTimingInputs(seg);
   } else if(key === 'durMin'){
+    if(seg.isContestants) seg.durManual = true;
     if(autoSignalsFromSlot(seg)) syncCardTimingInputs(seg);
   }
   /* Push the numbers back to this segment's row in Programme Segments — the
@@ -3803,6 +3902,8 @@ const ADD_OPTIONS = {
     ['calltoorder','SAA Calls Meeting to Order'],
     ['welcome','TME Welcome Remarks'],
     ['langeval','Language Evaluator Introduces Word of the Day'],
+    ['ahreport',"Ah-Counter's Report"],
+    ['langevalreport','Language Evaluation'],
     ['president','President Opening Address'],
     ['returncontrol','President Returns Control to TME'],
     ['speechvote',"Timer's Report | Voting for Best Speaker"],

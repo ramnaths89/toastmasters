@@ -142,6 +142,35 @@ textarea{resize:vertical; min-height:56px; font-size:12.5px; line-height:1.4;}
 /* Roles grid */
 .roles-grid{ display:grid; grid-template-columns:1fr 1fr; gap:2px 12px; }
 .roles-grid label{ margin-top:6px; }
+/* V47: label on the left, the print-order arrows on the right of the same line.
+   The buttons are deliberately small and grey - they reorder how the roster
+   PRINTS, they are not the main act of the form. */
+.role-head{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.role-move{ display:flex; gap:2px; flex:0 0 auto; }
+.role-move button{
+  border:1px solid var(--line); background:#fff; color:var(--ink-soft);
+  font-size:9px; line-height:1; padding:2px 5px; border-radius:3px; cursor:pointer;
+}
+.role-move button:hover:not(:disabled){ background:var(--cream); color:var(--maroon); }
+.role-move button:disabled{ opacity:0.35; cursor:default; }
+/* V48: a custom role's slot in the ordering grid. It shows where the role sits
+   among the built-in appointments and lets it be moved; its tick, title and
+   name stay in the Custom Roles editor, so there is exactly one input per
+   value and no caret to fight over. */
+.role-custom{ align-self:start; }
+.role-lbl-custom{ display:flex; align-items:center; gap:6px; font-weight:600; color:var(--ink-soft); }
+.role-cr-tag{
+  font-size:8.5px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase;
+  padding:1px 4px; border-radius:3px; background:var(--cream); color:var(--maroon);
+  border:1px solid var(--line);
+}
+.roles-grid > div.role-custom.role-off .role-lbl-custom{ text-decoration:line-through; opacity:0.6; }
+/* "use the estimate" in a contest block's length note. */
+.ct-reset{
+  border:1px solid var(--line); background:#fff; color:var(--maroon);
+  font-family:inherit; font-size:10.5px; padding:1px 6px; border-radius:3px; cursor:pointer;
+}
+.ct-reset:hover{ background:var(--cream); }
 .lbl-hint{ font-weight:400; text-transform:none; letter-spacing:0; color:var(--ink-soft); font-style:italic; }
 
 /* Speech & evaluator cards */

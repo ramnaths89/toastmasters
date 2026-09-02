@@ -46,7 +46,17 @@ const PRESETS = {
   registration:  {label:'Registration & Fellowship', durMin:30, noHolder:true},
   calltoorder:   {label:'SAA Calls Meeting to Order', sub:'Introduction of Guests and Theme', durMin:4, roleKey:'saa'},
   welcome:       {label:'TME Welcome Remarks', sub:'Introduction of Role Players', durMin:4, roleKey:'tmod'},
-  langeval:      {label:'Language Evaluator Introduces the Word of the Day', durMin:3, roleKey:'langeval'},
+  /* V47: Word of the Day trimmed 3 -> 2 min (Rama), and the Language Evaluator
+     now also DELIVERS - the 8-minute Language Evaluation near the end of the
+     night, after the Ah-Counter's report. Both rows are managed by
+     syncLanguageEvaluatorSegment, splicing in and out with the tick. */
+  langeval:      {label:'Language Evaluator Introduces the Word of the Day', durMin:2, roleKey:'langeval'},
+  langevalreport:{label:'Language Evaluation', durMin:8, roleKey:'langeval'},
+  /* V47: the Ah-Counter reports on the night's filler words. 2 min - Rama gave
+     durations only for the WOTD and the Language Evaluation; two minutes is the
+     club convention for a counter's report and is flagged here so it is a
+     one-line change if he corrects it. */
+  ahreport:      {label:"Ah-Counter's Report", durMin:2, roleKey:'ahcounter'},
   president:     {label:'Club President Opening Address', durMin:4, roleKey:'president'},
   returncontrol: {label:'Club President Returns Control to TME', durMin:1, roleKey:'tmod'},
   speech:        {label:'Speech', durMin:8, hasSignal:true, signalMin:5, signalMid:6, signalMax:7, isSpeech:true, signalGroup:'Prepared Speech'},
@@ -86,24 +96,44 @@ const PRESETS = {
      contestants turn up on the night. A 0-minute row deliberately repeats the
      clock of the row above it - that is the sample sheets' "same time slot,
      second item" and it is accurate rather than blank. */
-  csetup:        {label:'Set up of Room by SAA', durMin:15, roleKey:'csaa1'},
-  cbriefchair:   {label:'Briefing for Contest Chair & Photographer', durMin:0, roleKey:'cchair'},
-  cbriefjudges:  {label:'Briefing for Judges, Tally Counters & Timers', durMin:15, roleKey:'cjudge'},
+  /* V48: these durations are Rama's, read off the 24 Sep 2026 contest sheet
+     after he had worked it through end to end. The shipped template had been my
+     estimates; his are what the club actually runs, and the ceremonial rows in
+     particular are consistently shorter (5 -> 3) than I had guessed. A 0-minute
+     briefing for the chair was also plainly wrong - it happens, it takes five
+     minutes, and printing 0 said the sheet had not been thought about. */
+  csetup:        {label:'Set up of Room by SAA', durMin:10, roleKey:'csaa1'},
+  cbriefchair:   {label:'Briefing for Contest Chair & Photographer', durMin:5, roleKey:'cchair'},
+  cbriefjudges:  {label:'Briefing for Judges, Tally Counters & Timers', durMin:10, roleKey:'cjudge'},
   cdraw:         {label:'Contestants to Draw Ballots', durMin:5, roleKey:'ctm'},
-  ccalltoorder:  {label:'Sergeant-at-Arms Calls Contest to Order', durMin:0, roleKey:'csaa1'},
-  copening:      {label:'Opening Address', durMin:5, roleKey:'cchair'},
-  crules:        {label:'Briefing of Contest Rules', durMin:5, roleKey:'ctm'},
-  contest:       {label:'Contest', durMin:30, flexible:true, flexMin:15, flexMax:50,
-                  isContestants:true, roleKey:'ctm'},
-  ccollect:      {label:"Collection of Judges' Ballots & Timers' Record", durMin:5, roleKey:'ctally1'},
-  cbreak:        {label:'Refreshment Break', durMin:15, flexible:true, flexMin:10, flexMax:20, noHolder:true},
-  ctestspeech:   {label:'Test Speaker Speech', durMin:7, hasSignal:true,
+  ccalltoorder:  {label:'Sergeant-at-Arms Calls Contest to Order', durMin:1, roleKey:'csaa1'},
+  copening:      {label:'Opening Address', durMin:3, roleKey:'cchair'},
+  crules:        {label:'Briefing of Contest Rules', durMin:3, roleKey:'ctm'},
+  /* V46: the Evaluation half runs Briefing(3) -> Test Speaker Speech(9) ->
+     Contestants to Holding Room(7) -> the contest itself. Separate presets so
+     the Table Topics half keeps its own 5-minute briefing. */
+  cruleseval:    {label:'Briefing of Evaluation Contest Rules', durMin:3, roleKey:'ctm'},
+  /* V46: no longer FLEXIBLE. The length is computed from the number of
+     contestants (see contestBlockMinutes) rather than stretched to fit, so the
+     printed clock is the one the contest will actually run to. */
+  contest:       {label:'Contest', durMin:30, isContestants:true, roleKey:'ctm'},
+  ccollect:      {label:"Collection of Judges' Ballots & Timers' Record", durMin:3, roleKey:'ctally1'},
+  cbreak:        {label:'Refreshment Break', durMin:10, flexible:true, flexMin:10, flexMax:20, noHolder:true},
+  /* V48 (Rama): the speech is 5-7 minutes and there is NO disqualifying bell -
+     the Test Speaker is giving the contestants something to evaluate, not
+     competing. The SLOT stays 9 minutes: the speech is 7 at most, and the
+     remainder is the walk on, the introduction and the settle after. */
+  ctestspeech:   {label:'Test Speaker Speech', durMin:9, hasSignal:true, noBell:true,
+                  fixedSignals:true,
                   signalMin:5, signalMid:6, signalMax:7, roleKey:'ctestspk', signalGroup:'Test Speech'},
-  cholding:      {label:'Contestants Proceed to Holding Room', durMin:3, roleKey:'csaa2'},
-  ccerts:        {label:'Presentation of Certificates of Participation', durMin:5, roleKey:'cchair'},
-  cappreciation: {label:'Certificates of Appreciation', durMin:0, roleKey:'cchair'},
-  cresults:      {label:'Announcement of Results', durMin:5, roleKey:'cjudge'},
-  cclosing:      {label:'Closing Address', durMin:5, roleKey:'cadirector'},
+  cholding:      {label:'Contestants Proceed to Holding Room', durMin:7, roleKey:'csaa2'},
+  /* V46: the Contest Toastmaster hands out the certificates and tokens, not the
+     Contest Chair (Rama). */
+  ccerts:        {label:'Presentation of Certificates of Participation', durMin:3, roleKey:'ctm'},
+  cappreciation: {label:'Certificates of Appreciation', durMin:3, roleKey:'ctm'},
+  cresults:      {label:'Announcement of Results', durMin:3, roleKey:'cjudge'},
+  /* Closing and photos ran as one row on the 24 Sep sheet. */
+  cclosing:      {label:'Closing Address | Photo Taking', durMin:3, roleKey:'cchair'},
   cphoto:        {label:'Photography Session', durMin:5, roleKey:'cphoto', fixedHolder:'All'},
   /* Superseded by the three combined rows above, kept only so a meeting saved
      before V21 still resolves its presetKey on load. Not offered in Add. */
@@ -142,6 +172,10 @@ function newSegment(presetKey){
     signalsManual: false,
     signalGroup: p.signalGroup || '',
     signalSuffix: p.signalSuffix || '',
+    /* V48: this row's red light carries no disqualifying bell. */
+    noBell: !!p.noBell,
+    /* V48: a contest block whose length was typed rather than computed. */
+    durManual: false,
     isSpeech: !!p.isSpeech,
     isEvaluation: !!p.isEvaluation,
     /* Contest block (V43): the row prints a numbered list of contestants under
@@ -150,6 +184,9 @@ function newSegment(presetKey){
        adoptState rather than being allowed to spread into {0:'a',1:'b'}. */
     isContestants: !!p.isContestants,
     contestants: [],
+    /* V46: free-text note printed under a contest block's participant list -
+       eligibility, a withdrawal, "order drawn on the night". Always a string. */
+    comments: '',
     /* Pathways linkage (speech segments) */
     pathway: '',
     pLevel: '',
@@ -160,9 +197,68 @@ function newSegment(presetKey){
 
 /* ================= Meeting mode (V43) ================= */
 function isContest(){ return (state.meeting && state.meeting.mode) === 'contest'; }
+
+/* ================= Contest block length (V46) =================
+   A contest block used to be FLEXIBLE - a nominal 30 min that Balance Segments
+   stretched to make the night land on its published end time. That is the wrong
+   way round: the contest takes as long as its contestants take, and it is the
+   END TIME that should move.
+   Rate per contestant plus a fixed allowance for the chair's introduction, the
+   ballot collection between speakers and the shuffle on and off stage:
+       Table Topics  3.5 min/contestant + 5
+       Evaluation    4.5 min/contestant + 5
+   Rounded to the nearest whole minute, because the sheet prints whole minutes
+   and a half-minute in the clock column reads as a typo. */
+const CONTEST_RATES = { tabletopics: 3.5, evaluation: 4.5 };
+const CONTEST_BLOCK_BASE = 5;
+
+/* Which rate a block uses is read off its TITLE, so retitling a block for a
+   Humorous or International contest keeps it on the evaluation-style rate
+   unless the title says Table Topics. */
+function contestBlockRate(seg){
+  return /table\s*topic/i.test(String(seg.title||'')) ? CONTEST_RATES.tabletopics
+                                                      : CONTEST_RATES.evaluation;
+}
+function contestBlockMinutes(seg){
+  const n = Array.isArray(seg.contestants) ? seg.contestants.length : 0;
+  if(!n) return CONTEST_BLOCK_BASE;
+  return Math.round(n * contestBlockRate(seg) + CONTEST_BLOCK_BASE);
+}
+/* Push the computed length into every contest block. Called after any change to
+   a contestant list and on load, so durMin is never stale. Returns true if any
+   duration actually moved. */
+function syncContestDurations(){
+  let changed = false;
+  (state.segments||[]).forEach(s => {
+    if(!s.isContestants) return;
+    /* V48: A TYPED LENGTH WINS. V47 recomputed on every load and on every
+       contestant edit, unconditionally - so Rama's 24 Sep sheet, where he set
+       both blocks to a flat 35 minutes to land the night on 9:30, would have
+       been silently pushed back to the formula's 37 the next time he opened it.
+       The formula is a good first guess, not a policy: once someone types a
+       length, it is theirs until they ask for the estimate back. */
+    if(s.durManual) return;
+    const want = contestBlockMinutes(s);
+    if(Number(s.durMin) !== want){ s.durMin = want; changed = true; }
+  });
+  return changed;
+}
+/* Hand the block back to the formula. */
+function resetContestDuration(segId){
+  const seg = state.segments.find(s=>s.id===segId);
+  if(!seg) return;
+  seg.durManual = false;
+  syncContestDurations();
+  renderContestants();
+  renderSegmentsList();
+  updatePreview();
+}
 /* The template for each mode is built to land on its own end time, so the mode
    carries the clock with it - a contest starts earlier because the briefings and
    the room set-up happen before anyone is called to order. */
+/* The standing note for an appointment filled on the night. */
+const TEST_SPEAKER_DEFAULT = 'TBA @ Contest';
+
 const MODE_TIMES = {
   chapter: {startTime:'19:00', endTime:'21:30'},
   contest: {startTime:'18:45', endTime:'21:30'},
@@ -218,8 +314,13 @@ function defaultState(){
       tmod: '', president: '', ttmaster: '', ttevaluator: '',
       langeval: '', timer: '', ahcounter: '', photographer: '', saa: '',
       cchair: '', ctm: '', cjudge: '', ctimer1: '', ctimer2: '',
-      ctally1: '', ctally2: '', csaa1: '', csaa2: '', cjudges: '',
-      ctestspk: '', cphoto: '', cadirector: '',
+      ctally1: '', ctally2: '', csaa1: '', csaa2: '', csaa3: '', cjudges: '',
+      /* V48: the Test Speaker is booked on the night, not in advance - Rama
+         filled this with an "announced during the contest" note by hand on the
+         24 Sep sheet, and an appointment whose honest answer is always the same
+         sentence should not need typing. It is an ordinary editable value, so a
+         club that DOES know its test speaker just types over it. */
+      ctestspk: TEST_SPEAKER_DEFAULT, cphoto: '', cadirector: '',
     },
     /* Unticked = this role isn't running today: it drops off the roster and its
        own agenda items are switched off (kept in state, not deleted). */
@@ -233,9 +334,16 @@ function defaultState(){
       tmod: true, president: true, ttmaster: true, ttevaluator: true,
       langeval: false, timer: true, ahcounter: true, photographer: true, saa: true,
       cchair: true, ctm: true, cjudge: true, ctimer1: true, ctimer2: true,
-      ctally1: true, ctally2: true, csaa1: true, csaa2: true, cjudges: true,
+      ctally1: true, ctally2: true, csaa1: true, csaa2: true, csaa3: false, cjudges: true,
       ctestspk: true, cphoto: true, cadirector: true,
     },
+    /* V47: the order appointment holders PRINT in - the chapter roster under
+       TME Welcome Remarks and the Contest Committee block both follow it, and
+       the roles form draws in the same order so what you see while editing is
+       what the sheet prints. One array per mode; an empty array means the
+       built-in order. Keys missing from the array (a build adds a role later)
+       are appended in built-in order rather than lost. */
+    roleOrder: { chapter: [], contest: [] },
     /* [{key:'cr1', label:'Zoom Master'}] — the club's own roles. Empty in the
        template: this is a per-club addition, not part of the standard meeting. */
     customRoles: [],
@@ -314,10 +422,17 @@ function buildContestSegments(){
      contest's ballots are being drawn, which is what the reference sheets show
      by printing both against the same clock. The second collection, at the end
      of the night, is the one that really costs five minutes. */
-  seg.push(segTitled('ccollect', '', {durMin:0}));
-  seg.push(segTitled('cdraw', 'Evaluation Contestants to Draw Ballots'));
+  seg.push(segTitled('ccollect', '', {durMin:2}));
+  /* V48: the break comes BEFORE the evaluation draw, and the draw itself takes
+     no clock. Rama reordered these on the 24 Sep sheet and he is right: the
+     contestants draw their ballots as the break ends and the room comes back,
+     so the draw shares the break's slot instead of holding the night up for
+     five minutes of its own. */
   seg.push(newSegment('cbreak'));
-  seg.push(segTitled('crules', 'Briefing of Evaluation Contest Rules'));
+  seg.push(segTitled('cdraw', 'Evaluation Contestants to Draw Ballots', {durMin:0}));
+  /* V46 running order for the Evaluation half, on Rama's instruction:
+     Briefing (3) -> Test Speaker Speech (9) -> Holding Room (7) -> Contest. */
+  seg.push(newSegment('cruleseval'));
   seg.push(newSegment('ctestspeech'));
   seg.push(segTitled('cholding', 'Evaluation Contestants Proceed to Holding Room'));
   seg.push(segTitled('contest', 'Evaluation Contest'));
@@ -325,8 +440,12 @@ function buildContestSegments(){
   seg.push(newSegment('ccerts'));
   seg.push(newSegment('cappreciation'));
   seg.push(newSegment('cresults'));
+  /* V48: no separate Photography Session row. The closing row now reads
+     "Closing Address | Photo Taking", which is how the 24 Sep sheet ran it -
+     everyone is already standing at the front. The Photographer APPOINTMENT is
+     untouched and still prints in the committee; it simply no longer owns a row
+     of its own. Add one from the Add bar for a contest that wants it. */
   seg.push(newSegment('cclosing'));
-  seg.push(newSegment('cphoto'));
   return seg;
 }
 
@@ -484,6 +603,35 @@ function adoptState(parsed){
        not an array becomes an empty list, and non-string entries are coerced
        rather than dropped so a hand-edited number still names someone. */
     seg.isContestants = !!seg.isContestants;
+    seg.comments = strOr(seg.comments, '');
+    /* V48: these two ask "did the FILE say anything", so they must read the raw
+       object. seg is Object.assign(newSegment(...), sg), and newSegment already
+       supplied false for both - so testing seg here cannot tell a file that
+       said false from a file written before the field existed, and the
+       migration below would never fire. Caught by the round-trip test: Rama's
+       hand-set 35s were still being pushed back to the formula's 37. */
+    const said = k => Object.prototype.hasOwnProperty.call(sg || {}, k)
+                      && sg[k] !== undefined && sg[k] !== null;
+    /* No noBell in the file means nobody ever decided, and the rule - a Test
+       Speaker is not competing, so there is no disqualifying time - decides it.
+       An explicit false is left alone. */
+    seg.noBell = said('noBell') ? !!sg.noBell : (seg.presetKey === 'ctestspeech');
+    /* No durManual in the file, on a contest block whose length is not what the
+       formula would produce, means the length was typed. Keep it and mark it.
+       Wrong in this direction costs one click of "use the estimate"; wrong the
+       other way silently rewrites the sheet. */
+    seg.durManual = said('durManual') ? !!sg.durManual
+      : !!(seg.isContestants && Number(seg.durMin) !== contestBlockMinutes(seg));
+    /* V48: a fixed-signal row whose lights were never typed by hand gets the
+       rule's numbers back. Files written before V48 have the slot-derived ones
+       baked in (6/7/8 on a 9-minute Test Speaker slot); signalsManual false says
+       plainly that no one chose them, so restoring 5/6/7 corrects the app's own
+       arithmetic rather than overwriting anybody's decision. */
+    const pf = PRESETS[seg.presetKey] || {};
+    if(pf.fixedSignals && !seg.signalsManual){
+      seg.signalMin = pf.signalMin; seg.signalMid = pf.signalMid; seg.signalMax = pf.signalMax;
+      seg.signalSpan = Math.max(0, pf.signalMax - pf.signalMin);
+    }
     if(Array.isArray(seg.contestants)){
       seg.contestants = seg.contestants.map(c => strOr(c, ''));
     }else{
@@ -507,12 +655,24 @@ function adoptState(parsed){
     seenIds.add(id);
   });
   if(dupes) repairs.push(dupes + ' duplicate segment ids re-keyed');
+  /* V46: a contest block's length is DERIVED from its contestant count, so a
+     file written before V46 (or hand-edited) carries a stale durMin. Recompute
+     on load rather than trusting the file. */
+  if(syncContestDurations()) repairs.push('contest block lengths recalculated from the contestant counts');
   /* These four are split on newlines and pipes all over the renderer; a non-string
      here threw before anything reached the screen. */
   ['execText','districtText','linksText','announcementsText'].forEach(k=>{
     if(typeof state[k] !== 'string'){ state[k] = strOr(state[k], ''); repairs.push(k + ' was not text'); }
   });
   if(typeof state.theme !== 'string') state.theme = 'classic';
+  /* V47: the appointment-holder print order. A file from before V47, or a
+     mangled one, gets the built-in order back rather than a throw in the
+     sort. */
+  if(!state.roleOrder || typeof state.roleOrder !== 'object') state.roleOrder = {chapter:[], contest:[]};
+  ['chapter','contest'].forEach(k=>{
+    if(!Array.isArray(state.roleOrder[k])) state.roleOrder[k] = [];
+    state.roleOrder[k] = state.roleOrder[k].filter(x=>typeof x === 'string');
+  });
   /* An unknown mode would make isContest() false and quietly render a contest
      with the chapter roster, which reads as "the app lost my committee" rather
      than as a bad file. Say so instead. */
@@ -535,6 +695,49 @@ function adoptState(parsed){
   state.customRoles = (Array.isArray(raw.customRoles) ? raw.customRoles : [])
     .filter(r => r && typeof r === 'object' && r.key)
     .map(r => ({key: String(r.key), label: String(r.label == null ? '' : r.label)}));
+  /* A custom role that has since become a built-in appointment (V48: Contest
+     SAA 3) is folded into it, so a file written when it was the only way to get
+     the post does not now carry the appointment twice - once built-in and empty,
+     once custom and filled.
+     Deliberately narrow. It fires only on an EXACT label match against the
+     built-in set, and only when the built-in is still empty, so it can never
+     overwrite a name already there: on Rama's 24 Sep sheet that lets "Contest
+     SAA 3" fold while his custom "Photographer" stays put, because the built-in
+     Photographer already holds a name. Every fold is reported, because a role
+     quietly changing identity under a file is exactly the sort of help nobody
+     asked for. */
+  (function foldCustomIntoBuiltIn(){
+    /* The CURRENT MODE's appointments only. Folding against both sets at once
+       looked harmless and was not: "Photographer" is a label in both, so the
+       chapter role overwrote the contest one in this lookup and a custom
+       Photographer on a CONTEST sheet folded into the chapter roster - landing
+       in a list the contest never prints, while the contest's own Photographer
+       (which already held a name, and should have blocked the fold) was never
+       even consulted. Caught by the round-trip test on the 24 Sep sheet. */
+    const byLabel = {};
+    Object.entries(modeRoleLabels())
+      .forEach(([k,label])=>{ byLabel[label.trim().toLowerCase()] = k; });
+    const keep = [];
+    state.customRoles.forEach(r=>{
+      const target = byLabel[String(r.label || '').trim().toLowerCase()];
+      const filled = target && String(state.roles[target] || '').trim();
+      if(!target || filled){ keep.push(r); return; }
+      state.roles[target] = state.roles[r.key] || '';
+      state.roleActive[target] = state.roleActive[r.key] !== false;
+      delete state.roles[r.key];
+      delete state.roleActive[r.key];
+      /* Inherit its slot in the print order rather than jumping to the end. */
+      ['chapter','contest'].forEach(mk=>{
+        const arr = state.roleOrder && state.roleOrder[mk];
+        if(Array.isArray(arr)){
+          const at = arr.indexOf(r.key);
+          if(at >= 0) arr[at] = target;
+        }
+      });
+      repairs.push('the club role "' + r.label + '" is now a built-in appointment and was folded into it');
+    });
+    state.customRoles = keep;
+  })();
   state.meeting.voting = Object.assign({link:VOTE_LINK, codes:{}},
     (raw.meeting && raw.meeting.voting) || {});
   syncVotingFromState();
@@ -854,6 +1057,11 @@ const CONTEST_ROLE_LABELS = {
   ctally2:    'Contest Tally Counter 2',
   csaa1:      'Contest SAA 1',
   csaa2:      'Contest SAA 2',
+  /* A third SAA is a standing appointment, not a club oddity: two work the
+     doors and the holding room while the third runs the stage. Starts UNTICKED
+     for the same reason the Language Evaluator does - a contest that runs two
+     SAAs should not print a red TBD for a post it never filled. */
+  csaa3:      'Contest SAA 3',
   cjudges:    'Judges',
   ctestspk:   'Test Speaker',
   cphoto:     'Photographer',
@@ -906,19 +1114,63 @@ function roleLabelMap(){
   customRoles().forEach(r=>{ if(r.label) m[r.key] = r.label; });
   return m;
 }
+
+/* ================= Appointment-holder order (V47) =================
+   Every list of appointment holders - the roles form, the roster the TME reads
+   from, the Contest Committee block - draws through here, so the up/down
+   arrows in the form reorder ALL of them at once and the saved file carries
+   the order. */
+function roleOrderKey(){ return isContest() ? 'contest' : 'chapter'; }
+
+/* V48: CUSTOM ROLES ARE IN THE ORDER TOO.
+   V47 built this list from modeRoleLabels(), which is the built-in appointments
+   only - so a custom role was appended to the end of the printed committee and
+   could not be moved. That is precisely the case the feature exists for: Rama's
+   24 Sep contest sheet carries a custom "Contest SAA 3" that belongs directly
+   under Contest SAA 2, and a custom "Photographer" standing in for the built-in
+   one he had switched off. Both sat at the bottom with no way up.
+   The merged list is the single source of print order; the roles form and the
+   custom-role editor each carry arrows that move a key within it. */
+function orderedRoleEntries(){
+  const base = Object.entries(modeRoleLabels())
+    .concat(customRoles().filter(r=>r.label).map(r=>[r.key, r.label]));
+  const saved = (state.roleOrder && state.roleOrder[roleOrderKey()]) || [];
+  if(!saved.length) return base;
+  const pos = {}; saved.forEach((k,i)=>{ pos[k] = i; });
+  /* Stable: keys the saved order knows come first, in that order; keys it does
+     not (a newer build's role, or a custom role added since) keep their built-in
+     relative order after them. */
+  return base.map((e,i)=>[e, (e[0] in pos) ? pos[e[0]] : saved.length + i])
+             .sort((a,b)=>a[1]-b[1]).map(([e])=>e);
+}
+/* True for a key the custom-role editor owns, so the roles grid can draw it
+   without a second name input fighting the one in that editor. */
+function isCustomRoleKey(key){ return customRoles().some(r=>r.key===key); }
+function moveRole(key, dir){
+  const keys = orderedRoleEntries().map(([k])=>k);
+  const i = keys.indexOf(key), j = i + dir;
+  if(i < 0 || j < 0 || j >= keys.length) return;
+  [keys[i], keys[j]] = [keys[j], keys[i]];
+  if(!state.roleOrder) state.roleOrder = {chapter:[], contest:[]};
+  state.roleOrder[roleOrderKey()] = keys;
+  renderRolesGrid();
+  renderCustomRoles();
+  updatePreview();
+}
 /* Which agenda items exist ONLY because a role is running. Deliberately NOT the same
    as a segment's roleKey: the TME *holds* Welcome Remarks, Returns Control, and the two
    introductions, but those are meeting infrastructure — they must survive even if the
    TME row is switched off. Same for the President's address. */
 const ROLE_OWNED_SEGMENTS = {
   saa:          ['calltoorder'],
-  langeval:     ['langeval'],
+  langeval:     ['langeval','langevalreport'],
   ttmaster:     ['ttmasterintro','tabletopics','ttreturn','ttvoting','ttvote'],
   /* Deliberately NOT the three vote rows: the club still votes when nobody is
      timing, so unticking Timer must leave those rows standing (holder → TBD). */
   timer:        ['timerreport'],
   photographer: ['photo'],
-  tmod: [], president: [], ttevaluator: [], ahcounter: [],
+  tmod: [], president: [], ttevaluator: [],
+  ahcounter: ['ahreport'],
   /* Contest appointments (V43). Only two of them OWN a row. Unticking the Test
      Speaker has to take the Test Speaker Speech with it - that is the documented
      way to run a Table Topics contest, which has no test speech, and without
@@ -932,7 +1184,7 @@ const ROLE_OWNED_SEGMENTS = {
   ctestspk:   ['ctestspeech'],
   cphoto:     ['cphoto'],
   cchair: [], ctm: [], cjudge: [], ctimer1: [], ctimer2: [],
-  ctally1: [], ctally2: [], csaa1: [], csaa2: [], cjudges: [], cadirector: [],
+  ctally1: [], ctally2: [], csaa1: [], csaa2: [], csaa3: [], cjudges: [], cadirector: [],
 };
 function roleIsActive(key){ return state.roleActive ? state.roleActive[key] !== false : true; }
 
@@ -958,14 +1210,23 @@ function rolePlayerLines(){
   /* In a contest the whole committee is introduced, not a subset: there is no
      TME standing apart from the people being introduced, and the Contest Chair
      and Chief Judge both speak later in their own right. */
+  /* V47: both lists follow the saved appointment order. The chapter roster is
+     still the ROLE_PLAYER_KEYS subset (no TME, no President), but sorted by the
+     same order the form shows. */
+  /* The chapter roster is the ROLE_PLAYER_KEYS subset - no TME, no President,
+     both of whom are named elsewhere on the sheet - PLUS every custom role,
+     which has no built-in slot to be excluded from. */
+  const playerSet = new Set(ROLE_PLAYER_KEYS.map(([k])=>k));
   const keys = isContest()
-    ? Object.entries(CONTEST_ROLE_LABELS)
-    : ROLE_PLAYER_KEYS;
-  const builtIn = keys.filter(([k]) => roleIsActive(k)).map(([k,label])=>({
+    ? orderedRoleEntries()
+    : orderedRoleEntries().filter(([k]) => playerSet.has(k) || isCustomRoleKey(k));
+  /* V48: orderedRoleEntries() already carries the custom roles, so they are no
+     longer concatenated on the end - that printed each of them twice. In a
+     chapter meeting they are still introduced with the rest of the role
+     players, now at whatever position the order puts them. */
+  return keys.filter(([k]) => roleIsActive(k)).map(([k,label])=>({
     label, name: state.roles[k] || '', tbd: !state.roles[k]
   }));
-  /* Custom roles are introduced with the rest of the role players, after them. */
-  return builtIn.concat(customRoleLines().map(r=>({label:r.label, name:r.name, tbd:r.tbd})));
 }
 /* A role that isn't running today is not "still open" — don't chase it. */
 function openRoleLabels(){
@@ -979,28 +1240,74 @@ function openRoleLabels(){
    TME Welcome Remarks whenever a Language Evaluator is named, and disappears
    when the role is cleared. Returns true if the running order changed. */
 function syncLanguageEvaluatorSegment(){
-  /* Tick-driven since V24 (was name-driven): a ticked Language Evaluator puts
-     the row in the agenda immediately, TBD until named, so the printed running
-     order and timings are final before the roster is. The 3 min it adds is
-     flagged by the end-check and absorbed with Balance. */
-  /* A contest has no Word of the Day. Without this guard a club that leaves the
-     Language Evaluator ticked from last month's chapter meeting gets one spliced
-     into the contest running order, three minutes and all. */
+  /* Tick-driven since V24 (was name-driven): a ticked role puts its rows in the
+     agenda immediately, TBD until named, so the printed running order and
+     timings are final before the roster is. The minutes added are flagged by
+     the end-check and absorbed with Balance.
+     V47 manages THREE rows here, not one:
+       langeval tick  -> Word of the Day (2 min) right after TME Welcome Remarks
+                      -> Language Evaluation (8 min) in the reports slot
+       ahcounter tick -> Ah-Counter's Report (2 min) in the reports slot
+     The reports slot is after the LAST timer's-report row (evalvote), in the
+     order Ah-Counter's Report then Language Evaluation - the language
+     evaluation follows the counter's report on Rama's instruction. */
+  /* A contest has no Word of the Day and no reports segment. Without this guard
+     a club that leaves the roles ticked from last month's chapter meeting gets
+     them spliced into the contest running order. */
   if(isContest()) return false;
-  const has = roleIsActive('langeval');
-  const idx = state.segments.findIndex(s => s.presetKey === 'langeval');
-  if(has && idx < 0){
+  let changed = false;
+
+  const drop = (presetKey)=>{
+    const idx = state.segments.findIndex(s => s.presetKey === presetKey);
+    if(idx < 0) return;
+    if(editingSegId === state.segments[idx].id) editingSegId = null;
+    state.segments.splice(idx, 1);
+    changed = true;
+  };
+  /* Where the reports go: after the named anchor presets, taking the LAST one
+     present so 'langevalreport' lands after 'ahreport' when both are in. A
+     hand-built order missing every anchor gets the row before Award
+     Presentation - the reports belong before the wrap-up, not after the
+     President has adjourned. */
+  const insertAfter = (presetKey, anchors)=>{
+    const seg = newSegment(presetKey);
+    let at = -1;
+    anchors.forEach(a=>{
+      const i = state.segments.findIndex(s => s.presetKey === a);
+      if(i > at) at = i;
+    });
+    if(at < 0){
+      const aw = state.segments.findIndex(s => s.presetKey === 'awards');
+      state.segments.splice(aw >= 0 ? aw : state.segments.length, 0, seg);
+    } else {
+      state.segments.splice(at + 1, 0, seg);
+    }
+    changed = true;
+  };
+
+  const wantLE = roleIsActive('langeval');
+  const wantAh = roleIsActive('ahcounter');
+  const hasWotd = state.segments.some(s => s.presetKey === 'langeval');
+  const hasLEr  = state.segments.some(s => s.presetKey === 'langevalreport');
+  const hasAh   = state.segments.some(s => s.presetKey === 'ahreport');
+
+  if(wantLE && !hasWotd){
     const seg = newSegment('langeval');
     const wIdx = state.segments.findIndex(s => s.presetKey === 'welcome');
     state.segments.splice(wIdx >= 0 ? wIdx + 1 : 1, 0, seg);
-    return true;
+    changed = true;
   }
-  if(!has && idx >= 0){
-    if(editingSegId === state.segments[idx].id) editingSegId = null;
-    state.segments.splice(idx, 1);
-    return true;
-  }
-  return false;
+  if(!wantLE && hasWotd) drop('langeval');
+
+  /* Order matters: place the Ah-Counter's report first so the Language
+     Evaluation can anchor after it. */
+  if(wantAh && !hasAh) insertAfter('ahreport', ['evalvote']);
+  if(!wantAh && hasAh) drop('ahreport');
+
+  if(wantLE && !hasLEr) insertAfter('langevalreport', ['ahreport','evalvote']);
+  if(!wantLE && hasLEr) drop('langevalreport');
+
+  return changed;
 }
 
 
@@ -1041,6 +1348,14 @@ function spanOf(seg){
 }
 function autoSignalsFromSlot(seg){
   if(seg.signalsManual) return false;
+  /* V48: some rows' lights are fixed by the CONTEST RULES and have nothing to do
+     with the length of the slot. The Test Speaker speaks 5-7 minutes inside a
+     9-minute slot - the rest is the introduction, the walk on and the settle
+     after - and deriving red from the slot gave 8:00 with a bell at 8:30, which
+     is a full minute past the speech the timer is actually timing. This is how
+     the 24 Sep sheet came to carry 6/7/8 without anyone choosing it: the file
+     had signalsManual false, so the slot owned the numbers. */
+  if((PRESETS[seg.presetKey] || {}).fixedSignals) return false;
   const span = spanOf(seg);
   const red = Math.max(0, (Number(seg.durMin)||0) - TRANSITION_MIN);
   const green = Math.max(0, red - span);

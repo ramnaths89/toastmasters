@@ -30,6 +30,6 @@ SEP='</script>\n<script>'
 out = (r('00_head_open.html') + '<style>' + r('01_builder.css') + r('02_body.html')
        + css_sheet + SEP + h2c + SEP
        + r('05_app.js') + SEP + r('06_app2.js') + r('07_tail.html'))
-dest = sys.argv[1] if len(sys.argv)>1 else 'ProgSheetGenV45.html'
+dest = sys.argv[1] if len(sys.argv)>1 else 'ProgSheetGenV48.html'
 open(dest,'w',encoding='utf-8').write(out)
 print('wrote',dest,len(out))

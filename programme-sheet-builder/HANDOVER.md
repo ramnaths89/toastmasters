@@ -1,20 +1,40 @@
 # Handover — NSE Programme Sheet Builder
 
 Paste this into a new chat to pick the project up cold. Written 11 Aug 2026,
-updated 29 Aug 2026 for **V45**.
+updated 2 Sep 2026 for **V48**.
 
-**V45** is V44 plus the GitHub/hub work: contest mode, JPG footer fix and Break
-10–20 stay; the published copy uses officer **placeholders**; iframe handlers
-are `(window.fn||parent.fn)` so the builder still edits inside the mega-app
-shell; empty voting fields print blank; the print FAB is live-preview only.
-`python3 publish.py index.html` from this folder. Next version is **V46**.
+**V48** is V45 plus V46–V48, all driven by Rama's 24 Sep 2026 contest sheet:
+
+- **V46** — a contest block's length is computed from its contestant count
+  (`contestBlockMinutes`: Table Topics 3.5, Evaluation 4.5 min per contestant
+  + 5), not stretched by Balance; "Participants" heading, "not in any particular
+  order" note and a per-block `comments` line print under the list; the FLEXIBLE
+  chip and range are gone from the printed row; Evaluation half runs Briefing
+  (3) → Test Speaker (9) → Holding Room (7) → Contest; certificates go to the
+  Contest Toastmaster.
+- **V47** — `state.roleOrder` {chapter, contest}: ▲▼ arrows in the roles form
+  reorder every printed list of appointment holders. Language Evaluator now
+  owns two rows (Word of the Day 2 min, Language Evaluation 8 min) and the
+  Ah-Counter tick adds an Ah-Counter's Report (2 min); both sit after
+  `evalvote`. Print-uniform set gains `text-transform`, chip borders, thead rule.
+- **V48** — custom roles join the order (`orderedRoleEntries`) and are no longer
+  printed twice; a typed contest length wins (`durManual`, "↺ use the estimate"
+  hands it back); Test Speaker is `noBell` + `fixedSignals` 5/6/7 in a 9-min slot
+  with a struck bell on the sheet; `csaa3` "Contest SAA 3" (unticked by default);
+  a custom role whose label matches a built-in folds into it on load; Test
+  Speaker defaults to "TBA @ Contest"; Rama's contest durations replace the
+  estimates; Photography Session row removed ("Closing Address | Photo Taking").
+
+The published copy uses officer **placeholders**; iframe handlers are
+`(window.fn||parent.fn)` so the builder still edits inside the mega-app shell.
+`python3 publish.py index.html` from this folder. Next version is **V49**.
 Never overwrite an existing V-file.
 
 ---
 
 # Handover (V44 text, still the source of truth for print geometry)
 
-Written 11 Aug 2026. Current OneDrive file **V44**; this tree is **V45**.
+Written 11 Aug 2026. Current OneDrive file **V48**; this tree is **V48**.
 Supersedes the 11 Aug V37 handover.
 
 ---
@@ -38,7 +58,7 @@ wrong and a test says it is fine, distrust the test first.** That has been right
 ## How to work on it
 
 This folder holds `src/`, `build.py`, `publish.py` and every test harness.
-Edit `src/`, run `python3 build.py ProgSheetGenV45.html`, then
+Edit `src/`, run `python3 build.py ProgSheetGenV48.html`, then
 `python3 publish.py index.html` for the GitHub copy.
 
 If the zip is lost, the monolith splits back into parts at exact byte offsets. Split any V-file by

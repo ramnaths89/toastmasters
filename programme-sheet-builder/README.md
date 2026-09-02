@@ -1,16 +1,22 @@
-# Programme Sheet Builder (V45)
+# Programme Sheet Builder (V48)
 
 Single-file Toastmasters agenda builder for Nee Soon East, District 80 — also
-usable by any club via Club Setup. **V45** is the V44 builder (contest mode,
-JPG footer fix, Break 10–20) published into this repo with officer names as
-placeholders.
+usable by any club via Club Setup. **V48** is V45 plus three rounds of contest
+work from the 24 Sep 2026 sheet: contest block length derived from the
+contestant count (3.5 / 4.5 min each + 5) unless a length is typed by hand;
+"Participants" heading and "not in any particular order" note under each list,
+with a free-text comments line; FLEXIBLE chip gone from print; appointment
+holders print in an order you set with ▲▼ arrows (custom roles included);
+Language Evaluation (8 min) and Ah-Counter's Report (2 min) rows follow the
+ticks; Test Speaker slot 9 min, lights 5/6/7, struck bell (not competing);
+Contest SAA 3; Rama's contest durations; officer names still placeholders.
 
 **Live:** https://ramnaths89.github.io/toastmasters/programme-sheet-builder/
 
 Do not hand-edit `index.html`. Edit `src/`, then:
 
 ```
-python3 build.py ProgSheetGenV45.html   # local monolith (gitignored)
+python3 build.py ProgSheetGenV48.html   # local monolith (gitignored)
 python3 publish.py index.html           # GitHub copy: placeholders + name gate
 ```
 

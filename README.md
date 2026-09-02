@@ -1,7 +1,7 @@
 # Toastmasters Tools
 
 Unofficial single-page tools for Toastmasters clubs and meetings, by Ramanathan S
-(Nee Soon East, District 80, Singapore). **V45.**
+(Nee Soon East, District 80, Singapore). **V48.**
 
 **Live:** https://ramnaths89.github.io/toastmasters/
 
@@ -26,7 +26,7 @@ is assembled from numbered parts in `programme-sheet-builder/src/` — see
 | Tool | Path | For | Notes |
 |------|------|-----|-------|
 | D80 Club Finder | [`d80-club-finder/`](d80-club-finder/) | Anyone looking for a club to visit | All 217 District 80 clubs across 9 divisions and 45 areas, with meeting schedules expanded into real dates. Filter by division / language / day / time / format. Four tabs — Table, Calendar, Breakdown, Starred. Star clubs to get their whole year on one page with clash days flagged, and copy that list as a link. CSV, clipboard and Google Calendar export. Data compiled 29 Jul 2026 — not live. |
-| Programme Sheet Builder **V45** | [`programme-sheet-builder/`](programme-sheet-builder/) | Toastmaster of the Day | Fill the panel on the left, the agenda redraws on the right. **Chapter meeting or speech contest.** Official Pathways catalogue built in. Club Setup is the first panel — see [Customise it for your club](programme-sheet-builder/customise-for-your-club.md). Break flexes 10–20 min (nominal 15). Save as `.json`; export HTML, A4 PDF, or a JPG under 500 KB. Officer names ship as placeholders, not real people. |
+| Programme Sheet Builder **V48** | [`programme-sheet-builder/`](programme-sheet-builder/) | Toastmaster of the Day | Fill the panel on the left, the agenda redraws on the right. **Chapter meeting or speech contest.** Official Pathways catalogue built in. Club Setup is the first panel — see [Customise it for your club](programme-sheet-builder/customise-for-your-club.md). Contest blocks size themselves from the contestant count (or take a typed length); appointment holders print in the order you set with ▲▼; Language Evaluation and Ah-Counter's Report rows follow the ticks. Break flexes 10–20 min. Save as `.json`; export HTML, A4 PDF, or a JPG under 500 KB. Officer names ship as placeholders, not real people. |
 | TMtimer | [`timer/`](timer/) | Timer | Full-screen timing lights — white, green, amber, red, then a bell after a delay you set (30 s by default) — with presets for Prepared Speech, Table Topics and Evaluation, custom times, and a session log you can edit and copy for the Timer's report. The log is saved in this browser (`timer.log.v1`). |
 | The Ah-Counter's Log **V7** | [`ah-counter/`](ah-counter/) | Ah-Counter | One tap per crutch word, one row per speaker. Two-column word list. Undo, remarks, keyboard shortcuts, and an end-of-meeting report you can copy or download as CSV. |
 
@@ -83,7 +83,7 @@ TMtimer does not persist a running clock — reload resets the seconds, not the 
 
 ## Programme sheet builder: source and tests
 
-`programme-sheet-builder/index.html` is a build artifact — do not hand-edit it. V45 uses the
+`programme-sheet-builder/index.html` is a build artifact — do not hand-edit it. V48 uses the
 numbered-part pipeline from V44:
 
 ```
@@ -93,7 +93,7 @@ numbered-part pipeline from V44:
 
 ```
 cd programme-sheet-builder
-python3 build.py ProgSheetGenV45.html
+python3 build.py ProgSheetGenV48.html
 python3 publish.py index.html
 ```
 
@@ -132,7 +132,7 @@ Do not load the pages as `file://`. Details: [desktop/](desktop/).
 
 - `.nojekyll` stops GitHub Pages from running Jekyll over the files.
 - `.gitignore` covers generated monoliths, test artifacts, and desktop build folders.
-- Numbered working copies (`V44`, `V45`, …) stay in OneDrive; git carries the published history here.
+- Numbered working copies (`V45`, `V48`, …) stay in OneDrive; git carries the published history here.
 - Never overwrite an existing V-file — always increment.
 
 ## Disclaimer
